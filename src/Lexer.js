@@ -356,10 +356,10 @@ Lexer.prototype =
 		for(; i < numFuncParams; i++) 
 		{
 			param = funcParams[i];
-			param.expr = new Expression.Number(0);
-			param.var = param.expr;
-			param.analyse();
-			args[i] = param.expr;				
+
+			expr = new Expression.Var();
+			expr.var = param;
+			args[i] = expr;				
 		}		
 
 		var funcCall = new Expression.FunctionCall(func, args);
@@ -407,6 +407,7 @@ Lexer.prototype =
 		while(this.token.type === Token.Type.STRING) 
 		{
 			newVar = new Expression.Var(this.token.str);
+			newVar.type = this.varEnum.NUMBER;
 			vars.push(newVar);
 			this.scope.vars[newVar.name] = newVar;
 			

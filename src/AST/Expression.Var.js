@@ -2,7 +2,7 @@
 
 Expression.Var = function(name)
 {
-	this.name = name;
+	this.name = name || "";
 	this.expr = null;
 	this.var = null;
 	this.value = "";

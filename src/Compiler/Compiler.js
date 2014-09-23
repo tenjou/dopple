@@ -6,9 +6,10 @@ function Compiler(library)
 	this.createLexer();
 
 	this.varMap = {};
-	this.varMap[Variable.Type.UNKNOWN] = "void";
-	this.varMap[Variable.Type.NUMBER] = "double";
+	this.varMap[Variable.Type.UNKNOWN] = "void ";
+	this.varMap[Variable.Type.NUMBER] = "double ";
 	this.varMap[Variable.Type.BOOL] = "int32_t";
+	this.varMap[Variable.Type.STRING] = "char *";
 
 	this.library = library || "";
 	this.tabs = "";
@@ -17,6 +18,7 @@ function Compiler(library)
 	this.global = this.lexer.global;
 	this.scope = null;
 
+	this.exprEnum = Expression.Type;
 	this.varEnum = Variable.Type;
 };
 
@@ -205,17 +207,17 @@ Compiler.prototype =
 			numParams = params.length;
 		}
 
-		this.output += "\n" + this.varMap[func.returnVar.type] + " " + func.name + "(";
+		this.output += "\n" + this.varMap[func.returnVar.type] + func.name + "(";
 
 		if(numParams) 
 		{
 			var varDef;
 			for(var i = 0; i < numParams - 1; i++) {
 				varDef = params[i];
-				this.output += this.varMap[varDef.type] + " " + varDef.name + ", ";
+				this.output += this.varMap[varDef.type] + varDef.name + ", ";
 			}
 			varDef = params[i];
-			this.output += this.varMap[varDef.type] + " " + varDef.name;
+			this.output += this.varMap[varDef.type] + varDef.name;
 		}
 
 		this.output += ") \n{\n";
@@ -286,10 +288,25 @@ Compiler.prototype =
 
 		if(numArgs > 0)
 		{
-			this.writeVar(args[0]);
-			for(var i = 1; i < numArgs; i++) {
+			var arg = args[0];
+			if(arg.exprType === this.exprEnum.VAR) {
+				this.writeDefaultVar(arg.var);
+			}
+			else {
+				this.writeVar(arg);
+			}
+
+			for(var i = 1; i < numArgs; i++) 
+			{
 				this.output += ", ";
-				this.writeVar(args[i]);
+
+				arg = args[i];
+				if(arg.exprType === this.exprEnum.VAR) {
+					this.writeDefaultVar(arg.var);
+				}
+				else {
+					this.writeVar(arg);
+				}
 			}
 		}
 
@@ -383,6 +400,19 @@ Compiler.prototype =
 		else {
 			this.output += varExpr.value;
 		}
+	},
+
+	writeDefaultVar: function(varExpr)
+	{
+		if(varExpr.type === this.varEnum.NUMBER) {
+			this.output += "0";
+		}
+		else if(varExpr.type === this.varEnum.STRING) {
+			this.output += "\"\\x0\\x0\\x0\\x0\"\"\"";
+		}
+		else {
+			throw "writeDefaultVar: Unknown Type";	
+		}	
 	},
 
 	incTabs: function() {

@@ -18,17 +18,15 @@ Optimizer.prototype =
 
 	_doExpr: function(expr)
 	{
-		var lhs = expr.lhs;
-		var rhs = expr.rhs;
-		var lhsType = lhs.exprType;
-		var rhsType = rhs.exprType;
+		var lhsType = expr.lhs.exprType;
+		var rhsType = expr.rhs.exprType;
 
 		if(lhsType === this.exprEnum.BINARY) {
-			expr.lhs = this._doExpr(lhs);
+			expr.lhs = this._doExpr(expr.lhs);
 			lhsType = expr.lhs.exprType;
 		}
 		if(rhsType === this.exprEnum.BINARY) {
-			expr.rhs = this._doExpr(rhs);
+			expr.rhs = this._doExpr(expr.rhs);
 			rhsType = expr.rhs.exprType;
 		}
 
@@ -41,16 +39,16 @@ Optimizer.prototype =
 		var op = expr.op;
 
 		if(op === "+") {
-			result = lhs.value + rhs.value;
+			result = expr.lhs.value + expr.rhs.value;
 		}
 		else if(op === "-") {
-			result = lhs.value - rhs.value;
+			result = expr.lhs.value - expr.rhs.value;
 		} 
 		else if(op === "*") {
-			result = lhs.value * rhs.value;
+			result = expr.lhs.value * expr.rhs.value;
 		}
 		else if(op === "/") {
-			result = lhs.value / rhs.value;
+			result = expr.lhs.value / expr.rhs.value;
 		}
 
 		if(typeof(result) === "string") {
