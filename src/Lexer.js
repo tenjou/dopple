@@ -25,6 +25,8 @@ function Lexer()
 	this.currVar = null;
 
 	this._skipNextToken = false;
+
+	this.varEnum = Variable.Type;
 };
 
 Lexer.prototype = 
@@ -316,32 +318,51 @@ Lexer.prototype =
 		if(!func) {
 			Lexer.throw(Lexer.Error.REFERENCE_ERROR, name);
 		}
-		var exprBuffer = null;
 
+		var args = new Array(func.numParams);
+		var i = 0, param;
+		var funcParams = func.params;
+		var numFuncParams = funcParams.length;
+
+		// Check if there are arguments passed:
 		this.nextToken();
 		if(this.token.str !== ")") 
 		{
-			exprBuffer = [];
-
-			var expr, param;
-			for(var i = 0;; i++)
+			// Parse all variable expressions:	
+			for(;; i++)
 			{
-				param = func.params[i];
+				// Too many arguments:
+				if(i >= numFuncParams) {
+					Lexer.throw(Lexer.Error.TOO_MANY_ARGUMENTS);
+				}
 
+				param = funcParams[i];
 				param.expr = this.parseExpression();
 				param.expr = this.optimizer.do(param.expr);
 				param.var = param.expr;
 				param.analyse();
-				exprBuffer.push(param.expr);
+				args[i] = param.expr;
 
 				if(this.token.str !== ",") {
+					i++;
 					break;
 				}
 				this.nextToken();		
-			}	
+			}
 		}
 
-		var funcCall = new Expression.FunctionCall(name, exprBuffer);
+		// Add missing variables with default value:
+		var expr;
+		for(; i < numFuncParams; i++) 
+		{
+			param = funcParams[i];
+			param.expr = new Expression.Number(0);
+			param.var = param.expr;
+			param.analyse();
+			args[i] = param.expr;				
+		}		
+
+		var funcCall = new Expression.FunctionCall(func, args);
 		this.scope.varBuffer.push(funcCall);
 	},
 
@@ -419,6 +440,7 @@ Lexer.prototype =
 
 		var funcExpr = new Expression.Function(name, this.scope, vars);
 		var parentScope = this.scope.parent;
+		parentScope.vars[name] = funcExpr;
 		parentScope.defBuffer.push(funcExpr);
 
 		this.scope = this.scope.parent;

@@ -16,6 +16,8 @@ function Compiler(library)
 
 	this.global = this.lexer.global;
 	this.scope = null;
+
+	this.varEnum = Variable.Type;
 };
 
 Compiler.prototype = 
@@ -277,27 +279,21 @@ Compiler.prototype =
 
 	makeFuncCall: function(funcCall) 
 	{
-		var params = funcCall.params;
-		var numParams = 0;
-		if(params) {
-			numParams = params.length;
-		}
+		var args = funcCall.args;
+		var numArgs = funcCall.func.numParams;
 
-		if(numParams === 0) {
-			this.output += this.tabs + funcCall.name + "();\n";
-		}
-		else 
+		this.output += this.tabs + funcCall.func.name + "(";
+
+		if(numArgs > 0)
 		{
-			this.output += this.tabs + funcCall.name + "(";
-
-			this.writeVar(params[0]);
-			for(var i = 1; i < numParams; i++) {
+			this.writeVar(args[0]);
+			for(var i = 1; i < numArgs; i++) {
 				this.output += ", ";
-				this.writeVar(params[i]);
+				this.writeVar(args[i]);
 			}
-
-			this.output += ");\n";
 		}
+
+		this.output += ");\n";
 	},	
 
 	makeVarExpr: function(varExpr)
@@ -388,7 +384,6 @@ Compiler.prototype =
 			this.output += varExpr.value;
 		}
 	},
-
 
 	incTabs: function() {
 		this.tabs += "\t";

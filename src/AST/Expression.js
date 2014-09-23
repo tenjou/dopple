@@ -62,6 +62,9 @@ var Variable =
 		BOOL: 2,
 		STRING: 3,
 		OBJECT: 4,
-		RAW_STRING: 10
+		STRING_OBJ: 5,
+		FORMAT: 6,
+		ARGUMENTS: 7,
+		SCOPE: 8
 	}
 };
