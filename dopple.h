@@ -2,6 +2,10 @@
 #include <stdarg.h>
 #include <stdint.h>
 
+static inline double String$length(const char *str) {
+	return (double)((int32_t)(*str));
+}
+
 void console$log(const char *format, ...)
 {
     va_list argptr;
