@@ -160,7 +160,7 @@ Lexer.prototype =
 		if(this.token.type === Token.Type.NUMBER) {
 			return this.parseNumber();
 		}
-		else if(this.token.type === Token.Type.STRING) {
+		else if(this.token.type === Token.Type.STRING_OBJ) {
 			return this.parseVar();
 		}
 		else if(this.token.type === Token.Type.BOOL) {
@@ -199,7 +199,7 @@ Lexer.prototype =
 			return null;
 		}
 
-		var expr = new Expression.String(str);
+		var expr = new Expression.StringObj(str);
 		this.nextToken();
 		return expr;
 	},

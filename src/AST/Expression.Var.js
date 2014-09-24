@@ -31,8 +31,10 @@ Expression.Var.prototype.analyse = function()
 	{
 		if(this.var.type === 0) { return; }
 
-		if(this.type !== this.var.type) {
-			Lexer.throw(Lexer.Error.INVALID_TYPE_CONVERSION, "\"" + this.var.name + "\" " + this.var.strType() + " to " + this.expr.strType());
+		if(this.type !== this.var.type) 
+		{
+			Lexer.throw(Lexer.Error.INVALID_TYPE_CONVERSION, 
+				"\"" + this.var.name + "\" " + this.var.strType() + " to " + this.expr.strType());
 		}
 	}
 };
@@ -57,8 +59,8 @@ Expression.Var.prototype.analyseBinExpr = function(binExpr)
 
 	if(lhsType !== rhsType) 
 	{
-		if(lhsType === Variable.Type.STRING || rhsType === Variable.Type.STRING) {
-			return Variable.Type.STRING;
+		if(lhsType === Variable.Type.STRING_OBJ || rhsType === Variable.Type.STRING_OBJ) {
+			return Variable.Type.STRING_OBJ;
 		}
 		else 
 		{

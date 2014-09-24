@@ -1,7 +1,6 @@
 "use strict";
 
-function Optimizer() 
-{
+function Optimizer() {
 	this.exprEnum = Expression.Type;
 };
 
@@ -30,8 +29,8 @@ Optimizer.prototype =
 			rhsType = expr.rhs.exprType;
 		}
 
-		if((lhsType === this.exprEnum.NUMBER || lhsType === this.exprEnum.STRING) &&
-		   (rhsType === this.exprEnum.NUMBER || rhsType === this.exprEnum.STRING)) 
+		if((lhsType === this.exprEnum.NUMBER || lhsType === this.exprEnum.STRING_OBJ) &&
+		   (rhsType === this.exprEnum.NUMBER || rhsType === this.exprEnum.STRING_OBJ)) 
 		{}
 		else { return expr; }
 
@@ -52,7 +51,7 @@ Optimizer.prototype =
 		}
 
 		if(typeof(result) === "string") {
-			return new Expression.String(result);
+			return new Expression.StringObj(result);
 		}
 
 		return new Expression.Number(result);

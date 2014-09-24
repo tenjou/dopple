@@ -9,7 +9,8 @@ function Compiler(library)
 	this.varMap[Variable.Type.UNKNOWN] = "void ";
 	this.varMap[Variable.Type.NUMBER] = "double ";
 	this.varMap[Variable.Type.BOOL] = "int32_t";
-	this.varMap[Variable.Type.STRING] = "char *";
+	this.varMap[Variable.Type.STRING] = "const char *";
+	this.varMap[Variable.Type.STRING_OBJ] = "const char *";
 
 	this.library = library || "";
 	this.tabs = "";
@@ -148,14 +149,16 @@ Compiler.prototype =
 			}
 		}
 
-		this.output += "\n";
+		if(numDefs || numVars) {
+			this.output += "\n";
+		}
 	},
 
 
 	defineVar: function(varExpr)
 	{
-		if(varExpr.type === Variable.Type.UNKNOWN) {
-			console.warn("[Compiler.makeVar]:", "Variable \"" + varExpr.name + "\" is discarded - unknown type.");
+		if(varExpr.type === Variable.Type.VOID) {
+			console.warn("[Compiler.makeVar]:", "Variable \"" + varExpr.name + "\" is discarded - void type.");
 			return;
 		}
 
@@ -167,16 +170,16 @@ Compiler.prototype =
 		if(varExpr.type === varType.OBJECT) {
 			this.output += expr.name + " " + varExpr.name + ";\n";
 		}
-		else if(varExpr.type === varType.STRING) {
+		else if(varExpr.type === varType.STRING_OBJ) {
 			this.output += "char *" + varExpr.name + " = \"" + expr.length + "\"\"" + expr.value + "\";\n";
 		}
 		else 
 		{
 			if(this.scope === this.global && varExpr.expr.exprType === Expression.Type.BINARY) {
-				this.output += this.varMap[varExpr.type] + " " + varExpr.name + ";\n";
+				this.output += this.varMap[varExpr.type] + varExpr.name + ";\n";
 			}
 			else {				
-				this.output += this.varMap[varExpr.type] + " " + varExpr.name + " = ";
+				this.output += this.varMap[varExpr.type] + varExpr.name + " = ";
 				this.defineExpr(expr);
 				this.output += ";\n";
 			}
@@ -251,8 +254,8 @@ Compiler.prototype =
 
 	makeVar: function(varExpr)
 	{
-		if(varExpr.type === Variable.Type.UNKNOWN) {
-			console.warn("[Compiler.makeVar]:", "Variable \"" + varExpr.name + "\" is discarded - unknown type.");
+		if(varExpr.type === Variable.Type.VOID) {
+			console.warn("[Compiler.makeVar]:", "Variable \"" + varExpr.name + "\" is discarded - void type.");
 			return "";
 		}
 
@@ -266,7 +269,7 @@ Compiler.prototype =
 		else if(expr.exprType === exprType.VAR) {
 			this.output += expr.name;
 		}		
-		else if(expr.exprType === exprType.STRING) {
+		else if(expr.exprType === exprType.STRING_OBJ) {
 			this.output += "\"" + expr.length + expr.value + "\"";
 		}
 		else if(expr.exprType === exprType.BINARY) {
@@ -315,8 +318,8 @@ Compiler.prototype =
 
 	makeVarExpr: function(varExpr)
 	{
-		if(varExpr.type === Variable.Type.UNKNOWN) {
-			console.warn("[Compiler.makeVar]:", "Variable \"" + varExpr.name + "\" is discarded - unknown type.");
+		if(varExpr.type === Variable.Type.VOID) {
+			console.warn("[Compiler.makeVar]:", "Variable \"" + varExpr.name + "\" is discarded - void type.");
 			return "";
 		}
 
@@ -330,7 +333,7 @@ Compiler.prototype =
 		else if(expr.exprType === exprType.VAR) {
 			output += expr.value + ";\n";
 		}
-		else if(expr.exprType === exprType.STRING) {
+		else if(expr.exprType === exprType.STRING_OBJ) {
 			output += "\"" + expr.value + "\";\n";
 		}
 		else if(expr.exprType === exprType.BINARY) {
@@ -348,7 +351,7 @@ Compiler.prototype =
 		}
 		else 
 		{
-			if(binExpr.lhs.type === Variable.Type.STRING) {
+			if(binExpr.lhs.type === Variable.Type.STRING_OBJ) {
 				lhsValue = "\"" + binExpr.lhs.str + "\"";
 			}
 			else {
@@ -391,7 +394,7 @@ Compiler.prototype =
 		else if(exprType === exprEnum.VAR) {
 			this.output += varExpr.name;
 		}		
-		else if(exprType === exprEnum.STRING) {
+		else if(exprType === exprEnum.STRING_OBJ) {
 			this.output += "\"" + varExpr.length + "\"\"" + varExpr.value + "\"";
 		}
 		else if(exprType === exprEnum.BINARY) {
@@ -408,6 +411,9 @@ Compiler.prototype =
 			this.output += "0";
 		}
 		else if(varExpr.type === this.varEnum.STRING) {
+			this.output += "\"\"";
+		}
+		else if(varExpr.type === this.varEnum.STRING_OBJ) {
 			this.output += "\"\\x0\\x0\\x0\\x0\"\"\"";
 		}
 		else {

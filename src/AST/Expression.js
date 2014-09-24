@@ -40,29 +40,30 @@ Expression.Base.prototype =
 
 
 Expression.Type = {
-	UNKNOWN: 0,
+	VOID: 0,
 	VAR: 1,
 	NUMBER: 2,
-	BOOL: 4,
+	BOOL: 3,
 	STRING: 4,
-	BINARY: 5,
-	FUNCTION: 6,
-	FUNCTION_CALL: 7,
-	PROTOTYPE: 8,
-	OBJECT: 9,
-	RETURN: 10
+	STRING_OBJ: 5,
+	BINARY: 6,
+	FUNCTION: 7,
+	FUNCTION_CALL: 8,
+	PROTOTYPE: 9,
+	OBJECT: 10,
+	RETURN: 11
 };
 
 var Variable =
 {
 	Type:
 	{
-		UNKNOWN: 0,
+		VOID: 0,
 		NUMBER: 1,
 		BOOL: 2,
 		STRING: 3,
-		OBJECT: 4,
-		STRING_OBJ: 5,
+		STRING_OBJ: 4,
+		OBJECT: 5,
 		FORMAT: 6,
 		ARGUMENTS: 7,
 		SCOPE: 8
