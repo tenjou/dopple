@@ -33,7 +33,7 @@ Compiler.prototype =
 		// console.externFunc("log", [ Variable.Type.FORMAT, "format", Variable.Type.ARGS, "..."]);
 
 		this.lexer.externFunc("alert", [ Variable.Type.STRING, "str" ]);
-		this.lexer.externFunc("confirm", [ Variable.Type.STRING, "str" ]);
+		this.lexer.externFunc("confirm", [ Variable.Type.NUMBER, "str" ]);
 	},
 
 	compile: function(str)
@@ -282,40 +282,6 @@ Compiler.prototype =
 		this.output += ";\n";
 	},
 
-	makeFuncCall: function(funcCall) 
-	{
-		var args = funcCall.args;
-		var numArgs = funcCall.func.numParams;
-
-		this.output += this.tabs + funcCall.func.name + "(";
-
-		if(numArgs > 0)
-		{
-			var arg = args[0];
-			if(arg.exprType === this.exprEnum.VAR) {
-				this.writeDefaultVar(arg.var);
-			}
-			else {
-				this.writeVar(arg);
-			}
-
-			for(var i = 1; i < numArgs; i++) 
-			{
-				this.output += ", ";
-
-				arg = args[i];
-				if(arg.exprType === this.exprEnum.VAR) {
-					this.writeDefaultVar(arg.var);
-				}
-				else {
-					this.writeVar(arg);
-				}
-			}
-		}
-
-		this.output += ");\n";
-	},	
-
 	makeVarExpr: function(varExpr)
 	{
 		if(varExpr.type === Variable.Type.VOID) {
@@ -374,52 +340,46 @@ Compiler.prototype =
 		}
 
 		return lhsValue + " " + binExpr.op + " " + rhsValue;
-	},
+	},	
 
-	makeFunction: function(funcExpr)
+	makeFuncCall: function(funcCall) 
 	{
-		var output = "function " + funcExpr.name + "() {};";
-		return output;
-	},
+		var params = funcCall.func.params;
+		var args = funcCall.args;
+		var numArgs = funcCall.func.numParams;
 
+		this.output += this.tabs + funcCall.func.name + "(";
 
-	writeVar: function(varExpr) 
-	{
-		var exprType = varExpr.exprType;
-		var exprEnum = Expression.Type;
+		// Write arguments, if there is any:
+		if(numArgs > 0)
+		{
+			var arg = args[0];
+			var param = params[0];
+			if(arg === param) {
+				this.output += param.defaultValue();
+			}
+			else {
+				this.output += arg.castTo(param);
+			}
 
-		if(exprType === exprEnum.NUMBER) {
-			this.output += varExpr.value;
-		}
-		else if(exprType === exprEnum.VAR) {
-			this.output += varExpr.name;
-		}		
-		else if(exprType === exprEnum.STRING_OBJ) {
-			this.output += "\"" + varExpr.length + "\"\"" + varExpr.value + "\"";
-		}
-		else if(exprType === exprEnum.BINARY) {
-			this.output += this._makeVarBinary(varExpr);
-		}
-		else {
-			this.output += varExpr.value;
-		}
-	},
+			for(var i = 1; i < numArgs; i++) 
+			{
+				this.output += ", ";
 
-	writeDefaultVar: function(varExpr)
-	{
-		if(varExpr.type === this.varEnum.NUMBER) {
-			this.output += "0";
+				arg = args[i];
+				param = params[i];
+				if(arg === param) {
+					this.output += param.defaultValue();
+				}
+				else {
+					this.output += arg.castTo(param);
+				}
+			}
 		}
-		else if(varExpr.type === this.varEnum.STRING) {
-			this.output += "\"\"";
-		}
-		else if(varExpr.type === this.varEnum.STRING_OBJ) {
-			this.output += "\"\\x0\\x0\\x0\\x0\"\"\"";
-		}
-		else {
-			throw "writeDefaultVar: Unknown Type";	
-		}	
-	},
+
+		this.output += ");\n";
+	},	
+
 
 	incTabs: function() {
 		this.tabs += "\t";
@@ -429,3 +389,4 @@ Compiler.prototype =
 		this.tabs = this.tabs.substr(0, this.tabs.length - 1);
 	}
 };
+

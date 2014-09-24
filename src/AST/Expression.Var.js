@@ -10,64 +10,35 @@ Expression.Var = function(name)
 
 Expression.Var.prototype = new Expression.Base(Expression.Type.VAR);
 
-Expression.Var.prototype.analyse = function()
-{	
-	var exprType = Expression.Type;
+Expression.Var.prototype.write = function(str, param){
+	this.var.write(str, param);
+};
 
-	if(this.expr.exprType === exprType.BINARY) {
-		this.type = this.analyseBinExpr(this.expr);
-	}
-	else if(this.expr.exprType === exprType.VAR) {
-		this.type = this.expr.var.type;
+Expression.Var.prototype.cast = function(str, expr) 
+{
+	if(this.var) {
+		this.var.castFromExpr(str, expr);
 	}
 	else {
-		this.type = this.expr.type;
-	}
-
-	if(this === this.var) {
-		return;
-	}
-	else 
-	{
-		if(this.var.type === 0) { return; }
-
-		if(this.type !== this.var.type) 
-		{
-			Lexer.throw(Lexer.Error.INVALID_TYPE_CONVERSION, 
-				"\"" + this.var.name + "\" " + this.var.strType() + " to " + this.expr.strType());
-		}
+		this.expr.castFromType(str, this.type);
 	}
 };
 
-Expression.Var.prototype.analyseBinExpr = function(binExpr)
-{
-	var lhsType;
-	if(binExpr.lhs.exprType === Expression.Type.BINARY) {
-		lhsType = this.analyseBinExpr(binExpr.lhs);
-	}
-	else {
-		lhsType = binExpr.lhs.type;
-	}
+Expression.Var.prototype.analyse = function()
+{	
+	this.type = this.expr.type;
 
-	var rhsType;
-	if(binExpr.rhs.exprType === Expression.Type.BINARY) {
-		rhsType = this.analyseBinExpr(binExpr.rhs);
-	}
-	else {
-		rhsType = binExpr.rhs.type;
-	}
+	// if(this === this.var) {
+	// 	return;
+	// }
+	// else 
+	// {
+	// 	if(this.var.type === 0) { return; }
 
-	if(lhsType !== rhsType) 
-	{
-		if(lhsType === Variable.Type.STRING_OBJ || rhsType === Variable.Type.STRING_OBJ) {
-			return Variable.Type.STRING_OBJ;
-		}
-		else 
-		{
-			Lexer.throw(Lexer.Error.INVALID_TYPE_CONVERSION, "\"" + 
-				this.var.name + "\" " + binExpr.lhs.strType() + " to " + binExpr.rhs.strType());
-		}
-	}
-
-	return lhsType;
+	// 	if(this.type !== this.var.type) 
+	// 	{
+	// 		Error.throw(Error.Type.INVALID_TYPE_CONVERSION, 
+	// 			"\"" + this.var.name + "\" " + this.var.strType() + " to " + this.expr.strType());
+	// 	}
+	// }
 };

@@ -9,6 +9,12 @@ Expression.Base = function(exprType) {
 
 Expression.Base.prototype = 
 {
+	analyse: function() {},
+
+	to: function(type) {
+		return "void";
+	},
+
 	strType: function()
 	{
 		var type = Variable.Type;

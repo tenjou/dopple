@@ -160,7 +160,7 @@ Lexer.prototype =
 		if(this.token.type === Token.Type.NUMBER) {
 			return this.parseNumber();
 		}
-		else if(this.token.type === Token.Type.STRING_OBJ) {
+		else if(this.token.type === Token.Type.STRING) {
 			return this.parseVar();
 		}
 		else if(this.token.type === Token.Type.BOOL) {
@@ -222,7 +222,7 @@ Lexer.prototype =
 	parseObject: function()
 	{
 		var name = "";
-		if(this.isGlobalScope) {
+		if(this.scope === this.global) {
 			name = "S" + this.currVar.name;
 		}
 		else {
@@ -231,8 +231,6 @@ Lexer.prototype =
 
 		var objDef = new ObjectDef(name);
 		var expr = new Expression.Object(name, objDef);
-		// this.deffBuffer.push(expr);
-		// this.defs[name] = expr;
 
 		this.nextToken();
 
@@ -240,10 +238,9 @@ Lexer.prototype =
 			Lexer.throw(Lexer.Error.UNEXPECTED_EOI);
 		}
 
-		this.scope.defs[name] = objDef;
 		this.scope.defBuffer.push(objDef);
 
-		if(this.isGlobalScope) {
+		if(this.scope === this.global) {
 			//this.varBuffer.push(expr);
 		}
 
@@ -319,8 +316,9 @@ Lexer.prototype =
 			Lexer.throw(Lexer.Error.REFERENCE_ERROR, name);
 		}
 
+		var i = 0
 		var args = new Array(func.numParams);
-		var i = 0, param;
+		var param, expr;
 		var funcParams = func.params;
 		var numFuncParams = funcParams.length;
 
@@ -333,16 +331,19 @@ Lexer.prototype =
 			{
 				// Too many arguments:
 				if(i >= numFuncParams) {
-					Lexer.throw(Lexer.Error.TOO_MANY_ARGUMENTS);
+					dopple.throw(dopple.Error.TOO_MANY_ARGUMENTS);
 				}
 
-				param = funcParams[i];
-				param.expr = this.parseExpression();
-				param.expr = this.optimizer.do(param.expr);
-				param.var = param.expr;
-				param.analyse();
-				args[i] = param.expr;
+				expr = this.parseExpression();
+				expr = this.optimizer.do(expr);
+				expr.analyse();
+				args[i] = expr;
 
+				param = funcParams[i];
+				if(param.type === 0) {
+					param.type = expr.type;
+				}
+		
 				if(this.token.str !== ",") {
 					i++;
 					break;
@@ -352,14 +353,8 @@ Lexer.prototype =
 		}
 
 		// Add missing variables with default value:
-		var expr;
-		for(; i < numFuncParams; i++) 
-		{
-			param = funcParams[i];
-
-			expr = new Expression.Var();
-			expr.var = param;
-			args[i] = expr;				
+		for(; i < numFuncParams; i++) {
+			args[i] = funcParams[i];				
 		}		
 
 		var funcCall = new Expression.FunctionCall(func, args);
@@ -459,13 +454,25 @@ Lexer.prototype =
 		{
 			funcParams = [];
 
-			var expr;
+			var varExpr, expr, type;
 			var numParams = params.length;
 			for(var i = 0; i < numParams; i += 2) 
 			{
-				expr = new Expression.Var(params[i + 1]);
-				expr.type = params[i];
-				funcParams.push(expr);
+				type = params[i];
+				if(type === this.varEnum.NUMBER) {
+					expr = new Expression.Number(0);
+				}
+				else if(type === this.varEnum.STRING) {
+					expr = new Expression.String("");
+				}
+				else if(type === this.varEnum.STRING_OBJ) {
+					expr = new Expression.StringObj("");
+				}
+
+				varExpr = new Expression.Var(params[i + 1]);
+				varExpr.type = type;
+				varExpr.var = expr;
+				funcParams.push(varExpr);
 			}
 		}
 
@@ -478,7 +485,6 @@ function Scope(parent)
 {
 	this.parent = parent || null;
 
-	this.defs = {};
 	this.vars = {};
 	this.defBuffer = [];
 	this.varBuffer = [];
