@@ -14,8 +14,8 @@ This will install `dopple` globally so that it may be run from the command line.
 
 	dopple [source] [target-path]
 
-`[source]` - JavaScript source file or code
-`[target-path]` - Path for executable, this defaults to `./app` (or `./app.exe` on windows)
+`-[source]` - JavaScript source file or code
+`-[target-path]` - Path for executable, this defaults to `./app` (or `./app.exe` on windows)
 
 ## Compile locally
 
