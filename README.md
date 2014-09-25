@@ -10,6 +10,10 @@ Install package from `npm`:
 
 This will install `dopple` globally so that it may be run from the command line.
 
+### Windows
+
+Dopple requires GCC compiler to be installed for automatic compilation and windows users should install it manually. 
+
 # Usage 
 
 ### Global
