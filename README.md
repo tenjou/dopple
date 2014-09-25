@@ -24,7 +24,7 @@ This will install `dopple` globally so that it may be run from the command line.
 	
 # License
 
-Dopple is released under the Mozzila Public License v2.0 [MPL 2.0](https://www.mozilla.org/MPL/2.0/) 
+Dopple is released under the Mozilla Public License v2.0 [MPL 2.0](https://www.mozilla.org/MPL/2.0/) 
 	
 * [Offical Website](http://infinite-games.com/)
-* [npm](https://www.npmjs.org/package/dopple)
+* [Npm](https://www.npmjs.org/package/dopple)
