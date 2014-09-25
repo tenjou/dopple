@@ -1,6 +1,6 @@
 "use strict";
 
-function Compiler(library)
+function Compiler()
 {
 	this.lexer = null;
 	this.createLexer();
@@ -8,11 +8,10 @@ function Compiler(library)
 	this.varMap = {};
 	this.varMap[Variable.Type.UNKNOWN] = "void ";
 	this.varMap[Variable.Type.NUMBER] = "double ";
-	this.varMap[Variable.Type.BOOL] = "int32_t";
+	this.varMap[Variable.Type.BOOL] = "int32_t ";
 	this.varMap[Variable.Type.STRING] = "const char *";
 	this.varMap[Variable.Type.STRING_OBJ] = "const char *";
 
-	this.library = library || "";
 	this.tabs = "";
 	this.output = "";
 
@@ -53,7 +52,7 @@ Compiler.prototype =
 
 	make: function()
 	{
-		this.output = this.library + "\n\n";
+		this.output = "#include \"dopple.h\"\n\n";
 
 		this.define(this.global);
 

@@ -24,7 +24,10 @@ function init()
 		{
 			if(err) { throw err; }
 			var source = buffer.toString();
-			readHeaders(source);
+			var output = dopple.compile(source);
+			if(output) {
+				save(output);
+			}
 		});
 	}
 	else {
@@ -32,24 +35,17 @@ function init()
 	}
 };
 
-function readHeaders(source) 
-{
-	fs.readFile("dopple.h", function(err, buffer) 
-	{
-		if(err) { throw err; }
-
-		var headers = buffer.toString();
-		var output = dopple.compile(source, headers);
-		if(output) {
-			save(output);
-		}
-	});	
-};
-
 function save(output) 
 {
 	exec("mkdir dopple");
 
+	if(!isWin) {
+		exec("cp lib/dopple.h dopple/dopple.h");	
+	}
+	else {
+		exec("copy lib/dopple.h dopple/dopple.h");
+	}
+	
 	fs.writeFile("dopple/app.c", output, function(err) {
 		if(err) { throw err; }
 		compile();

@@ -2,8 +2,8 @@
 
 var dopple = 
 {
-	compile: function(source, headers) {
-		var compiler = new Compiler(headers);
+	compile: function(source) {
+		var compiler = new Compiler();
 		return compiler.compile(source);
 	}
 };

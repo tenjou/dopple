@@ -8,12 +8,6 @@ function main()
 	});
 };
 
-function compile(source)
-{
-	meta.ajax({
-		url: "dopple.h",
-		success: function(headers) {
-			console.log(dopple.compile(source, headers));
-		}
-	});	
+function compile(source) {
+	console.log(dopple.compile(source));
 };
