@@ -2,7 +2,7 @@
 
 Dopple is compiler that generates C or LLVM from JavaScript code.
 
-# Installing:
+# Installation
 
 Install package from `npm`:
 
@@ -12,15 +12,29 @@ This will install `dopple` globally so that it may be run from the command line.
 
 # Usage 
 
+### Global
+
 	dopple [source] [target-path]
+	
+### Local
+
+	node bin/dopple [source] [target-path]
+	
+### Arguments
 
 `[source]` - JavaScript source file or code
 
 `[target-path]` - Path for executable, this defaults to `./app` (or `./app.exe` on windows)
 
-## Compile locally
+# Example
 
-	node bin/dopple [source] [target-path]
+### From source file
+
+	dopple ./source.js
+
+### Feed code manually
+
+	dopple 'var x = "Hello World!"; confirm(x);'
 	
 # License
 
