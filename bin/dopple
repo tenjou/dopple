@@ -18,17 +18,25 @@ if(isWin) {
 
 function init()
 {
+	var output;
+
 	if(getExt(sourceFilePath)) 
 	{
 		fs.readFile(sourceFilePath, function(err, buffer) 
 		{
 			if(err) { throw err; }
 			var source = buffer.toString();
-			var output = dopple.compile(source);
+			output = dopple.compile(source);
 			if(output) {
 				save(output);
 			}
 		});
+	}
+	else {
+		output = dopple.compile(sourceFilePath);
+		if(output) {
+			save(output);
+		}
 	}
 };
 
