@@ -1,33 +1,37 @@
 {
-	"name": "dopple",
-	"version": "0.0.1-10-alpha",
-	"description": "Dopple is compiler that generates C or LLVM from JavaScript code.",
-	"author": "Infinite Foundation <dopple@infinite-games.com>",
-	"contributors": [
-		{
-			"name": "Arturs Šefers",
-			"email": "arthur.der.shefer@gmail.com"
-		}
-	],
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/InfiniteFoundation/dopple.git"
-	},
-	"bugs": {
-		"url": "https://github.com/InfiniteFoundation/dopple/issues"
-	},
-	"licenses": [ 
-		{
-			"type": "MPL 2.0",
-			"url": "https://github.com/InfiniteFoundation/dopple/blob/master/LICENSE"
-		}
-	],
-	"keywords": [
-		"native", "compiler", "llvm", "c", "c++"
-	],
-	"bin": {
-		"dopple": "./bin/dopple"
-	},
-	"preferGlobal": true,
-	"analyze": true
+  "name": "dopple",
+  "version": "0.0.1",
+  "description": "Dopple is compiler that generates C or LLVM from JavaScript code.",
+  "author": "Infinite Foundation <dopple@infinite-games.com>",
+  "contributors": [
+    {
+      "name": "Arturs Šefers",
+      "email": "arthur.der.shefer@gmail.com"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/InfiniteFoundation/dopple.git"
+  },
+  "bugs": {
+    "url": "https://github.com/InfiniteFoundation/dopple/issues"
+  },
+  "licenses": [
+    {
+      "type": "MPL 2.0",
+      "url": "https://github.com/InfiniteFoundation/dopple/blob/master/LICENSE"
+    }
+  ],
+  "keywords": [
+    "native",
+    "compiler",
+    "llvm",
+    "c",
+    "c++"
+  ],
+  "bin": {
+    "dopple": "./bin/dopple"
+  },
+  "preferGlobal": true,
+  "analyze": true
 }
