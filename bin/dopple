@@ -2,7 +2,7 @@
 
 var fs = require("fs");
 var exec = require("child_process").exec;
-var dopple = require("./dopple.latest.js").dopple;
+var dopple = require("../lib/dopple.latest.js").dopple;
 
 var sourceFilePath = process.argv[2] || "";
 var targetFilePath = process.argv[3] || "app";
