@@ -1,6 +1,6 @@
 {
 	"name": "dopple",
-	"version": "0.0.1-4-alpha",
+	"version": "0.0.1-5-alpha",
 	"description": "Dopple is compiler that generates C or LLVM from JavaScript code.",
 	"author": "Infinite Foundation <dopple@infinite-games.com>",
 	"contributors": [
@@ -11,7 +11,7 @@
 	],
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/InfiniteFoundation/dopple.git"
+		"url": "git://github.com/InfiniteFoundation/dopple.git"
 	},
 	"bugs": {
 		"url": "https://github.com/InfiniteFoundation/dopple/issues"
@@ -29,6 +29,5 @@
 		"dopple": "./bin/dopple"
 	},
 	"preferGlobal": true,
-	"analyze": true,
-	"main": "./exec.js"
+	"analyze": true
 }

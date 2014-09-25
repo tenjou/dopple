@@ -20,4 +20,4 @@ cat dopple.js \
 	AST/Expression.Return.js \
 	AST/Expression.Object.js \
 	Compiler/Compiler.js \
-	| uglifyjs --output ../dopple.latest.js --mangle -c dead_code=false,unused=false,side_effects=false --screw-ie8 -b
+	| uglifyjs --output ../lib/dopple.latest.js --mangle -c dead_code=false,unused=false,side_effects=false --screw-ie8
