@@ -1,4 +1,6 @@
-var a = "sdsds" + 1;
-var b = a;
+var a = 10;
+var b = "sdsd";
+var c = b;
+confirm(a);
 confirm(b);
-confirm(10);
+confirm(c);

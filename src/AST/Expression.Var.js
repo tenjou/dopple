@@ -18,8 +18,14 @@ Expression.Var.prototype.castTo = function(param)
 	else 
 	{
 		var varEnum = Variable.Type;
-		if(param.type === varEnum.STRING) {
-			return "(" + this.value + " + sizeof(int32_t))";
+		if(param.type === varEnum.STRING) 
+		{
+			if(this.type === varEnum.STRING_OBJ) {
+				return this.value + " + sizeof(int32_t)";
+			}
+			else {
+				return this.value;				
+			}
 		}
 		else 
 		{
