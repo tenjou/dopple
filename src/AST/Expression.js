@@ -1,6 +1,6 @@
 "use strict";
 
-window.Expression = {};
+var Expression = {};
 
 Expression.Base = function(exprType) {
 	this.type = 0;

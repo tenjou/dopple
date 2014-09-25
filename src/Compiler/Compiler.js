@@ -33,19 +33,19 @@ Compiler.prototype =
 		// console.externFunc("log", [ Variable.Type.FORMAT, "format", Variable.Type.ARGS, "..."]);
 
 		this.lexer.externFunc("alert", [ Variable.Type.STRING, "str" ]);
-		this.lexer.externFunc("confirm", [ Variable.Type.NUMBER, "str" ]);
+		this.lexer.externFunc("confirm", [ Variable.Type.STRING, "str" ]);
 	},
 
 	compile: function(str)
 	{
 		if(this.lexer.read(str)) 
 		{
-//			try {
+			try {
 				return this.make();
-			// }
-			// catch(str) {
-			// 	console.error(str);
-			// }
+			}
+			catch(str) {
+				console.error(str);
+			}
 		}
 
 		return "";	
@@ -164,14 +164,20 @@ Compiler.prototype =
 
 		this.output += this.tabs;
 
-		var varType = Variable.Type;
 		var expr = varExpr.expr;
+		var exprType = expr.exprType;
 
-		if(varExpr.type === varType.OBJECT) {
-			this.output += expr.name + " " + varExpr.name + ";\n";
+		if(exprType === this.exprEnum.VAR) 
+		{
+			if(this.scope === this.global) {
+				this.output += this.varMap[varExpr.type] + varExpr.name + ";\n";
+			}
+			else {
+				this.output += this.varMap[varExpr.type] + varExpr.name + " = " + expr.name + ";\n";
+			}
 		}
-		else if(varExpr.type === varType.STRING_OBJ) {
-			this.output += "char *" + varExpr.name + " = \"" + expr.length + "\"\"" + expr.value + "\";\n";
+		else if(exprType === this.exprEnum.STRING_OBJ) {
+			this.output += this.varMap[varExpr.type] + varExpr.name + " = \"" + expr.length + "\"\"" + expr.value + "\";\n";
 		}
 		else 
 		{
@@ -184,6 +190,24 @@ Compiler.prototype =
 				this.output += ";\n";
 			}
 		}
+
+		// if(varExpr.type === varType.OBJECT) {
+		// 	this.output += expr.name + " " + varExpr.name + ";\n";
+		// }
+		// else if(varExpr.type === varType.STRING_OBJ) {
+		// 	this.output += "char *" + varExpr.name + " = \"" + expr.length + "\"\"" + expr.value + "\";\n";
+		// }
+		// else 
+		// {
+		// 	if(this.scope === this.global && varExpr.expr.exprType === Expression.Type.BINARY) {
+		// 		this.output += this.varMap[varExpr.type] + varExpr.name + ";\n";
+		// 	}
+		// 	else {				
+		// 		this.output += this.varMap[varExpr.type] + varExpr.name + " = ";
+		// 		this.defineExpr(expr);
+		// 		this.output += ";\n";
+		// 	}
+		// }
 	},
 
 	defineExpr: function(expr)
@@ -356,7 +380,7 @@ Compiler.prototype =
 			var arg = args[0];
 			var param = params[0];
 			if(arg === param) {
-				this.output += param.defaultValue();
+				this.output += param.var.defaultValue();
 			}
 			else {
 				this.output += arg.castTo(param);
@@ -369,7 +393,7 @@ Compiler.prototype =
 				arg = args[i];
 				param = params[i];
 				if(arg === param) {
-					this.output += param.defaultValue();
+					this.output += param.var.defaultValue();
 				}
 				else {
 					this.output += arg.castTo(param);

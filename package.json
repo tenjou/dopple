@@ -1,6 +1,6 @@
 {
 	"name": "dopple",
-	"version": "0.0.1.1",
+	"version": "0.0.1",
 	"description": "Dopple is compiler that generates C or LLVM from JavaScript code.",
 	"author": "Infinite Foundation <dopple@infinite-games.com>",
 	"contributors": [
@@ -30,5 +30,5 @@
 	"bin": {
 		"dopple": "./bin/dopple"
 	},
-	"main": "lib/main.js"
+	"main": "lib/exec.js"
 }

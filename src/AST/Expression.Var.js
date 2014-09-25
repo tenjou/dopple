@@ -10,17 +10,22 @@ Expression.Var = function(name)
 
 Expression.Var.prototype = new Expression.Base(Expression.Type.VAR);
 
-Expression.Var.prototype.write = function(str, param){
-	this.var.write(str, param);
-};
-
-Expression.Var.prototype.cast = function(str, expr) 
+Expression.Var.prototype.castTo = function(param)
 {
-	if(this.var) {
-		this.var.castFromExpr(str, expr);
+	if(this.type === param.type) {
+		return this.value;
 	}
-	else {
-		this.expr.castFromType(str, this.type);
+	else 
+	{
+		var varEnum = Variable.Type;
+		if(param.type === varEnum.STRING) {
+			return "(" + this.value + " + sizeof(int32_t))";
+		}
+		else 
+		{
+			dopple.throw(dopple.Error.INVALID_TYPE_CONVERSION, 
+				"\"" + param.name + "\" from " + this.strType() + " to " + param.strType());
+		}		
 	}
 };
 

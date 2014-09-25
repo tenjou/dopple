@@ -27,20 +27,21 @@ function Lexer()
 	this._skipNextToken = false;
 
 	this.varEnum = Variable.Type;
+	this.exprEnum = Expression.Type;
 };
 
 Lexer.prototype = 
 {
 	read: function(buffer) 
 	{
-		//try {
+		try {
 			this.tokenizer.setBuffer(buffer);
 			this.parseBody();
-		//}
-		//catch(str) {
-		//	console.error(str);
-		//	return false;
-		//}
+		}
+		catch(str) {
+			console.error(str);
+			return false;
+		}
 
 		return true;
 	},
@@ -103,7 +104,7 @@ Lexer.prototype =
 						this.tokenizer.skipUntil("/");
 					}		
 					else {
-						Lexer.throw(Lexer.Error.INVALID_REGEXP, this.token.str);
+						dopple.throw(dopple.Error.INVALID_REGEXP, this.token.str);
 					}
 				}
 				else if(this.token.str === "\"") {
@@ -208,10 +209,11 @@ Lexer.prototype =
 	{
 		var variable = this.scope.vars[this.token.str];
 		if(!variable) {
-			Lexer.throw(Lexer.Error.REFERENCE_ERROR, this.token.str);
+			dopple.throw(dopple.Error.REFERENCE_ERROR, this.token.str);
 		}
 
 		var expr = new Expression.Var(this.token.str);
+		expr.expr = expr;
 		expr.var = variable;
 		expr.type = variable.type;
 		expr.value = this.token.str;
@@ -235,7 +237,7 @@ Lexer.prototype =
 		this.nextToken();
 
 		if(this.token.str !== "}") {
-			Lexer.throw(Lexer.Error.UNEXPECTED_EOI);
+			dopple.throw(dopple.Error.UNEXPECTED_EOI);
 		}
 
 		this.scope.defBuffer.push(objDef);
@@ -277,7 +279,7 @@ Lexer.prototype =
 			{
 				// No such variable defined.
 				if(!initial) {
-					Lexer.throw(Lexer.Error.REFERENCE_ERROR, varName);
+					dopple.throw(dopple.Error.REFERENCE_ERROR, varName);
 				}
 
 				variable = varExpr;
@@ -301,7 +303,8 @@ Lexer.prototype =
 
 				if(definition && this.scope === this.global)
 				{
-					if(varExpr.expr.exprType === Expression.Type.BINARY) {
+					var exprType = varExpr.expr.exprType;
+					if(exprType === this.exprEnum.BINARY || exprType === this.exprEnum.VAR) {
 						this.scope.varBuffer.push(varExpr);
 					}
 				}
@@ -313,7 +316,7 @@ Lexer.prototype =
 	{
 		var func = this.scope.vars[name];
 		if(!func) {
-			Lexer.throw(Lexer.Error.REFERENCE_ERROR, name);
+			dopple.throw(dopple.Error.REFERENCE_ERROR, name);
 		}
 
 		var i = 0
@@ -402,7 +405,7 @@ Lexer.prototype =
 		while(this.token.type === Token.Type.STRING) 
 		{
 			newVar = new Expression.Var(this.token.str);
-			newVar.type = this.varEnum.NUMBER;
+			newVar.var = newVar;
 			vars.push(newVar);
 			this.scope.vars[newVar.name] = newVar;
 			
@@ -425,13 +428,13 @@ Lexer.prototype =
 
 		this.nextToken();
 		if(this.token.str !== "{") {
-			Lexer.throw(Lexer.Error.UNEXPECTED_EOI);
+			dopple.throw(dopple.Error.UNEXPECTED_EOI);
 		}		
 		
 		this.parseBody();
 		
 		if(this.token.str !== "}") {
-			Lexer.throw(Lexer.Error.UNEXPECTED_EOI);
+			dopple.throw(dopple.Error.UNEXPECTED_EOI);
 		}
 
 		var funcExpr = new Expression.Function(name, this.scope, vars);
