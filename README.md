@@ -19,4 +19,4 @@ This will install `dopple` globally so that it may be run from the command line.
 
 ## Compile locally
 
-	mode bin/dopple
+	node bin/dopple
