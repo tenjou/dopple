@@ -34,14 +34,14 @@ Lexer.prototype =
 {
 	read: function(buffer) 
 	{
-		try {
+//		try {
 			this.tokenizer.setBuffer(buffer);
 			this.parseBody();
-		}
-		catch(str) {
-			console.error(str);
-			return false;
-		}
+		// }
+		// catch(str) {
+		// 	console.error(str);
+		// 	return false;
+		// }
 
 		return true;
 	},
@@ -481,6 +481,14 @@ Lexer.prototype =
 
 		var func = new Expression.Function(name, this.global, funcParams);
 		this.global.vars[name] = func;
+	},
+
+	externObj: function(name)
+	{
+		var objExpr = new Expression.Object(name);
+		this.global.vars[name] = objExpr;
+
+		return objExpr;
 	}
 };
 

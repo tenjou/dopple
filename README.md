@@ -1,4 +1,4 @@
-# Dopple 0.0.1-4-alpha
+# Dopple 0.0.2-1-alpha
 
 Dopple is compiler that generates C or LLVM from JavaScript code.
 
@@ -15,6 +15,8 @@ This will install `dopple` globally so that it may be run from the command line.
 Dopple requires GCC compiler to be installed for automatic compilation and windows users should install it manually. 
 
 # Usage 
+	
+	After compilation in your root directory will be added executable and `dopple` folder that contains all generated C source files.
 
 ### Global
 

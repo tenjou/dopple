@@ -28,7 +28,7 @@ Compiler.prototype =
 	{
 		this.lexer = new Lexer();
 		
-		// var console = this.lexer.externScope("console");
+		var console = this.lexer.externObj("console");
 		// console.externFunc("log", [ Variable.Type.FORMAT, "format", Variable.Type.ARGS, "..."]);
 
 		this.lexer.externFunc("alert", [ Variable.Type.STRING, "str" ]);
@@ -189,24 +189,6 @@ Compiler.prototype =
 				this.output += ";\n";
 			}
 		}
-
-		// if(varExpr.type === varType.OBJECT) {
-		// 	this.output += expr.name + " " + varExpr.name + ";\n";
-		// }
-		// else if(varExpr.type === varType.STRING_OBJ) {
-		// 	this.output += "char *" + varExpr.name + " = \"" + expr.length + "\"\"" + expr.value + "\";\n";
-		// }
-		// else 
-		// {
-		// 	if(this.scope === this.global && varExpr.expr.exprType === Expression.Type.BINARY) {
-		// 		this.output += this.varMap[varExpr.type] + varExpr.name + ";\n";
-		// 	}
-		// 	else {				
-		// 		this.output += this.varMap[varExpr.type] + varExpr.name + " = ";
-		// 		this.defineExpr(expr);
-		// 		this.output += ";\n";
-		// 	}
-		// }
 	},
 
 	defineExpr: function(expr)
