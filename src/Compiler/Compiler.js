@@ -6,7 +6,7 @@ function Compiler()
 	this.createLexer();
 
 	this.varMap = {};
-	this.varMap[Variable.Type.UNKNOWN] = "void ";
+	this.varMap[Variable.Type.VOID] = "void ";
 	this.varMap[Variable.Type.NUMBER] = "double ";
 	this.varMap[Variable.Type.BOOL] = "int32_t ";
 	this.varMap[Variable.Type.STRING] = "const char *";
@@ -210,26 +210,39 @@ Compiler.prototype =
 	{
 		var params = func.params;
 		var numParams = 0;
-		
 		if(params) {
 			numParams = params.length;
 		}
 
+		// Write head:
 		this.output += "\n" + this.varMap[func.returnVar.type] + func.name + "(";
 
+		// Write parameters:
 		if(numParams) 
 		{
 			var varDef;
-			for(var i = 0; i < numParams - 1; i++) {
+			for(var i = 0; i < numParams - 1; i++) 
+			{
 				varDef = params[i];
-				this.output += this.varMap[varDef.type] + varDef.name + ", ";
+				if(varDef.type !== 0) {
+					this.output += this.varMap[varDef.type] + varDef.name + ", ";
+				}
+				else {
+					this.output += "double " + varDef.name + ", ";
+				}
 			}
 			varDef = params[i];
-			this.output += this.varMap[varDef.type] + varDef.name;
+			if(varDef.type !== 0) {
+				this.output += this.varMap[varDef.type] + varDef.name;
+			}
+			else {
+				this.output += "double " + varDef.name;
+			}
 		}
 
 		this.output += ") \n{\n";
 		
+		// Write body:
 		this.incTabs();
 		this.define(func.scope);
 		this.decTabs();

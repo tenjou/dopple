@@ -1,8 +1,3 @@
-var z = "sdsd";
+function test(x, y) {};
 
-var test = {
-	a: "a" + "a",
-	b: 100,
-	c: 1.2 * -1,
-	d: z
-};
+test();

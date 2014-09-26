@@ -217,7 +217,7 @@ Lexer.prototype =
 	parseVar: function()
 	{
 		var initial = false;
-		if(this.token.type !== Token.Type.STRING)
+		if(this.token.type !== Token.Type.NAME)
 		{
 			this.nextToken();	
 			if(this.token.type !== Token.Type.NAME) {
@@ -301,8 +301,8 @@ Lexer.prototype =
 			dopple.throw(dopple.Error.REDEFINITION, name);
 		}
 
-		var scope = new dopple.Scope(this.scope);
-		var objExpr = new Expression.Object(name, scope);
+		var objScope = new dopple.Scope(this.scope);
+		var objExpr = new Expression.Object(name, objScope);
 
 		// Parse object members:
 		var varName, varExpr, expr;
@@ -349,8 +349,8 @@ Lexer.prototype =
 				varExpr.expr = expr;
 				varExpr.analyse();
 
-				scope.vars[varName] = varExpr;
-				scope.defBuffer.push(varExpr);
+				objScope.vars[varName] = varExpr;
+				objScope.defBuffer.push(varExpr);
 			}
 			else {
 				dopple.throw(dopple.Error.UNSUPPORTED_FEATURE, "hashmap");
@@ -360,9 +360,18 @@ Lexer.prototype =
 		this.scope.vars[name] = objExpr;
 		this.scope.defBuffer.push(objExpr);
 
-		// var scope = new dopple.Scope(this.global);
-		// var initFunc = new Expression.Function("test$init", scope, []);
-		// this.scope.defBuffer.push(initFunc);
+		//Constructor:
+		var funcName = this.currName + "$__init";
+		var scope = new dopple.Scope(this.global);
+		var initFunc = new Expression.Function(funcName, objScope, null);
+		objScope.vars[funcName] = initFunc;
+		this.scope.defBuffer.push(initFunc);
+
+		var initFuncCall = new Expression.FunctionCall(initFunc);
+		this.scope.varBuffer.push(initFuncCall);
+
+		this.nextToken();
+		this._skipNextToken = true;
 
 		return objExpr;
 	},
@@ -384,7 +393,7 @@ Lexer.prototype =
 		var newVar;
 		var vars = [];
 		this.nextToken();
-		while(this.token.type === Token.Type.STRING) 
+		while(this.token.type === Token.Type.NAME) 
 		{
 			newVar = new Expression.Var(this.token.str);
 			newVar.var = newVar;

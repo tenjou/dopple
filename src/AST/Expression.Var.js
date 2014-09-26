@@ -35,6 +35,10 @@ Expression.Var.prototype.castTo = function(param)
 	}
 };
 
+Expression.Var.prototype.defaultValue = function() {
+	return "0";
+};
+
 Expression.Var.prototype.analyse = function()
 {	
 	this.type = this.expr.type;
