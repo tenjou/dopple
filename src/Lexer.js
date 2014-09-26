@@ -92,25 +92,6 @@ Lexer.prototype =
 			else if(type === tokenType.RETURN) {
 				this.parseReturn();
 			}
-			else
-			{
-				if(this.token.str === "/") 
-				{
-					this.nextToken();
-					if(this.token.str === "/") {
-						this.tokenizer.skipUntilNewline();
-					}	
-					else if(this.token.str === "*") {
-						this.tokenizer.skipUntil("/");
-					}		
-					else {
-						dopple.throw(dopple.Error.INVALID_REGEXP, this.token.str);
-					}
-				}
-				else if(this.token.str === "\"") {
-					this.tokenizer.skipUntil("\"");
-				}
-			}
 		} while(this.token.type !== tokenType.EOF && this.token.str !== "}");
 	},
 

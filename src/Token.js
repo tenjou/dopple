@@ -18,5 +18,6 @@ Token.Type =
 	STRING: -15,
 	VAR: -20,
 	RETURN: -21,
-	FUNCTION: -22
+	FUNCTION: -22,
+	COMMENT: -30
 };

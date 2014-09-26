@@ -100,11 +100,27 @@ Tokenizer.prototype =
 				}
 
 				this.cursor--;
-			}			
+			}	
+			else if(this.currChar === "/") 
+			{
+				this.nextChar();
+				if(this.currChar === "/") {
+					this.skipUntilNewline();
+					token.type = Token.Type.COMMENT;
+					return token;
+				}	
+				else if(this.currChar === "*") {
+					this.skipUntil("/");
+					token.type = Token.Type.COMMENT;
+					return token;
+				}
+				
+				this.cursor--;
+			}					
 
 			token.type = Token.Type.BINOP;
 			return token;
-		}
+		}		
 
 		// String
 		if(this.currChar === "\"" || this.currChar === "'") 
