@@ -2,7 +2,7 @@
 
 Dopple is compiler that generates C or LLVM from JavaScript code.
 
-# Installation
+# 1. Installation
 
 Install package from `npm`:
 
@@ -14,9 +14,9 @@ This will install `dopple` globally so that it may be run from the command line.
 
 Dopple requires GCC compiler to be installed for automatic compilation and windows users should install it manually. 
 
-# Usage 
+# 2. Usage 
 	
-	After compilation in your root directory will be added executable and `dopple` folder that contains all generated C source files.
+After compilation in your root directory will be added executable and `dopple` folder that contains all generated C source files.
 
 ### Global
 
@@ -32,7 +32,7 @@ Dopple requires GCC compiler to be installed for automatic compilation and windo
 
 `[target-path]` - Path for executable, this defaults to `./app` (or `./app.exe` on windows)
 
-# Example
+# 3. Example
 
 ### From source file
 
@@ -42,9 +42,12 @@ Dopple requires GCC compiler to be installed for automatic compilation and windo
 
 	dopple 'var x = "Hello World!"; confirm(x);'
 	
-# License
+# 4. License
 
-Dopple is released under the Mozilla Public License v2.0 [MPL 2.0](https://www.mozilla.org/MPL/2.0/) 
+Dopple is released under the Mozilla Public License v2.0 [MPL 2.0](https://www.mozilla.org/MPL/2.0/)
+
+# 5. Links 
 	
 * [Offical Website](http://infinite-games.com/)
 * [Npm](https://www.npmjs.org/package/dopple)
+* [Twitter](https://twitter.com/ArthurShefer)

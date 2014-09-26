@@ -14,7 +14,8 @@ Token.Type =
 	BINOP: -11,
 	NUMBER: -12,
 	BOOL: -13,
-	STRING: -14,
+	NAME: -14,
+	STRING: -15,
 	VAR: -20,
 	RETURN: -21,
 	FUNCTION: -22
