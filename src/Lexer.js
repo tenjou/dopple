@@ -18,14 +18,15 @@ function Lexer()
 		"/": 400
 	};
 
-	this.global = new Scope();
+	this.global = new dopple.Scope();
 	this.scope = this.global;
 
 	this.genID = 0;
-	this.currVar = null;
+	this.currName = "";
 
 	this._skipNextToken = false;
 
+	this.tokenEnum = Token.Type;
 	this.varEnum = Variable.Type;
 	this.exprEnum = Expression.Type;
 };
@@ -80,11 +81,10 @@ Lexer.prototype =
 			}
 
 			type = this.token.type;
-			if(type === tokenType.VAR) {
-				this.parseVarExpr();
-			}
-			else if(type === tokenType.STRING) {
-				this.parseVarExpr();
+			if(type === tokenType.NAME || 
+			   type === tokenType.VAR) 
+			{
+				this.parseVar();
 			}
 			else if(type === tokenType.FUNCTION) {
 				this.parseFunction();
@@ -161,20 +161,20 @@ Lexer.prototype =
 		if(this.token.type === Token.Type.NUMBER) {
 			return this.parseNumber();
 		}
-		else if(this.token.type === Token.Type.STRING) {
-			return this.parseVar();
+		else if(this.token.type === Token.Type.NAME) {
+			return this.parseName();
 		}
+		else if(this.token.type === Token.Type.STRING) {
+			return this.parseString();
+		}		
 		else if(this.token.type === Token.Type.BOOL) {
 			return this.parseBool();
-		}
-		else if(this.token.str === '"' || this.token.str === "'") {
-			return this.parseString();
 		}
 		else if(this.token.str === "{") {
 			return this.parseObject();
 		}
-
-		return null;
+			
+		this.handleTokenError();
 	},
 
 	parseNumber: function() 
@@ -191,21 +191,7 @@ Lexer.prototype =
 		return expr;
 	},
 
-	parseString: function()
-	{
-		var endChar = this.token.str;
-
-		var str = this.tokenizer.readUntil(endChar);
-		if(this.tokenizer.currChar !== endChar) {
-			return null;
-		}
-
-		var expr = new Expression.StringObj(str);
-		this.nextToken();
-		return expr;
-	},
-
-	parseVar: function()
+	parseName: function()
 	{
 		var variable = this.scope.vars[this.token.str];
 		if(!variable) {
@@ -221,96 +207,228 @@ Lexer.prototype =
 		return expr;
 	},
 
-	parseObject: function()
+	parseString: function()
 	{
-		var name = "";
-		if(this.scope === this.global) {
-			name = "S" + this.currVar.name;
-		}
-		else {
-			name = "__Sanonym" + this.genID++ + "__";
-		}
-
-		var objDef = new ObjectDef(name);
-		var expr = new Expression.Object(name, objDef);
-
+		var expr = new Expression.StringObj(this.token.str);
 		this.nextToken();
-
-		if(this.token.str !== "}") {
-			dopple.throw(dopple.Error.UNEXPECTED_EOI);
-		}
-
-		this.scope.defBuffer.push(objDef);
-
-		if(this.scope === this.global) {
-			//this.varBuffer.push(expr);
-		}
-
 		return expr;
-	},
+	},	
 
-	parseVarExpr: function()
+	parseVar: function()
 	{
 		var initial = false;
-		var definition = false;
-
 		if(this.token.type !== Token.Type.STRING)
 		{
 			this.nextToken();	
-			if(this.token.type !== Token.Type.STRING) {
-				throw "Error";
+			if(this.token.type !== Token.Type.NAME) {
+				this.handleTokenError();
 			}
 
 			initial = true;
 		}
 
-		var varName = this.token.str;
+		this.currName = this.token.str;
 		this.nextToken();
 
 		if(this.token.str === "(") {
-			this.parseFuncCall(varName);
+			this.parseFuncCall(this.currName);
 		}
 		else
-		{
-			var varExpr = new Expression.Var(varName);
-
-			var variable = this.scope.vars[varName];
-			if(variable === void(0)) 
-			{
-				// No such variable defined.
-				if(!initial) {
-					dopple.throw(dopple.Error.REFERENCE_ERROR, varName);
-				}
-
-				variable = varExpr;
-				definition = true;
-				this.scope.vars[varName] = varExpr;
-				this.scope.defBuffer.push(varExpr);
-			}
-			else {
-				this.scope.varBuffer.push(varExpr);
-			}
-
-			varExpr.var = variable;
-			this.currVar = variable;
-			
+		{	
 			if(this.token.str === "=")
 			{
 				this.nextToken();
-				varExpr.expr = this.parseExpression();
-				varExpr.expr = this.optimizer.do(varExpr.expr);
-				varExpr.analyse();
 
-				if(definition && this.scope === this.global)
-				{
-					var exprType = varExpr.expr.exprType;
-					if(exprType === this.exprEnum.BINARY || exprType === this.exprEnum.VAR) {
-						this.scope.varBuffer.push(varExpr);
-					}
+				var expr = this.parseExpression();
+				if(expr.exprType !== this.exprEnum.OBJECT) {
+					this._defineVar(expr, initial);			
 				}
 			}
+			else {
+				this._defineVar(null, initial);
+			}
 		}
+	},	
+
+	_defineVar: function(expr, initial)
+	{
+		var definition = false;
+		var varExpr = new Expression.Var(this.currName);
+
+		var variable = this.scope.vars[this.currName];
+		if(variable === void(0)) 
+		{
+			// No such variable defined.
+			if(!initial) {
+				dopple.throw(dopple.Error.REFERENCE_ERROR, this.currName);
+			}
+
+			definition = true;
+			variable = varExpr;
+			this.scope.vars[this.currName] = varExpr;
+			this.scope.defBuffer.push(varExpr);
+		}
+		else {
+			this.scope.varBuffer.push(varExpr);
+		}
+
+		varExpr.var = variable;
+
+		expr = this.optimizer.do(expr);
+		varExpr.expr = expr;
+		varExpr.analyse();
+
+		if(definition && this.scope === this.global)
+		{
+			var exprType = varExpr.expr.exprType;
+			if(exprType === this.exprEnum.BINARY || exprType === this.exprEnum.VAR) {
+				this.scope.varBuffer.push(varExpr);
+			}
+		}				
 	},
+
+	parseObject: function()
+	{
+		var name = "";
+		if(this.scope === this.global) {
+			name = this.currName;
+		}
+		else {
+			name = "__Sanonym" + this.genID++ + "__";
+		}
+
+		if(this.scope.vars[name]) {
+			dopple.throw(dopple.Error.REDEFINITION, name);
+		}
+
+		var scope = new dopple.Scope(this.scope);
+		var objExpr = new Expression.Object(name, scope);
+
+		// Parse object members:
+		var varName, varExpr, expr;
+		this.nextToken();
+		while(this.token.str !== "}") 
+		{
+			if(this.token.type === this.tokenEnum.NAME ||
+			   this.token.type === this.tokenEnum.STRING) 
+			{
+				varName = this.token.str;
+
+				this.nextToken();
+				if(this.token.str !== ":") {
+					this.handleTokenError();
+				}
+
+				this.nextToken();
+				expr = this.parseExpression();
+				expr = this.optimizer.do(expr);
+				if(expr.exprType === this.exprEnum.OBJECT) {
+					dopple.throw(dopple.Error.UNSUPPORTED_FEATURE, "object inside object")
+				}
+
+				if(this.token.str === ";") {
+					this.handleTokenError();
+				}
+
+				if(this.token.str !== "}")
+				{
+					if(this.token.str !== ",") 
+					{
+						this.validateToken();
+						this.nextToken();
+						if(this.token.str !== "}") {
+							this.handleTokenError();
+						}
+					}
+					else {
+						this.nextToken();
+					}					
+				}
+		
+				varExpr = new Expression.Var(varName);
+				varExpr.expr = expr;
+				varExpr.analyse();
+
+				scope.vars[varName] = varExpr;
+				scope.defBuffer.push(varExpr);
+			}
+			else {
+				dopple.throw(dopple.Error.UNSUPPORTED_FEATURE, "hashmap");
+			}
+		}
+
+		this.scope.vars[name] = objExpr;
+		this.scope.defBuffer.push(objExpr);
+
+		// var scope = new dopple.Scope(this.global);
+		// var initFunc = new Expression.Function("test$init", scope, []);
+		// this.scope.defBuffer.push(initFunc);
+
+		return objExpr;
+	},
+
+	parseFunction: function()
+	{
+		this.nextToken();
+		var name = this.token.str;
+
+		this.nextToken();
+		if(this.token.str !== "(") {
+			throw "Error: not (";
+		}
+
+		// Create a new scope.
+		this.scope = new dopple.Scope(this.scope);	
+
+		// Parse all variables.
+		var newVar;
+		var vars = [];
+		this.nextToken();
+		while(this.token.type === Token.Type.STRING) 
+		{
+			newVar = new Expression.Var(this.token.str);
+			newVar.var = newVar;
+			vars.push(newVar);
+			this.scope.vars[newVar.name] = newVar;
+			
+			this.nextToken();
+			if(this.token.str !== ",") 
+			{
+				if(this.token.str === ")") {
+					break;
+				}
+
+				throw "Error: not ,";
+			}
+
+			this.nextToken();
+		}
+
+		if(this.token.str !== ")") {
+			throw "Error: not )";
+		}		
+
+		this.nextToken();
+		if(this.token.str !== "{") {
+			dopple.throw(dopple.Error.UNEXPECTED_EOI);
+		}		
+		
+		this.parseBody();
+		
+		if(this.token.str !== "}") {
+			dopple.throw(dopple.Error.UNEXPECTED_EOI);
+		}
+
+		var funcExpr = new Expression.Function(name, this.scope, vars);
+		var parentScope = this.scope.parent;
+		parentScope.vars[name] = funcExpr;
+		parentScope.defBuffer.push(funcExpr);
+
+		this.scope = this.scope.parent;
+
+		this.nextToken();
+		this._skipNextToken = true;
+	},	
 
 	parseFuncCall: function(name)
 	{
@@ -385,70 +503,6 @@ Lexer.prototype =
 		this.scope.varBuffer.push(returnExpr);
 	},
 
-	parseFunction: function()
-	{
-		this.nextToken();
-		var name = this.token.str;
-
-		this.nextToken();
-		if(this.token.str !== "(") {
-			throw "Error: not (";
-		}
-
-		// Create a new scope.
-		this.scope = new Scope(this.scope);	
-
-		// Parse all variables.
-		var newVar;
-		var vars = [];
-		this.nextToken();
-		while(this.token.type === Token.Type.STRING) 
-		{
-			newVar = new Expression.Var(this.token.str);
-			newVar.var = newVar;
-			vars.push(newVar);
-			this.scope.vars[newVar.name] = newVar;
-			
-			this.nextToken();
-			if(this.token.str !== ",") 
-			{
-				if(this.token.str === ")") {
-					break;
-				}
-
-				throw "Error: not ,";
-			}
-
-			this.nextToken();
-		}
-
-		if(this.token.str !== ")") {
-			throw "Error: not )";
-		}		
-
-		this.nextToken();
-		if(this.token.str !== "{") {
-			dopple.throw(dopple.Error.UNEXPECTED_EOI);
-		}		
-		
-		this.parseBody();
-		
-		if(this.token.str !== "}") {
-			dopple.throw(dopple.Error.UNEXPECTED_EOI);
-		}
-
-		var funcExpr = new Expression.Function(name, this.scope, vars);
-		var parentScope = this.scope.parent;
-		parentScope.vars[name] = funcExpr;
-		parentScope.defBuffer.push(funcExpr);
-
-		this.scope = this.scope.parent;
-
-		this.nextToken();
-		this._skipNextToken = true;
-	},
-
-
 	externFunc: function(name, params)
 	{
 		var funcParams = null;
@@ -489,10 +543,28 @@ Lexer.prototype =
 		this.global.vars[name] = objExpr;
 
 		return objExpr;
+	},
+
+	validateToken: function()
+	{
+		if(this.token.type === this.tokenEnum.NUMBER) {
+			dopple.throw(dopple.Error.UNEXPECTED_NUMBER);
+		}
+		else if(this.token.str === "@") {
+			dopple.throw(dopple.Error.UNEXPECTED_TOKEN_ILLEGAL);
+		}
+		else if(this.token.type !== this.tokenEnum.SYMBOL) {
+			dopple.throw(dopple.Error.UNEXPECTED_ID);
+		}		
+	},
+
+	handleTokenError: function() {
+		this.validateToken();
+		dopple.throw(dopple.Error.UNEXPECTED_TOKEN, this.token.str);		
 	}
 };
 
-function Scope(parent)
+dopple.Scope = function(parent)
 {
 	this.parent = parent || null;
 

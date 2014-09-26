@@ -10,7 +10,7 @@ function Compiler()
 	this.varMap[Variable.Type.NUMBER] = "double ";
 	this.varMap[Variable.Type.BOOL] = "int32_t ";
 	this.varMap[Variable.Type.STRING] = "const char *";
-	this.varMap[Variable.Type.STRING_OBJ] = "const char *";
+	this.varMap[Variable.Type.STRING_OBJ] = "char *";
 
 	this.tabs = "";
 	this.output = "";
@@ -39,12 +39,12 @@ Compiler.prototype =
 	{
 		if(this.lexer.read(str)) 
 		{
-			try {
+	//		try {
 				return this.make();
-			}
-			catch(str) {
-				console.error(str);
-			}
+			// }
+			// catch(str) {
+			// 	console.error(str);
+			// }
 		}
 
 		return "";	
@@ -239,7 +239,21 @@ Compiler.prototype =
 
 	defineObject: function(obj)
 	{
-		this.output += "typedef struct " + obj.name + " {\n";
+		var defBuffer = obj.scope.defBuffer;
+		var numDefs = defBuffer.length;
+
+		this.output += "\nstatic struct {\n";
+
+		this.incTabs();
+
+		var varExpr;
+		for(var i = 0; i < numDefs; i++) {
+			varExpr = defBuffer[i];
+			this.output += this.tabs + this.varMap[varExpr.type] + varExpr.name + ";\n";
+		}
+
+		this.decTabs();
+
 		this.output += "} " + obj.name + ";\n";
 	},
 

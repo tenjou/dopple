@@ -8,6 +8,7 @@ dopple.Error = {
 	UNEXPECTED_NUMBER: 5,
 	UNEXPECTED_ID: 6,
 	INVALID_REGEXP: 10,
+	REDEFINITION: 100,
 	INVALID_TYPE_CONVERSION: 1000,
 	TOO_MANY_ARGUMENTS: 1001,
 	UNSUPPORTED_FEATURE: 1002
@@ -36,6 +37,9 @@ dopple.throw = function(type, arg)
 	else if(type === this.Error.INVALID_REGEXP) {
 		throw "SyntaxError: Invalid regular expression: missing " + arg;
 	}	
+	else if(type === this.Error.REDEFINITION) {
+		throw "Redefined: " + arg;
+	}		
 	else if(type === this.Error.INVALID_TYPE_CONVERSION) {
 		throw "Invalid Type Conversion: " + arg;
 	}

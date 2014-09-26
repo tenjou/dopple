@@ -42,6 +42,8 @@ function init()
 
 function save(output) 
 {
+	exec("rm -f -r " + targetFilePath);
+	exec("rmdir dopple")
 	exec("mkdir dopple");
 
 	if(!isWin) {

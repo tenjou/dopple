@@ -5,7 +5,6 @@ cat dopple.js \
 	Helper.js \
 	Token.js \
 	Tokenizer.js \
-	Object.js \
 	Lexer.js \
 	Optimizer.js \
 	AST/Expression.js \

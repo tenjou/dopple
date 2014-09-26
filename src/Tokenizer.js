@@ -57,7 +57,7 @@ Tokenizer.prototype =
 				token.type = Token.Type.BOOL;			
 			}
 			else {
-				token.type = Token.Type.STRING;
+				token.type = Token.Type.NAME;
 			}
 
 			return token;
@@ -103,6 +103,26 @@ Tokenizer.prototype =
 			}			
 
 			token.type = Token.Type.BINOP;
+			return token;
+		}
+
+		// String
+		if(this.currChar === "\"" || this.currChar === "'") 
+		{
+			var endChar = this.currChar;
+
+			this.nextChar();
+			while(this.currChar !== endChar)
+			{
+				if(this.currChar === "\0") {
+					throw dopple.throw(dopple.Error.UNEXPECTED_EOI);
+				}
+
+				token.str += this.currChar;
+				this.nextChar();
+			}
+
+			token.type = Token.Type.STRING;
 			return token;
 		}
 
