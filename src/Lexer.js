@@ -265,6 +265,10 @@ Lexer.prototype =
 			if(exprType === this.exprEnum.BINARY || exprType === this.exprEnum.VAR) {
 				this.scope.varBuffer.push(varExpr);
 			}
+		}
+
+		if(this.token.str !== ";") {
+			this._skipNextToken = true;
 		}				
 	},
 

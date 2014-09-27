@@ -57,7 +57,7 @@ Compiler.prototype =
 		this.define(this.global);
 
 		// Main start.
-		this.output += "int main(int argc, char *argv[]) \n{\n";
+		this.output += "\nint main(int argc, char *argv[]) \n{\n";
 		this.incTabs();
 
 		// Expressions.
@@ -107,22 +107,30 @@ Compiler.prototype =
 		var numDefs = defs.length;
 		if(numDefs)
 		{
+			var prevExprType = defs[0].exprType;
 			for(i = 0; i < numDefs; i++) 
 			{
 				expr = defs[i];
 				exprType = expr.exprType;
+
+				// Make newlines between diffrent expr types.
+				if(exprType !== prevExprType) {
+					this.output += "\n";
+				}
 
 				if(exprType === exprEnum.VAR) {
 					this.defineVar(expr);
 				}
 				else if(exprType === exprEnum.FUNCTION) {
 					this.defineFunc(expr);
+					exprType = 0;
 				}
 				else if(exprType === exprEnum.FUNCTION_CALL) {
 					this.defineFuncCall(expr);
 				}
 				else if(exprType === exprEnum.OBJECT) {
 					this.defineObject(expr);
+					exprType = 0;
 				}
 				else if(exprType === exprEnum.RETURN) {
 					this.defineReturn(expr);
@@ -130,6 +138,8 @@ Compiler.prototype =
 				else {
 					console.log("unhandled");
 				}
+
+				prevExprType = exprType;
 			}
 		}
 
@@ -148,9 +158,9 @@ Compiler.prototype =
 			}
 		}
 
-		if(numDefs || numVars) {
-			this.output += "\n";
-		}
+		// if(numDefs || numVars) {
+		// 	this.output += "\n";
+		// }
 	},
 
 
@@ -215,7 +225,7 @@ Compiler.prototype =
 		}
 
 		// Write head:
-		this.output += "\n" + this.varMap[func.returnVar.type] + func.name + "(";
+		this.output += this.varMap[func.returnVar.type] + func.name + "(";
 
 		// Write parameters:
 		if(numParams) 
@@ -255,7 +265,7 @@ Compiler.prototype =
 		var defBuffer = obj.scope.defBuffer;
 		var numDefs = defBuffer.length;
 
-		this.output += "\nstatic struct {\n";
+		this.output += "static struct {\n";
 
 		this.incTabs();
 
