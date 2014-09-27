@@ -9,6 +9,7 @@ Optimizer.prototype =
 	do: function(expr) 
 	{
 		// Check if we have something to optimize.
+		if(!expr) { return expr; }
 		if(expr.exprType !== Expression.Type.BINARY) { return expr; }
 		if(!expr.lhs && !expr.rhs) { return expr; }
 

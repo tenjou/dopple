@@ -41,6 +41,8 @@ Expression.Var.prototype.defaultValue = function() {
 
 Expression.Var.prototype.analyse = function()
 {	
+	if(!this.expr) { return; }
+	
 	this.type = this.expr.type;
 
 	// if(this === this.var) {

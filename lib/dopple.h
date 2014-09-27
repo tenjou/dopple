@@ -1,3 +1,11 @@
+//
+//  Created by Infinite Foundation on 27/09/14.
+//  Copyright (c) 2014 Infinite Foundation. All rights reserved.
+//
+
+#ifndef DOPPLE_H
+#define DOPPLE_H
+
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdint.h>
@@ -84,3 +92,5 @@ static void confirm(const char *str)
 {
 	printf("CONFIRM: %s\n", str);
 }
+
+#endif

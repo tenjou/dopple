@@ -48,7 +48,7 @@ Lexer.prototype =
 	},
 
 	nextToken: function() {
-		this.token = this.tokenizer.token();
+		this.token = this.tokenizer.nextToken();
 	},
 
 	getTokenPrecendence: function()
@@ -198,7 +198,7 @@ Lexer.prototype =
 	parseVar: function()
 	{
 		var initial = false;
-		if(this.token.type !== Token.Type.NAME)
+		if(this.token.type === Token.Type.VAR)
 		{
 			this.nextToken();	
 			if(this.token.type !== Token.Type.NAME) {
@@ -214,6 +214,29 @@ Lexer.prototype =
 		if(this.token.str === "(") {
 			this.parseFuncCall(this.currName);
 		}
+		else if(this.token.str === ".") 
+		{
+			// Invalid if initialized as: var <objName>.<memberName>
+			if(initial) {
+				dopple.throw(dopple.Error.UNEXPECTED_TOKEN, this.token.str);
+			}
+
+			var objExpr = this.getExprFromVar(this.scope, this.currName);
+
+			this.nextToken();
+			if(this.token.type !== this.tokenEnum.NAME) {
+				this.handleTokenError();
+			}
+
+			var expr = this.getExprFromVar(objExpr.scope, this.token.str);
+
+			this.nextToken();
+			if(this.token !== "=") {
+				return;
+			}
+
+			//var varExpr = 
+		}
 		else
 		{	
 			if(this.token.str === "=")
@@ -225,7 +248,15 @@ Lexer.prototype =
 					this._defineVar(expr, initial);			
 				}
 			}
-			else {
+			else 
+			{
+				if(!initial && this.token.type === this.tokenEnum.NAME) {
+					this.handleTokenError();
+				}
+				else if(this.token.type === this.tokenEnum.SYMBOL) {
+					this.handleUnexpectedToken();
+				}
+
 				this._defineVar(null, initial);
 			}
 		}
@@ -233,6 +264,12 @@ Lexer.prototype =
 
 	_defineVar: function(expr, initial)
 	{
+		// Ignore if it's not a definition and without a body.
+		if(!expr && !initial) {
+			this.getExprFromVar(this.scope, this.currName);
+			return;
+		}
+
 		var definition = false;
 		var varExpr = new Expression.Var(this.currName);
 
@@ -255,21 +292,24 @@ Lexer.prototype =
 
 		varExpr.var = variable;
 
-		expr = this.optimizer.do(expr);
-		varExpr.expr = expr;
-		varExpr.analyse();
-
-		if(definition && this.scope === this.global)
+		if(expr)
 		{
-			var exprType = varExpr.expr.exprType;
-			if(exprType === this.exprEnum.BINARY || exprType === this.exprEnum.VAR) {
-				this.scope.varBuffer.push(varExpr);
-			}
-		}
+			expr = this.optimizer.do(expr);
+			varExpr.expr = expr;
+			varExpr.analyse();
 
-		if(this.token.str !== ";") {
-			this._skipNextToken = true;
-		}				
+			if(definition && this.scope === this.global)
+			{
+				var exprType = varExpr.expr.exprType;
+				if(exprType === this.exprEnum.BINARY || exprType === this.exprEnum.VAR) {
+					this.scope.varBuffer.push(varExpr);
+				}
+			}
+
+			if(this.token.str !== ";") {
+				this._skipNextToken = true;
+			}	
+		}			
 	},
 
 	parseObject: function()
@@ -497,6 +537,17 @@ Lexer.prototype =
 		this.scope.varBuffer.push(returnExpr);
 	},
 
+	getExprFromVar: function(scope, name) 
+	{
+		var expr = scope.vars[name];
+		if(!expr) {
+			dopple.throw(dopple.Error.REFERENCE_ERROR, name);
+		}
+
+		return expr;
+	},
+
+
 	externFunc: function(name, params)
 	{
 		var funcParams = null;
@@ -541,7 +592,10 @@ Lexer.prototype =
 
 	validateToken: function()
 	{
-		if(this.token.type === this.tokenEnum.NUMBER) {
+		if(this.token.type === this.tokenEnum.EOF) {
+			dopple.throw(dopple.Error.UNEXPECTED_EOI);
+		}
+		else if(this.token.type === this.tokenEnum.NUMBER) {
 			dopple.throw(dopple.Error.UNEXPECTED_NUMBER);
 		}
 		else if(this.token.str === "@") {
@@ -555,6 +609,16 @@ Lexer.prototype =
 	handleTokenError: function() {
 		this.validateToken();
 		dopple.throw(dopple.Error.UNEXPECTED_TOKEN, this.token.str);		
+	},
+
+	handleUnexpectedToken: function() 
+	{
+		if(isIllegal(this.token.str)) {
+			dopple.throw(dopple.Error.UNEXPECTED_TOKEN_ILLEGAL);
+		}
+		else {
+			dopple.throw(dopple.Error.UNEXPECTED_TOKEN, this.token.str);
+		}
 	}
 };
 

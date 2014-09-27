@@ -6,6 +6,8 @@ function Tokenizer()
 	this.bufferLength = 0;
 	this.cursor = 0;
 	this.currChar = "";
+
+	this.token = new Token();
 };
 
 Tokenizer.prototype = 
@@ -18,9 +20,11 @@ Tokenizer.prototype =
 		this.currChar = "";
 	},
 
-	token: function()
+	nextToken: function()
 	{
-		var token = new Token();
+		this.token.type = 0;
+		this.token.str = "";
+		this.token.value = 0;
 
 		this.nextChar();
 
@@ -32,71 +36,71 @@ Tokenizer.prototype =
 		// String
 		if(isAlpha(this.currChar)) 
 		{
-			token.str += this.currChar;
+			this.token.str += this.currChar;
 			this.nextChar();
 			while(isAlphaNum(this.currChar)) {
-				token.str += this.currChar;
+				this.token.str += this.currChar;
 				this.nextChar();
 			}
 			this.cursor--;
 
-			if(token.str === "var") {
-				token.type = Token.Type.VAR;
+			if(this.token.str === "var") {
+				this.token.type = Token.Type.VAR;
 			}
-			else if(token.str === "return") {
-				token.type = Token.Type.RETURN;
+			else if(this.token.str === "return") {
+				this.token.type = Token.Type.RETURN;
 			}
-			else if(token.str === "function") {
-				token.type = Token.Type.FUNCTION;
+			else if(this.token.str === "function") {
+				this.token.type = Token.Type.FUNCTION;
 			}
-			else if(token.str === "true") {
-				token.type = Token.Type.BOOL;
-				token.value = 1;
+			else if(this.token.str === "true") {
+				this.token.type = Token.Type.BOOL;
+				this.token.value = 1;
 			}
-			else if(token.str === "false") {
-				token.type = Token.Type.BOOL;			
+			else if(this.token.str === "false") {
+				this.token.type = Token.Type.BOOL;			
 			}
 			else {
-				token.type = Token.Type.NAME;
+				this.token.type = Token.Type.NAME;
 			}
 
-			return token;
+			return this.token;
 		}
 
 		// Number
 		if(isDigit(this.currChar)) 
 		{
-			token.str += this.currChar;
+			this.token.str += this.currChar;
 
 			this.nextChar();
 			while(isDigit(this.currChar)) {
-				token.str += this.currChar;
+				this.token.str += this.currChar;
 				this.nextChar();
 			}
 			this.cursor--;
 
-			token.type = Token.Type.NUMBER;
-			token.value = parseFloat(token.str);
-			return token;
+			this.token.type = Token.Type.NUMBER;
+			this.token.value = parseFloat(this.token.str);
+			return this.token;
 		}
 
 		// BinOp
 		if(isBinOp(this.currChar)) 
 		{
-			token.str = this.currChar;
+			this.token.str = this.currChar;
 			if(this.currChar === "-") 
 			{
 				this.nextChar();
 				if(isDigit(this.currChar))
 				{
 					while(isDigit(this.currChar)) {
-						token.str += this.currChar;
+						this.token.str += this.currChar;
 						this.nextChar();
 					}					
-					token.value = parseFloat(token.str);
-					token.type = Token.Type.NUMBER;
+					this.token.value = parseFloat(this.token.str);
+					this.token.type = Token.Type.NUMBER;
 					this.cursor--;
-					return token;
+					return this.token;
 				}
 
 				this.cursor--;
@@ -106,20 +110,20 @@ Tokenizer.prototype =
 				this.nextChar();
 				if(this.currChar === "/") {
 					this.skipUntilNewline();
-					token.type = Token.Type.COMMENT;
-					return token;
+					this.token.type = Token.Type.COMMENT;
+					return this.token;
 				}	
 				else if(this.currChar === "*") {
 					this.skipUntil("/");
-					token.type = Token.Type.COMMENT;
-					return token;
+					this.token.type = Token.Type.COMMENT;
+					return this.token;
 				}
 				
 				this.cursor--;
 			}					
 
-			token.type = Token.Type.BINOP;
-			return token;
+			this.token.type = Token.Type.BINOP;
+			return this.token;
 		}		
 
 		// String
@@ -134,33 +138,34 @@ Tokenizer.prototype =
 					throw dopple.throw(dopple.Error.UNEXPECTED_EOI);
 				}
 
-				token.str += this.currChar;
+				this.token.str += this.currChar;
 				this.nextChar();
 			}
 
-			token.type = Token.Type.STRING;
-			return token;
+			this.token.type = Token.Type.STRING;
+			return this.token;
 		}
 
 		// EOF
 		if(this.currChar === "\0") {
-			token.type = Token.Type.EOF;
-			return token;
+			this.token.type = Token.Type.EOF;
+			return this.token;
 		}
 
-		token.type = Token.Type.SYMBOL;
-		token.str = this.currChar;
-		return token;
+		this.token.type = Token.Type.SYMBOL;
+		this.token.str = this.currChar;
+		return this.token;
 	},
 
 	nextChar: function(inc) 
 	{
 		if(this.cursor >= this.bufferLength) {
 			this.currChar = "\0";
-			return;
+		}
+		else {
+			this.currChar = this.buffer.charAt(this.cursor);
 		}
 
-		this.currChar = this.buffer.charAt(this.cursor);
 		this.cursor++;
 	},
 

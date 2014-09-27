@@ -36,3 +36,7 @@ function isBinOp(c)
 function ToHex(num) {
 	return "\\x" + num.toString(16);
 };
+
+function isIllegal(c) {
+	return (c === "@");
+};
