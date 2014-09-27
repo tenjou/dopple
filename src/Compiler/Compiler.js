@@ -330,7 +330,7 @@ Compiler.prototype =
 			this.output += expr.name;
 		}		
 		else if(expr.exprType === exprType.STRING_OBJ) {
-			this.output += "\"" + expr.length + expr.value + "\"";
+			this.output += "\"" + expr.length + "\"\"" + expr.value + "\"";
 		}
 		else if(expr.exprType === exprType.BINARY) {
 			this.output += this._makeVarBinary(expr);
