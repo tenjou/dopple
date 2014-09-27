@@ -35,14 +35,14 @@ Lexer.prototype =
 {
 	read: function(buffer) 
 	{
-//		try {
+		try {
 			this.tokenizer.setBuffer(buffer);
 			this.parseBody();
-		// }
-		// catch(str) {
-		// 	console.error(str);
-		// 	return false;
-		// }
+		}
+		catch(str) {
+			console.error(str);
+			return false;
+		}
 
 		return true;
 	},
@@ -228,14 +228,25 @@ Lexer.prototype =
 				this.handleTokenError();
 			}
 
-			var expr = this.getExprFromVar(objExpr.scope, this.token.str);
+			this.currName = this.token.str;
+			var memberExpr = this.getExprFromVar(objExpr.scope, this.currName);
 
 			this.nextToken();
-			if(this.token !== "=") {
+			if(this.token.str !== "=") {
 				return;
 			}
 
-			//var varExpr = 
+			this.nextToken();
+
+			var parentList = [ objExpr ];
+			
+			var varExpr = new Expression.Var(this.currName, parentList);
+			varExpr.expr = this.parseExpression();
+			varExpr.expr = this.optimizer.do(varExpr.expr);
+			varExpr.var = memberExpr;
+			varExpr.analyse();
+			this.scope.vars[this.currName] = varExpr;
+			this.scope.varBuffer.push(varExpr);
 		}
 		else
 		{	
@@ -329,6 +340,8 @@ Lexer.prototype =
 		var objScope = new dopple.Scope(this.scope);
 		var objExpr = new Expression.Object(name, objScope);
 
+		var parentList = [ objExpr ];
+
 		// Parse object members:
 		var varName, varExpr, expr;
 		this.nextToken();
@@ -370,12 +383,13 @@ Lexer.prototype =
 					}					
 				}
 		
-				varExpr = new Expression.Var(varName);
+				varExpr = new Expression.Var(varName, parentList);
 				varExpr.expr = expr;
 				varExpr.analyse();
 
 				objScope.vars[varName] = varExpr;
 				objScope.defBuffer.push(varExpr);
+				objScope.varBuffer.push(varExpr);
 			}
 			else {
 				dopple.throw(dopple.Error.UNSUPPORTED_FEATURE, "hashmap");

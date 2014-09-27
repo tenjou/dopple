@@ -1,11 +1,12 @@
 "use strict";
 
-Expression.Var = function(name)
+Expression.Var = function(name, parentList)
 {
 	this.name = name || "";
 	this.expr = null;
 	this.var = null;
 	this.value = "";
+	this.parentList = parentList || null;
 };
 
 Expression.Var.prototype = new Expression.Base(Expression.Type.VAR);

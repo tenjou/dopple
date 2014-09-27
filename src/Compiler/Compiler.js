@@ -39,12 +39,12 @@ Compiler.prototype =
 	{
 		if(this.lexer.read(str)) 
 		{
-	//		try {
+			try {
 				return this.make();
-			// }
-			// catch(str) {
-			// 	console.error(str);
-			// }
+			}
+			catch(str) {
+				console.error(str);
+			}
 		}
 
 		return "";	
@@ -101,7 +101,6 @@ Compiler.prototype =
 
 		var i;
 		var expr, exprType;
-		var exprEnum = Expression.Type;
 
 		var defs = scope.defBuffer;
 		var numDefs = defs.length;
@@ -118,21 +117,21 @@ Compiler.prototype =
 					this.output += "\n";
 				}
 
-				if(exprType === exprEnum.VAR) {
+				if(exprType === this.exprEnum.VAR) {
 					this.defineVar(expr);
 				}
-				else if(exprType === exprEnum.FUNCTION) {
+				else if(exprType === this.exprEnum.FUNCTION) {
 					this.defineFunc(expr);
 					exprType = 0;
 				}
-				else if(exprType === exprEnum.FUNCTION_CALL) {
+				else if(exprType === this.exprEnum.FUNCTION_CALL) {
 					this.defineFuncCall(expr);
 				}
-				else if(exprType === exprEnum.OBJECT) {
+				else if(exprType === this.exprEnum.OBJECT) {
 					this.defineObject(expr);
 					exprType = 0;
 				}
-				else if(exprType === exprEnum.RETURN) {
+				else if(exprType === this.exprEnum.RETURN) {
 					this.defineReturn(expr);
 				}
 				else {
@@ -152,15 +151,16 @@ Compiler.prototype =
 				expr = vars[i];
 				exprType = expr.exprType;
 
-				if(exprType === exprEnum.RETURN) {
+				if(exprType === this.exprEnum.VAR) 
+				{
+					if(expr.parentList) { continue; }
+					this.makeVar(expr);
+				}
+				else if(exprType === this.exprEnum.RETURN) {
 					this.defineReturn(expr);
 				}				
 			}
 		}
-
-		// if(numDefs || numVars) {
-		// 	this.output += "\n";
-		// }
 	},
 
 
@@ -178,23 +178,41 @@ Compiler.prototype =
 
 		if(exprType === this.exprEnum.VAR) 
 		{
-			if(this.scope === this.global) {
-				this.output += this.varMap[varExpr.type] + varExpr.name + ";\n";
+			if(!expr.parentList)
+			{
+				if(this.scope === this.global) {
+					this.output += this.varMap[varExpr.type] + varExpr.name + ";\n";
+				}
+				else {
+					this.output += this.varMap[varExpr.type] + varExpr.name + " = " + expr.name + ";\n";
+				}
 			}
 			else {
-				this.output += this.varMap[varExpr.type] + varExpr.name + " = " + expr.name + ";\n";
+				this.output += this.makeVarName(expr) + expr.name + ";\n";
 			}
 		}
-		else if(exprType === this.exprEnum.STRING_OBJ) {
-			this.output += this.varMap[varExpr.type] + varExpr.name + " = \"" + expr.length + "\"\"" + expr.value + "\";\n";
+		else if(exprType === this.exprEnum.STRING_OBJ) 
+		{
+			if(!varExpr.parentList) {
+				this.output += this.varMap[varExpr.type] + varExpr.name + " = \"" + expr.length + "\"\"" + expr.value + "\";\n";
+			}
+			else {
+				this.output += this.makeVarName(varExpr) + " = \"" + expr.length + "\"\"" + expr.value + "\";\n";
+			}
 		}
 		else 
 		{
 			if(this.scope === this.global && varExpr.expr.exprType === Expression.Type.BINARY) {
 				this.output += this.varMap[varExpr.type] + varExpr.name + ";\n";
 			}
-			else {				
-				this.output += this.varMap[varExpr.type] + varExpr.name + " = ";
+			else 
+			{
+				if(!varExpr.parentList) {				
+					this.output += this.varMap[varExpr.type] + varExpr.name + " = ";
+				}
+				else {
+					this.output += this.makeVarName(varExpr) + " = ";
+				}
 				this.defineExpr(expr);
 				this.output += ";\n";
 			}
@@ -301,7 +319,7 @@ Compiler.prototype =
 			return "";
 		}
 
-		this.output += this.tabs + varExpr.name + " = ";
+		this.output += this.tabs + this.makeVarName(varExpr) + " = ";
 
 		var exprType = Expression.Type;
 		var expr = varExpr.expr;
@@ -322,6 +340,27 @@ Compiler.prototype =
 		}
 
 		this.output += ";\n";
+	},
+
+	makeVarName: function(varExpr)
+	{
+		var parentList = varExpr.parentList;
+		if(!parentList) {
+			return varExpr.name;
+		}
+
+		var numItems = parentList.length;
+		if(numItems <= 0) {
+			return varExpr.name;
+		}
+		
+		var name = "";
+		for(var i = 0; i < numItems; i++) {
+			name += parentList[i].name + ".";
+		}
+		name += varExpr.name;
+
+		return name;
 	},
 
 	makeVarExpr: function(varExpr)
