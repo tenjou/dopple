@@ -10,6 +10,15 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <math.h>
+
+#ifndef NAN
+	#define NAN = 0.0 / 0.0;
+
+	static inline int32_t isnan(value) {
+		return (value != value);
+	}
+#endif
 
 /* ARRAY */
 typedef struct Array {
