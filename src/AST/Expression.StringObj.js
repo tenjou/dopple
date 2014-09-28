@@ -32,7 +32,7 @@ Expression.StringObj.prototype.castTo = function(param)
 };
 
 Expression.StringObj.prototype.defaultValue = function() {
-	return "\"\\x0\\x0\\x0\\x0\"\"\"";
+	return "\"\\x9\\x0\\x0\\x0\"\"undefined\"";
 };
 
 Expression.StringObj.prototype.hexLength = function(length) {

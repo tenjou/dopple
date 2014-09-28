@@ -13,11 +13,13 @@
 #include <math.h>
 
 #ifndef NAN
-	#define NAN = 0.0 / 0.0;
+	#define NaN = 0.0 / 0.0;
 
 	static inline int32_t isnan(value) {
 		return (value != value);
 	}
+#else
+	#define NaN NAN;
 #endif
 
 /* ARRAY */

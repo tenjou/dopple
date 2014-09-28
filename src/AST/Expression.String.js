@@ -8,5 +8,5 @@ Expression.String = function(str) {
 Expression.String.prototype = new Expression.Base(Expression.Type.STRING);
 
 Expression.String.prototype.defaultValue = function() {
-	return "\"\"";
+	return "\"undefined\"";
 };

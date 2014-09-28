@@ -28,5 +28,5 @@ Expression.Number.prototype.castTo = function(param)
 };
 
 Expression.Number.prototype.defaultValue = function() {
-	return "0";
+	return "NaN";
 };
