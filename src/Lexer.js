@@ -23,6 +23,7 @@ function Lexer()
 
 	this.genID = 0;
 	this.currName = "";
+	this.parentList = null;
 
 	this._skipNextToken = false;
 
@@ -35,14 +36,14 @@ Lexer.prototype =
 {
 	read: function(buffer) 
 	{
-		try {
+//		try {
 			this.tokenizer.setBuffer(buffer);
 			this.parseBody();
-		}
-		catch(str) {
-			console.error(str);
-			return false;
-		}
+		// }
+		// catch(str) {
+		// 	console.error(str);
+		// 	return false;
+		// }
 
 		return true;
 	},
@@ -151,6 +152,9 @@ Lexer.prototype =
 		else if(this.token.type === Token.Type.BOOL) {
 			return this.parseBool();
 		}
+		else if(this.token.type === Token.Type.FUNCTION) {
+			return this.parseFunction();
+		}
 		else if(this.token.str === "{") {
 			return this.parseObject();
 		}
@@ -221,32 +225,7 @@ Lexer.prototype =
 				dopple.throw(dopple.Error.UNEXPECTED_TOKEN, this.token.str);
 			}
 
-			var objExpr = this.getExprFromVar(this.scope, this.currName);
-
-			this.nextToken();
-			if(this.token.type !== this.tokenEnum.NAME) {
-				this.handleTokenError();
-			}
-
-			this.currName = this.token.str;
-			var memberExpr = this.getExprFromVar(objExpr.scope, this.currName);
-
-			this.nextToken();
-			if(this.token.str !== "=") {
-				return;
-			}
-
-			this.nextToken();
-
-			var parentList = [ objExpr ];
-			
-			var varExpr = new Expression.Var(this.currName, parentList);
-			varExpr.expr = this.parseExpression();
-			varExpr.expr = this.optimizer.do(varExpr.expr);
-			varExpr.var = memberExpr;
-			varExpr.analyse();
-			this.scope.vars[this.currName] = varExpr;
-			this.scope.varBuffer.push(varExpr);
+			this._defineObjectVar();
 		}
 		else
 		{	
@@ -264,7 +243,7 @@ Lexer.prototype =
 				if(!initial && this.token.type === this.tokenEnum.NAME) {
 					this.handleTokenError();
 				}
-				else if(this.token.type === this.tokenEnum.SYMBOL) {
+				else if(initial && this.token.type === this.tokenEnum.SYMBOL) {
 					this.handleUnexpectedToken();
 				}
 
@@ -281,27 +260,40 @@ Lexer.prototype =
 			return;
 		}
 
+		var varExpr = new Expression.Var(this.currName, this.parentList);
+		var scopeVarExpr = this.scope.vars[this.currName];
 		var definition = false;
-		var varExpr = new Expression.Var(this.currName);
 
-		var variable = this.scope.vars[this.currName];
-		if(variable === void(0)) 
+		// Expression is function:
+		if(expr && expr.exprType === this.exprEnum.FUNCTION)
 		{
-			// No such variable defined.
-			if(!initial) {
-				dopple.throw(dopple.Error.REFERENCE_ERROR, this.currName);
+			if(scopeVarExpr) {
+				dopple.throw(dopple.Error.UNSUPPORTED_FEATURE, "Redefining function pointer");
 			}
 
-			definition = true;
-			variable = varExpr;
-			this.scope.vars[this.currName] = varExpr;
-			this.scope.defBuffer.push(varExpr);
-		}
-		else {
-			this.scope.varBuffer.push(varExpr);
-		}
 
-		varExpr.var = variable;
+		}
+		//
+		else
+		{
+			if(scopeVarExpr === void(0)) 
+			{
+				// No such variable defined.
+				if(!initial) {
+					dopple.throw(dopple.Error.REFERENCE_ERROR, this.currName);
+				}
+
+				definition = true;
+				scopeVarExpr = varExpr;
+				this.scope.vars[this.currName] = varExpr;
+				this.scope.defBuffer.push(varExpr);
+			}
+			else {
+				this.scope.varBuffer.push(varExpr);
+			}
+
+			varExpr.var = scopeVarExpr;
+		}
 
 		if(expr)
 		{
@@ -323,6 +315,58 @@ Lexer.prototype =
 		}			
 	},
 
+	_defineObjectVar: function()
+	{
+		var objExpr = this.getExprFromVar(this.scope, this.currName);
+
+		this.nextToken();
+		if(this.token.type !== this.tokenEnum.NAME) {
+			this.handleTokenError();
+		}
+
+		this.currName = this.token.str;
+		var parentList = [ objExpr ];
+		var memberExpr = objExpr.scope.vars[this.currName];
+
+		this.nextToken();
+		if(this.token.str !== "=") {
+			return;
+		}
+
+		this.nextToken();		
+
+		// If object don't have such variable - add as a definiton:
+		if(!memberExpr) 
+		{
+			memberExpr = new Expression.Var(this.currName, parentList);
+			memberExpr.var = memberExpr;
+
+			objExpr.scope.vars[this.currName] = memberExpr;
+			objExpr.scope.defBuffer.push(memberExpr);
+
+			var varExpr = new Expression.Var(this.currName, parentList);
+			varExpr.expr = this.parseExpression();
+			varExpr.expr = this.optimizer.do(varExpr.expr);
+			varExpr.var = memberExpr;
+			varExpr.analyse();
+
+			this.scope.varBuffer.push(varExpr);
+
+			memberExpr.type = varExpr.type;
+		}
+		else
+		{	
+			var varExpr = new Expression.Var(this.currName, parentList);
+			varExpr.expr = this.parseExpression();
+			varExpr.expr = this.optimizer.do(varExpr.expr);
+			varExpr.var = memberExpr;
+			varExpr.analyse();
+
+			this.scope.vars[this.currName] = varExpr;
+			this.scope.varBuffer.push(varExpr);	
+		}	
+	},
+
 	parseObject: function()
 	{
 		var name = "";
@@ -337,10 +381,11 @@ Lexer.prototype =
 			dopple.throw(dopple.Error.REDEFINITION, name);
 		}
 
-		var objScope = new dopple.Scope(this.scope);
-		var objExpr = new Expression.Object(name, objScope);
+		var parentScope = this.scope;
+		this.scope = new dopple.Scope(this.scope);
+		var objExpr = new Expression.Object(name, this.scope);
 
-		var parentList = [ objExpr ];
+		this.parentList = [ objExpr ];
 
 		// Parse object members:
 		var varName, varExpr, expr;
@@ -364,7 +409,7 @@ Lexer.prototype =
 					dopple.throw(dopple.Error.UNSUPPORTED_FEATURE, "object inside object")
 				}
 
-				if(this.token.str === ";") {
+				if(this.token.str !== "," && this.token.str !== "}") {
 					this.handleTokenError();
 				}
 
@@ -383,34 +428,35 @@ Lexer.prototype =
 					}					
 				}
 		
-				varExpr = new Expression.Var(varName, parentList);
+				varExpr = new Expression.Var(varName, this.parentList);
 				varExpr.expr = expr;
 				varExpr.analyse();
 
-				objScope.vars[varName] = varExpr;
-				objScope.defBuffer.push(varExpr);
-				objScope.varBuffer.push(varExpr);
+				this.scope.vars[varName] = varExpr;
+				this.scope.defBuffer.push(varExpr);
+				this.scope.varBuffer.push(varExpr);
 			}
 			else {
 				dopple.throw(dopple.Error.UNSUPPORTED_FEATURE, "hashmap");
 			}
 		}
 
-		this.scope.vars[name] = objExpr;
-		this.scope.defBuffer.push(objExpr);
+		parentScope.vars[name] = objExpr;
+		parentScope.defBuffer.push(objExpr);
 
-		//Constructor:
+		// Constructor:
 		var funcName = this.currName + "$__init";
-		var scope = new dopple.Scope(this.global);
-		var initFunc = new Expression.Function(funcName, objScope, null);
-		objScope.vars[funcName] = initFunc;
-		this.scope.defBuffer.push(initFunc);
+		var initFunc = new Expression.Function(funcName, this.scope, null);
+		this.scope.vars[funcName] = initFunc;
+		parentScope.defBuffer.push(initFunc);
 
 		var initFuncCall = new Expression.FunctionCall(initFunc);
-		this.scope.varBuffer.push(initFuncCall);
+		parentScope.varBuffer.push(initFuncCall);
 
 		this.nextToken();
+		this.scope = parentScope;
 		this._skipNextToken = true;
+		this.parentList = null;
 
 		return objExpr;
 	},
@@ -476,6 +522,8 @@ Lexer.prototype =
 
 		this.nextToken();
 		this._skipNextToken = true;
+
+		return funcExpr;
 	},	
 
 	parseFuncCall: function(name)

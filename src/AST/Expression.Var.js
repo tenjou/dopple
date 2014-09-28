@@ -36,13 +36,32 @@ Expression.Var.prototype.castTo = function(param)
 	}
 };
 
-Expression.Var.prototype.defaultValue = function() {
-	return "0";
+Expression.Var.prototype.defaultValue = function() 
+{
+	var varEnum = Variable.Type;
+	if(this.type === 0 || this.type === varEnum.NUMBER) {
+		return "NaN";
+	}
+	else if(this.type === varEnum.STRING) {
+		return "\"undefined\"";
+	}
+	else if(this.type === varEnum.STRING_OBJ) {
+		return "\"\\x9\\x0\\x0\\x0\"\"undefined\"";
+	}
+	else {
+		throw "Expression.Var.defaultValue: Invalid conversion.";
+	}
 };
 
 Expression.Var.prototype.analyse = function()
 {	
 	if(!this.expr) { return; }
+	
+	if(this.type !== 0 && this.type !== this.expr.type) 
+	{
+		Error.throw(Error.Type.INVALID_TYPE_CONVERSION, 
+	 			"\"" + this.var.name + "\" " + this.var.strType() + " to " + this.expr.strType());
+	}
 	
 	this.type = this.expr.type;
 

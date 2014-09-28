@@ -28,23 +28,23 @@ Compiler.prototype =
 	{
 		this.lexer = new Lexer();
 		
-		var console = this.lexer.externObj("console");
+		//var console = this.lexer.externObj("console");
 		// console.externFunc("log", [ Variable.Type.FORMAT, "format", Variable.Type.ARGS, "..."]);
 
-		this.lexer.externFunc("alert", [ Variable.Type.STRING, "str" ]);
-		this.lexer.externFunc("confirm", [ Variable.Type.STRING, "str" ]);
+		this.lexer.externFunc("alert", [ Variable.Type.STRING_OBJ, "str" ]);
+		this.lexer.externFunc("confirm", [ Variable.Type.STRING_OBJ, "str" ]);
 	},
 
 	compile: function(str)
 	{
 		if(this.lexer.read(str)) 
 		{
-			try {
+//			try {
 				return this.make();
-			}
-			catch(str) {
-				console.error(str);
-			}
+			// }
+			// catch(str) {
+			// 	console.error(str);
+			// }
 		}
 
 		return "";	
@@ -167,55 +167,60 @@ Compiler.prototype =
 	defineVar: function(varExpr)
 	{
 		if(varExpr.type === Variable.Type.VOID) {
-			console.warn("[Compiler.makeVar]:", "Variable \"" + varExpr.name + "\" is discarded - void type.");
+			console.warn("[Compiler.makeVar]:", "Variable \"" + this.makeVarName(varExpr) + "\" is discarded - void type.");
 			return;
 		}
 
 		this.output += this.tabs;
 
 		var expr = varExpr.expr;
-		var exprType = expr.exprType;
+		if(expr) 
+		{
+			var exprType = expr.exprType;
 
-		if(exprType === this.exprEnum.VAR) 
-		{
-			if(!expr.parentList)
+			if(varExpr.parentList)
 			{
-				if(this.scope === this.global) {
-					this.output += this.varMap[varExpr.type] + varExpr.name + ";\n";
+				if(exprType === this.exprEnum.VAR) {
+					this.output += this.makeVarName(expr) + expr.name + ";\n";
 				}
-				else {
-					this.output += this.varMap[varExpr.type] + varExpr.name + " = " + expr.name + ";\n";
-				}
-			}
-			else {
-				this.output += this.makeVarName(expr) + expr.name + ";\n";
-			}
-		}
-		else if(exprType === this.exprEnum.STRING_OBJ) 
-		{
-			if(!varExpr.parentList) {
-				this.output += this.varMap[varExpr.type] + varExpr.name + " = \"" + expr.length + "\"\"" + expr.value + "\";\n";
-			}
-			else {
-				this.output += this.makeVarName(varExpr) + " = \"" + expr.length + "\"\"" + expr.value + "\";\n";
-			}
-		}
-		else 
-		{
-			if(this.scope === this.global && varExpr.expr.exprType === Expression.Type.BINARY) {
-				this.output += this.varMap[varExpr.type] + varExpr.name + ";\n";
-			}
-			else 
-			{
-				if(!varExpr.parentList) {				
-					this.output += this.varMap[varExpr.type] + varExpr.name + " = ";
+				else if(exprType === this.exprEnum.STRING_OBJ) {
+					this.output += this.makeVarName(varExpr) + " = \"" + expr.length + "\"\"" + expr.value + "\";\n";
 				}
 				else {
 					this.output += this.makeVarName(varExpr) + " = ";
+					this.defineExpr(expr);
+					this.output += ";\n";
 				}
-				this.defineExpr(expr);
-				this.output += ";\n";
 			}
+			else 
+			{
+				if(exprType === this.exprEnum.VAR) 
+				{
+					if(this.scope === this.global) {
+						this.output += this.varMap[varExpr.type] + varExpr.name + ";\n";
+					}
+					else {
+						this.output += this.varMap[varExpr.type] + varExpr.name + " = " + expr.name + ";\n";
+					}
+				}
+				else if(exprType === this.exprEnum.STRING_OBJ) {
+					this.output += this.varMap[varExpr.type] + varExpr.name + " = \"" + expr.length + "\"\"" + expr.value + "\";\n";
+				}
+				else 
+				{
+					if(this.scope === this.global && varExpr.expr.exprType === Expression.Type.BINARY) {
+						this.output += this.varMap[varExpr.type] + varExpr.name + ";\n";
+					}
+					else {				
+						this.output += this.varMap[varExpr.type] + varExpr.name + " = ";
+						this.defineExpr(expr);
+						this.output += ";\n";
+					}
+				}
+			}			
+		}
+		else {
+			this.output += this.makeVarName(varExpr) + " = " + varExpr.defaultValue() + ";\n";
 		}
 	},
 
@@ -288,9 +293,12 @@ Compiler.prototype =
 		this.incTabs();
 
 		var varExpr;
-		for(var i = 0; i < numDefs; i++) {
+		for(var i = 0; i < numDefs; i++) 
+		{
 			varExpr = defBuffer[i];
-			this.output += this.tabs + this.varMap[varExpr.type] + varExpr.name + ";\n";
+			if(varExpr.type > 0) {
+				this.output += this.tabs + this.varMap[varExpr.type] + varExpr.name + ";\n";
+			}
 		}
 
 		this.decTabs();

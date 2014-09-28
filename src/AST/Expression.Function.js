@@ -2,9 +2,10 @@
 
 Expression.Function = function(name, scope, params) {
 	this.name = name;
+	this.type = Variable.Type.FUNCTION;
 	this.scope = scope;
 	this.params = params;
-	this.numParams = (params) ? params.length : 0;
+	this.numParams = (params) ? params.length : 0; 
 	this.returnVar = new Expression.Var("");
 };
 
