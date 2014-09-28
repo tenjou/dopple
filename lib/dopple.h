@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
 
 #ifndef NAN
 	#define NaN = 0.0 / 0.0;
@@ -21,6 +22,20 @@
 #else
 	#define NaN NAN;
 #endif
+
+static inline int32_t isStringEmpty(const char *str) 
+{
+	int32_t length = (int32_t)(*str);
+	if(length == 9)
+	{
+		int32_t result = strncmp(str + sizeof(int32_t), "undefined", (int32_t)(*str));
+		if(result == 0) {
+			return 1;
+		}
+	}	
+
+	return 0;
+}
 
 /* ARRAY */
 typedef struct Array {
@@ -96,12 +111,22 @@ static void console$log(const char *format, ...)
 
 static void alert(const char *str)
 {
-	printf("ALERT: %s\n", str);
+	if(isStringEmpty(str)) {
+		printf("ALERT:\n");
+		return;
+	}
+	
+	printf("ALERT: %s\n", str + sizeof(int32_t));
 }
 
 static void confirm(const char *str)
 {
-	printf("CONFIRM: %s\n", str);
+	if(isStringEmpty(str)) {
+		printf("CONFIRM:\n");
+		return;
+	}
+	
+	printf("CONFIRM: %s\n", str + sizeof(int32_t));
 }
 
 #endif
