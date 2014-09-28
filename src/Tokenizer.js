@@ -60,6 +60,10 @@ Tokenizer.prototype =
 			else if(this.token.str === "false") {
 				this.token.type = Token.Type.BOOL;			
 			}
+			else if(this.token.str === "NaN") {
+				this.token.type = Token.Type.NUMBER;
+				this.token.value = NaN;
+			}
 			else {
 				this.token.type = Token.Type.NAME;
 			}
