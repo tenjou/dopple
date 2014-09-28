@@ -40,7 +40,7 @@ After compilation in your root directory will be added executable and `dopple` f
 
 ### Feed code manually
 
-	dopple 'var x = "Hello World!"; confirm(x);'
+	dopple 'var x = "Hello World!"; alert(x);'
 	
 # 4. License
 
