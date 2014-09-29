@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-var fs = require("fs");
+var fs = require("fs-extra");
 var exec = require("child_process").exec;
 var dopple = require("../lib/dopple.latest.js").dopple;
 
@@ -42,20 +42,33 @@ function init()
 
 function save(output) 
 {
-	exec("rm -f -r " + targetFilePath);
-	exec("rmdir dopple")
-	exec("mkdir dopple");
-
-	if(!isWin) {
-		exec("cp lib/dopple.h dopple/dopple.h");	
-	}
-	else {
-		exec("copy lib/dopple.h dopple/dopple.h");
-	}
-	
-	fs.writeFile("dopple/app.c", output, function(err) {
+	// Remove executable:
+	fs.remove(targetFilePath, function(err) 
+	{
 		if(err) { throw err; }
-		compile();
+
+		// Remove "dopple" folder:
+		fs.remove("dopple", function(err) 
+		{
+			if(err) { throw err; }
+
+			// Create "dopple" folder:
+			fs.mkdirs("dopple", function(err) 
+			{
+				if(err) { throw err; }
+
+				// Copy library:
+				fs.copy("lib/dopple.h", "dopple/dopple.h", function(err) 
+				{
+					if(err) { throw err; }
+
+					fs.writeFile("dopple/app.c", output, function(err) {
+						if(err) { throw err; }
+						compile();
+					});		
+				});
+			});
+		});
 	});
 };
 
