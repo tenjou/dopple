@@ -12,7 +12,7 @@ This will install `dopple` globally so that it may be run from the command line.
 
 ### Windows
 
-Dopple requires GCC compiler to be installed: (TDM-GCC)[http://tdm-gcc.tdragon.net/download]
+Dopple requires GCC compiler to be installed: [TDM-GCC](http://tdm-gcc.tdragon.net/download)
 
 ### Mac
 
