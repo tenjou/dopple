@@ -6,6 +6,7 @@ var dopple = require("../lib/dopple.latest.js").dopple;
 
 var sourceFilePath = process.argv[2] || "";
 var targetFilePath = process.argv[3] || "app";
+
 if(!sourceFilePath) {
 	console.log("Error: No input files.");
 	return;
@@ -58,7 +59,7 @@ function save(output)
 				if(err) { throw err; }
 
 				// Copy library:
-				fs.copy("lib/dopple.h", "dopple/dopple.h", function(err) 
+				fs.copy(require("path").dirname(require.main.filename) + "/../lib/dopple.h", "dopple/dopple.h", function(err) 
 				{
 					if(err) { throw err; }
 
@@ -76,9 +77,18 @@ function compile()
 {
 	exec("gcc dopple/app.c -o " + targetFilePath, function() 
 	{
-		exec("./" + targetFilePath, function(err, data) {
-			console.log(data);
-		});
+		if(!isWin) 
+		{
+			exec("./" + targetFilePath, function(err, data) {
+				console.log(data);
+			});
+		}
+		else 
+		{
+			exec(targetFilePath, function(err, data) {
+				console.log(data);
+			});			
+		}
 	});
 };
 
@@ -98,4 +108,9 @@ function getExt(source)
 	return output;
 };
 
-init();
+try {
+	init();
+}
+catch(str) {
+	console.log(str);
+}
