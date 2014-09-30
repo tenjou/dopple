@@ -23,6 +23,7 @@ function Lexer()
 
 	this.genID = 0;
 	this.currName = "";
+	this.currVar = null;
 	this.parentList = null;
 
 	this._skipNextToken = false;
@@ -234,7 +235,9 @@ Lexer.prototype =
 				this.nextToken();
 
 				var expr = this.parseExpression();
-				if(expr.exprType !== this.exprEnum.OBJECT) {
+				if(expr.exprType !== this.exprEnum.OBJECT &&
+				   expr.exprType !== this.exprEnum.FUNCTION) 
+				{
 					this._defineVar(expr, initial);			
 				}
 			}
@@ -250,6 +253,8 @@ Lexer.prototype =
 				this._defineVar(null, initial);
 			}
 		}
+
+		this.currName = "";
 	},	
 
 	_defineVar: function(expr, initial)
@@ -324,7 +329,7 @@ Lexer.prototype =
 			this.handleTokenError();
 		}
 
-		this.currName = this.token.str;
+		name = this.token.str;
 		var parentList = [ objExpr ];
 		var memberExpr = objExpr.scope.vars[this.currName];
 
@@ -351,7 +356,6 @@ Lexer.prototype =
 			varExpr.analyse();
 
 			this.scope.varBuffer.push(varExpr);
-
 			memberExpr.type = varExpr.type;
 		}
 		else
@@ -464,11 +468,23 @@ Lexer.prototype =
 	parseFunction: function()
 	{
 		this.nextToken();
-		var name = this.token.str;
 
-		this.nextToken();
+		var name = this.currName;
+		var rootName = "";
+		if(this.token.type === this.tokenEnum.NAME) 
+		{
+			rootName = this.token.str;
+			if(!name) {
+				name = rootName;
+			}
+			this.nextToken();
+		}
+
+		if(!name && !rootName) {
+			this.handleUnexpectedToken();
+		}
 		if(this.token.str !== "(") {
-			throw "Error: not (";
+			this.handleUnexpectedToken();
 		}
 
 		// Create a new scope.
@@ -492,14 +508,14 @@ Lexer.prototype =
 					break;
 				}
 
-				throw "Error: not ,";
+				this.handleUnexpectedToken();
 			}
 
 			this.nextToken();
 		}
 
 		if(this.token.str !== ")") {
-			throw "Error: not )";
+			this.handleUnexpectedToken();
 		}		
 
 		this.nextToken();
@@ -514,7 +530,9 @@ Lexer.prototype =
 		}
 
 		var funcExpr = new Expression.Function(name, this.scope, vars);
+		funcExpr.rootName = rootName;
 		var parentScope = this.scope.parent;
+
 		parentScope.vars[name] = funcExpr;
 		parentScope.defBuffer.push(funcExpr);
 

@@ -206,6 +206,9 @@ Compiler.prototype =
 				else if(exprType === this.exprEnum.STRING_OBJ) {
 					this.output += this.varMap[varExpr.type] + varExpr.name + " = \"" + expr.length + "\"\"" + expr.value + "\";\n";
 				}
+				else if(exprType === this.exprEnum.FUNCTION) {
+					console.log("sds");
+				}
 				else 
 				{
 					if(this.scope === this.global && varExpr.expr.exprType === Expression.Type.BINARY) {
