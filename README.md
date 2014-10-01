@@ -1,4 +1,4 @@
-# Dopple 0.0.2-16-alpha
+# Dopple 0.0.2-17-alpha
 
 Dopple is compiler that generates C or LLVM from JavaScript code.
 

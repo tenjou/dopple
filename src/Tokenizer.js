@@ -83,6 +83,13 @@ Tokenizer.prototype =
 			}
 			this.cursor--;
 
+			// Only a symbol:
+			if(this.token.str === ".") {
+				this.token.type = Token.Type.SYMBOL;
+				this.token.value = this.token.str;
+				return this.token;
+			}
+
 			this.token.type = Token.Type.NUMBER;
 			this.token.value = parseFloat(this.token.str);
 			return this.token;

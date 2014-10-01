@@ -206,9 +206,6 @@ Compiler.prototype =
 				else if(exprType === this.exprEnum.STRING_OBJ) {
 					this.output += this.varMap[varExpr.type] + varExpr.name + " = \"" + expr.length + "\"\"" + expr.value + "\";\n";
 				}
-				else if(exprType === this.exprEnum.FUNCTION) {
-					console.log("sds");
-				}
 				else 
 				{
 					if(this.scope === this.global && varExpr.expr.exprType === Expression.Type.BINARY) {
@@ -251,7 +248,7 @@ Compiler.prototype =
 		}
 
 		// Write head:
-		this.output += this.varMap[func.returnVar.type] + func.name + "(";
+		this.output += this.varMap[func.returnVar.type] + this.makeFuncName(func) + "(";
 
 		// Write parameters:
 		if(numParams) 
@@ -353,27 +350,6 @@ Compiler.prototype =
 		this.output += ";\n";
 	},
 
-	makeVarName: function(varExpr)
-	{
-		var parentList = varExpr.parentList;
-		if(!parentList) {
-			return varExpr.name;
-		}
-
-		var numItems = parentList.length;
-		if(numItems <= 0) {
-			return varExpr.name;
-		}
-		
-		var name = "";
-		for(var i = 0; i < numItems; i++) {
-			name += parentList[i].name + ".";
-		}
-		name += varExpr.name;
-
-		return name;
-	},
-
 	makeVarExpr: function(varExpr)
 	{
 		if(varExpr.type === Variable.Type.VOID) {
@@ -440,7 +416,7 @@ Compiler.prototype =
 		var args = funcCall.args;
 		var numArgs = funcCall.func.numParams;
 
-		this.output += this.tabs + funcCall.func.name + "(";
+		this.output += this.tabs + this.makeFuncName(funcCall.func) + "(";
 
 		// Write arguments, if there is any:
 		if(numArgs > 0)
@@ -470,6 +446,48 @@ Compiler.prototype =
 		}
 
 		this.output += ");\n";
+	},	
+
+	makeVarName: function(varExpr)
+	{
+		var parentList = varExpr.parentList;
+		if(!parentList) {
+			return varExpr.name;
+		}
+
+		var numItems = parentList.length;
+		if(numItems <= 0) {
+			return varExpr.name;
+		}
+		
+		var name = "";
+		for(var i = 0; i < numItems; i++) {
+			name += parentList[i].name + ".";
+		}
+		name += varExpr.name;
+
+		return name;
+	},
+
+	makeFuncName: function(funcExpr)
+	{
+		var parentList = funcExpr.parentList;
+		if(!parentList) {
+			return funcExpr.name;
+		}
+
+		var numItems = parentList.length;
+		if(numItems <= 0) {
+			return funcExpr.name;
+		}
+		
+		var name = "";
+		for(var i = 0; i < numItems; i++) {
+			name += parentList[i].name + "$";
+		}
+		name += funcExpr.name;
+
+		return name;		
 	},	
 
 

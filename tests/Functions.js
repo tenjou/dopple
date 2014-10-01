@@ -1,7 +1,16 @@
 "use strict";
 
-var x1 = function(x, y) {};
-function x2(x, y) {};
+var x = {
+	x: function(x) {},
+	y: function(x, y, z, w) {}
+}
 
-x1("Hello" + " " + "World", 232 + 0.2);
-x2(232 + 0.2, "Hello" + " " + "World");
+function inc(x, y) {}
+
+var inc2 = function(x, y) {}
+
+x.y("Hello", "World", 100);
+x.x();
+inc();
+inc(10, 20);
+inc2("sdsd", -12);

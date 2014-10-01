@@ -1,6 +1,6 @@
 "use strict";
 
-Expression.Function = function(name, scope, params) 
+Expression.Function = function(name, scope, params, parentList) 
 {
 	this.name = name;
 	this.type = Variable.Type.FUNCTION;
@@ -11,6 +11,7 @@ Expression.Function = function(name, scope, params)
 
 	this.rootName = null;
 	this.returnVar = new Expression.Var("");
+	this.parentList = parentList || null;
 };
 
 Expression.Function.prototype = new Expression.Base(Expression.Type.FUNCTION);
