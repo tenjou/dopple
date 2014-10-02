@@ -4,6 +4,10 @@ dopple.Extern = function(lexer)
 {
 	this.lexer = lexer;
 	this.global = lexer.global;
+	
+	this.tokenEnum = Token.Type;
+	this.varEnum = Variable.Type;
+	this.exprEnum = Expression.Type;	
 };
 
 dopple.Extern.prototype =
