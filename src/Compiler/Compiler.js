@@ -27,12 +27,14 @@ Compiler.prototype =
 	createLexer: function()
 	{
 		this.lexer = new Lexer();
+
+		var extern = this.lexer.extern;
 		
 		//var console = this.lexer.externObj("console");
-		// console.externFunc("log", [ Variable.Type.FORMAT, "format", Variable.Type.ARGS, "..."]);
+		//console.externFunc("log", [ Variable.Type.FORMAT, "format" ]);
 
-		this.lexer.externFunc("alert", [ Variable.Type.STRING_OBJ, "str" ]);
-		this.lexer.externFunc("confirm", [ Variable.Type.STRING_OBJ, "str" ]);
+		extern.func("alert", [ Variable.Type.STRING_OBJ, "str" ]);
+		extern.func("confirm", [ Variable.Type.STRING_OBJ, "str" ]);
 	},
 
 	compile: function(str)

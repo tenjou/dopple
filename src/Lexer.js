@@ -6,7 +6,11 @@ function Lexer()
 	this.token = null;
 	this.prevToken = null;
 
+	this.global = new dopple.Scope();
+	this.scope = this.global;	
+
 	this.optimizer = new Optimizer();
+	this.extern = new dopple.Extern(this);
 
 	this.precedence = {
 		"=": 2,
@@ -17,9 +21,6 @@ function Lexer()
 		"*": 400,
 		"/": 400
 	};
-
-	this.global = new dopple.Scope();
-	this.scope = this.global;
 
 	this.genID = 0;
 	this.currName = "";
@@ -333,7 +334,6 @@ Lexer.prototype =
 	_defineObjVar: function()
 	{
 		var parentList = this.parentList;
-		//this.parentList = null;
 
 		var objExpr = parentList[parentList.length - 1];
 		this.scope = objExpr.scope;
@@ -721,48 +721,6 @@ Lexer.prototype =
 		name += this.currName;
 
 		return name;		
-	},		
-
-
-	externFunc: function(name, params)
-	{
-		var funcParams = null;
-
-		if(params) 
-		{
-			funcParams = [];
-
-			var varExpr, expr, type;
-			var numParams = params.length;
-			for(var i = 0; i < numParams; i += 2) 
-			{
-				type = params[i];
-				if(type === this.varEnum.NUMBER) {
-					expr = new Expression.Number(0);
-				}
-				else if(type === this.varEnum.STRING) {
-					expr = new Expression.String("");
-				}
-				else if(type === this.varEnum.STRING_OBJ) {
-					expr = new Expression.StringObj("");
-				}
-
-				varExpr = new Expression.Var(params[i + 1]);
-				varExpr.type = type;
-				varExpr.var = expr;
-				funcParams.push(varExpr);
-			}
-		}
-
-		var func = new Expression.Function(name, this.global, funcParams);
-		this.global.vars[name] = func;
-	},
-
-	externObj: function(name)
-	{
-		var objExpr = new Expression.Object(name);
-		this.global.vars[name] = objExpr;
-		return objExpr;
 	},
 
 	validateToken: function()
