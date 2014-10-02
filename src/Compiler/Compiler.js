@@ -30,11 +30,17 @@ Compiler.prototype =
 
 		var extern = this.lexer.extern;
 		
-		//var console = this.lexer.externObj("console");
-		//console.externFunc("log", [ Variable.Type.FORMAT, "format" ]);
+		var console = extern.obj("console");
+		console.func("log", [ Variable.Type.FORMAT ]);
+		console.func("warn", [ Variable.Type.FORMAT ]);
+		console.func("error", [ Variable.Type.FORMAT ]);
 
-		extern.func("alert", [ Variable.Type.STRING_OBJ, "str" ]);
-		extern.func("confirm", [ Variable.Type.STRING_OBJ, "str" ]);
+		// var string = extern.obj("String");
+		// string.getter("length", null, Variable.Type.NUMBER);
+		// string.setter("length", [ Variable.Type.NUMBER, "value" ]);
+
+		extern.func("alert", [ Variable.Type.STRING_OBJ ]);
+		extern.func("confirm", [ Variable.Type.STRING_OBJ ]);
 	},
 
 	compile: function(str)
@@ -423,26 +429,32 @@ Compiler.prototype =
 		// Write arguments, if there is any:
 		if(numArgs > 0)
 		{
-			var arg = args[0];
-			var param = params[0];
-			if(arg === param) {
-				this.output += param.var.defaultValue();
+			if(params[0].type === this.varEnum.FORMAT) {
+				this.makeFormat(args);
 			}
-			else {
-				this.output += arg.castTo(param);
-			}
-
-			for(var i = 1; i < numArgs; i++) 
+			else
 			{
-				this.output += ", ";
-
-				arg = args[i];
-				param = params[i];
+				var arg = args[0];
+				var param = params[0];
 				if(arg === param) {
 					this.output += param.var.defaultValue();
 				}
 				else {
 					this.output += arg.castTo(param);
+				}
+
+				for(var i = 1; i < numArgs; i++) 
+				{
+					this.output += ", ";
+
+					arg = args[i];
+					param = params[i];
+					if(arg === param) {
+						this.output += param.var.defaultValue();
+					}
+					else {
+						this.output += arg.castTo(param);
+					}
 				}
 			}
 		}
@@ -491,6 +503,48 @@ Compiler.prototype =
 
 		return name;		
 	},	
+
+	makeFormat: function(args)
+	{
+		var output = "\"";
+		var argOutput = "";
+
+		var arg, exprType, varType;
+		var numArgs = args.length;
+		for(var i = 0; i < numArgs; i++)
+		{
+			arg = args[i];
+			exprType = arg.exprType;
+
+			if(exprType === this.exprEnum.NUMBER) {
+				output += "%f ";
+				argOutput += "(double)" + arg.value + ", ";
+			}
+			else if(exprType === this.exprEnum.STRING_OBJ) {
+				output += "%s ";
+				argOutput += "\"" + arg.value + "\"" + ", ";
+			}
+			else if(exprType === this.exprEnum.VAR) 
+			{
+				varType = arg.type;
+				if(varType === this.varEnum.STRING_OBJ) {
+					output += "%s ";
+					argOutput += arg.value + " + sizeof(int32_t), ";
+				}
+				else {
+					output += "%f ";
+					argOutput += "(double)" + arg.value + ", ";
+				}
+			}
+			else {
+				throw "Compiler.makeFormat: Unhandled case.";
+			}
+		}
+
+		output = output.substr(0, output.length - 1) + "\\n\"";
+		argOutput = argOutput.substr(0, argOutput.length - 2);
+		this.output += output + ", " + argOutput;
+	},
 
 
 	incTabs: function() {

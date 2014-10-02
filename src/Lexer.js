@@ -578,17 +578,23 @@ Lexer.prototype =
 		var args = new Array(funcExpr.numParams);
 		var param, expr;
 		var funcParams = funcExpr.params;
-		var numFuncParams = funcParams.length;
+		var numFuncParams = funcParams ? funcParams.length : 0;
 
 		// Check if there are arguments passed:
 		this.nextToken();
 		if(this.token.str !== ")") 
 		{
+			// Check if first argument is FORMAT:
+			var isFormat = false;
+			if(numFuncParams > 0 && funcParams[0].type === this.varEnum.FORMAT) {
+				isFormat = true;
+			}
+
 			// Parse all variable expressions:	
 			for(;; i++)
 			{
 				// Too many arguments:
-				if(i >= numFuncParams) {
+				if(i >= numFuncParams && !isFormat) {
 					dopple.throw(dopple.Error.TOO_MANY_ARGUMENTS);
 				}
 
@@ -597,9 +603,12 @@ Lexer.prototype =
 				expr.analyse();
 				args[i] = expr;
 
-				param = funcParams[i];
-				if(param.type === 0) {
-					param.type = expr.type;
+				if(!isFormat) 
+				{
+					param = funcParams[i];
+					if(param.type === 0) {
+						param.type = expr.type;
+					}
 				}
 		
 				if(this.token.str !== ",") {

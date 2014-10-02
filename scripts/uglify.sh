@@ -19,5 +19,6 @@ cat dopple.js \
 	AST/Expression.FunctionCall.js \
 	AST/Expression.Return.js \
 	AST/Expression.Object.js \
+	AST/Expression.Format.js \
 	Compiler/Compiler.js \
 	| uglifyjs --output ../lib/dopple.latest.js --mangle -c dead_code=false,unused=false,side_effects=false --screw-ie8

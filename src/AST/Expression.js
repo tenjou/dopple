@@ -57,7 +57,8 @@ Expression.Type = {
 	FUNCTION_CALL: 8,
 	PROTOTYPE: 9,
 	OBJECT: 10,
-	RETURN: 11
+	RETURN: 11,
+	FORMAT: 12
 };
 
 var Variable =

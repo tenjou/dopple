@@ -97,10 +97,15 @@ static int32_t Array$exist(Array *this, int32_t index)
 }
 
 /* STRING */
-static inline double String$length(const char *str) {
+static inline double String$get$length(const char *str) {
 	return (double)((int32_t)(*str));
 }
 
+static inline double String$set$length(const char *str, double value) {
+	return value;
+}
+
+/* CONSOLE */
 static void console$log(const char *format, ...)
 {
     va_list argptr;
@@ -109,6 +114,23 @@ static void console$log(const char *format, ...)
     va_end(argptr);
 }
 
+static void console$warn(const char *format, ...)
+{
+    va_list argptr;
+    va_start(argptr, format);
+    vfprintf(stderr, format, argptr);
+    va_end(argptr);
+}
+
+static void console$error(const char *format, ...)
+{
+    va_list argptr;
+    va_start(argptr, format);
+    vfprintf(stderr, format, argptr);
+    va_end(argptr);
+}
+
+/* MISC */
 static void alert(const char *str)
 {
 	if(isStringEmpty(str)) {
