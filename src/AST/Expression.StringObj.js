@@ -3,7 +3,8 @@
 Expression.StringObj = function(str) {
 	this.value = str || "";
 	this.type = Variable.Type.STRING_OBJ;
-	this.length = this.hexLength(str.length);
+	this.length = str.length || 0;
+	this.hexLength = this.createHex(str.length);
 };
 
 Expression.StringObj.prototype = new Expression.Base(Expression.Type.STRING_OBJ);
@@ -35,6 +36,6 @@ Expression.StringObj.prototype.defaultValue = function() {
 	return "\"\\x9\\x0\\x0\\x0\"\"undefined\"";
 };
 
-Expression.StringObj.prototype.hexLength = function(length) {
+Expression.StringObj.prototype.createHex = function(length) {
 	return ToHex(length) + "\\x0\\x0\\x0";
 };

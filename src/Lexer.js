@@ -180,18 +180,43 @@ Lexer.prototype =
 
 	parseName: function()
 	{
-		var variable = this.scope.vars[this.token.str];
-		if(!variable) {
-			dopple.throw(dopple.Error.REFERENCE_ERROR, this.token.str);
+		var varName = this.token.str;
+		var expr = this.scope.vars[varName];
+		if(!expr) {
+			dopple.throw(dopple.Error.REFERENCE_ERROR, varName);
 		}
 
-		var expr = new Expression.Var(this.token.str);
-		expr.expr = expr;
-		expr.var = variable;
-		expr.type = variable.type;
-		expr.value = this.token.str;
+		var parentList = null;
+		var scope = expr.scope;
+		
 		this.nextToken();
-		return expr;
+		if(this.token.str === ".") 
+		{
+			parentList = [ expr ];
+
+			this.nextToken();
+			do
+			{
+				if(this.token.type !== this.tokenEnum.NAME) {
+					this.handleTokenError();
+				}
+
+				varName = this.token.str;
+				expr = scope.vars[varName];
+				if(!expr) {
+					dopple.throw(dopple.Error.REFERENCE_ERROR, varName);
+				}
+
+				this.nextToken();		
+			} while(this.token.str === ".");
+		}
+
+		var varExpr = new Expression.Var(varName, parentList);
+		varExpr.expr = varExpr;
+		varExpr.var = expr;
+		varExpr.type = expr.type;
+		varExpr.value = varName;
+		return varExpr;
 	},
 
 	parseString: function()
@@ -313,8 +338,7 @@ Lexer.prototype =
 
 		if(expr)
 		{
-			expr = this.optimizer.do(expr);
-			varExpr.expr = expr;
+			varExpr.expr = this.optimizer.do(expr);
 			varExpr.analyse();
 
 			if(definition && this.scope === this.global)

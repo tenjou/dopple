@@ -14,6 +14,7 @@ function Compiler()
 
 	this.tabs = "";
 	this.output = "";
+	this.outputBuffer = "";
 
 	this.global = this.lexer.global;
 	this.scope = null;
@@ -150,23 +151,26 @@ Compiler.prototype =
 			}
 		}
 
-		var vars = scope.varBuffer;
-		var numVars = vars.length;
-		if(numVars)
+		if(scope !== this.global)
 		{
-			for(i = 0; i < numVars; i++) 
+			var vars = scope.varBuffer;
+			var numVars = vars.length;
+			if(numVars)
 			{
-				expr = vars[i];
-				exprType = expr.exprType;
-
-				if(exprType === this.exprEnum.VAR) 
+				for(i = 0; i < numVars; i++) 
 				{
-					if(expr.parentList) { continue; }
-					this.makeVar(expr);
+					expr = vars[i];
+					exprType = expr.exprType;
+
+					if(exprType === this.exprEnum.VAR) 
+					{
+						if(expr.parentList) { continue; }
+						this.makeVar(expr);
+					}
+					else if(exprType === this.exprEnum.RETURN) {
+						this.defineReturn(expr);
+					}				
 				}
-				else if(exprType === this.exprEnum.RETURN) {
-					this.defineReturn(expr);
-				}				
 			}
 		}
 	},
@@ -192,7 +196,7 @@ Compiler.prototype =
 					this.output += this.makeVarName(expr) + expr.name + ";\n";
 				}
 				else if(exprType === this.exprEnum.STRING_OBJ) {
-					this.output += this.makeVarName(varExpr) + " = \"" + expr.length + "\"\"" + expr.value + "\";\n";
+					this.output += this.makeVarName(varExpr) + " = \"" + expr.hexLength + "\"\"" + expr.value + "\";\n";
 				}
 				else {
 					this.output += this.makeVarName(varExpr) + " = ";
@@ -212,7 +216,7 @@ Compiler.prototype =
 					}
 				}
 				else if(exprType === this.exprEnum.STRING_OBJ) {
-					this.output += this.varMap[varExpr.type] + varExpr.name + " = \"" + expr.length + "\"\"" + expr.value + "\";\n";
+					this.output += this.varMap[varExpr.type] + varExpr.name + " = \"" + expr.hexLength + "\"\"" + expr.value + "\";\n";
 				}
 				else 
 				{
@@ -335,65 +339,51 @@ Compiler.prototype =
 			return "";
 		}
 
-		this.output += this.tabs + this.makeVarName(varExpr) + " = ";
+		varExpr.fullName = this.makeVarName(varExpr);
+		this.outputBuffer += this.tabs + varExpr.fullName + " = ";
 
 		var exprType = Expression.Type;
 		var expr = varExpr.expr;
 		if(expr.exprType === exprType.NUMBER) {
-			this.output += expr.value;
+			this.outputBuffer += expr.value;
 		}
 		else if(expr.exprType === exprType.VAR) {
-			this.output += expr.name;
+			this.outputBuffer += expr.name;
 		}		
 		else if(expr.exprType === exprType.STRING_OBJ) {
-			this.output += "\"" + expr.length + "\"\"" + expr.value + "\"";
+			this.outputBuffer += "\"" + expr.hexLength + "\"\"" + expr.value + "\"";
 		}
 		else if(expr.exprType === exprType.BINARY) {
-			this.output += this._makeVarBinary(expr);
+			this._makeVarBinary(varExpr, expr);
 		}
 		else {
-			this.output += expr.value;
+			this.outputBuffer += expr.value;
 		}
 
-		this.output += ";\n";
-	},
+		this.outputBuffer += ";\n";
 
-	makeVarExpr: function(varExpr)
-	{
-		if(varExpr.type === Variable.Type.VOID) {
-			console.warn("[Compiler.makeVar]:", "Variable \"" + varExpr.name + "\" is discarded - void type.");
-			return "";
-		}
-
-		var exprType = Expression.Type;
-		var output = varExpr.name + " = ";
-
-		var expr = varExpr.expr;
-		if(expr.exprType === exprType.NUMBER) {
-			output += expr.value + ";\n";
-		}
-		else if(expr.exprType === exprType.VAR) {
-			output += expr.value + ";\n";
-		}
-		else if(expr.exprType === exprType.STRING_OBJ) {
-			output += "\"" + expr.value + "\";\n";
-		}
-		else if(expr.exprType === exprType.BINARY) {
-			output += this._makeVarBinary(expr) + ";\n";
-		}
-
-		return output;
+		this.output += this.outputBuffer;
+		this.outputBuffer = "";
 	},	
 
-	_makeVarBinary: function(binExpr)
+	_makeVarBinary: function(varExpr, binExpr)
 	{
+		var output = "";
+
+		if(varExpr.type === this.varEnum.STRING_OBJ) 
+		{
+			this.genConcat(varExpr.fullName, binExpr.lhs, binExpr.rhs);
+
+			return output;
+		}
+
 		var lhsValue;
-		if(binExpr.lhs.exprType === Expression.Type.BINARY) {
+		if(binExpr.lhs.exprType === this.exprEnum.BINARY) {
 			lhsValue = this._makeVarBinary(binExpr.lhs);
 		}
 		else 
 		{
-			if(binExpr.lhs.type === Variable.Type.STRING_OBJ) {
+			if(binExpr.lhs.type === this.varEnum.STRING_OBJ) {
 				lhsValue = "\"" + binExpr.lhs.str + "\"";
 			}
 			else {
@@ -417,6 +407,57 @@ Compiler.prototype =
 
 		return lhsValue + " " + binExpr.op + " " + rhsValue;
 	},	
+
+	genConcat: function(name, lhs, rhs)
+	{
+		this.outputBuffer = this.tabs + name + " = malloc(__dopple_strLength + NUMBER_SIZE);\n";
+		this.output += this.tabs + "__dopple_strOffset = NUMBER_SIZE;\n";
+		this.output += this.tabs + "__dopple_strLength = ";
+
+		this.genConcatExpr(name, lhs);
+		this.genConcatExpr(name, rhs, true);
+
+		this.outputBuffer += this.tabs + "APPEND_LENGTH(" + name + ", __dopple_strLength);\n\n";		
+	},
+
+	genConcatExpr: function(name, expr, last)
+	{
+		if(expr.exprType === this.exprEnum.BINARY) {
+			this.genConcatExpr(name, expr.lhs, false);
+			this.genConcatExpr(name, expr.rhs, last);
+		}
+		else if(expr.exprType === this.exprEnum.VAR) 
+		{
+			this.outputBuffer += this.tabs + "memcpy(" + name + " + __dopple_strOffset, " + 
+				expr.name + " + NUMBER_SIZE, (*(NUMBER *)" + expr.name + "));\n";
+			if(!last) {
+				this.outputBuffer += this.tabs + "__dopple_strOffset += (*(NUMBER *)" + expr.name + ");\n";
+				this.output += "(*(NUMBER *)" + expr.name + ") + ";
+			}
+			else {
+				this.output += "(*(NUMBER *)" + expr.name + ");\n";
+			}
+		}
+		else if(expr.exprType === this.exprEnum.STRING_OBJ) 
+		{
+			this.outputBuffer += this.tabs + "memcpy(" + name + " + __dopple_strOffset, \"" + 
+				expr.value + "\", " + expr.length + ");\n"
+			if(!last) {
+				this.outputBuffer += this.tabs + "__dopple_strOffset += " + expr.length + ";\n";
+				this.output += expr.length + " + ";
+			}
+			else {
+				this.output += expr.length + ";\n";
+			}
+		}
+		else if(expr.exprType === this.exprEnum.NUMBER)
+		{
+			
+		}
+		else {
+			throw "genConcatExpr: Unhandled expression type!";
+		}		
+	},
 
 	makeFuncCall: function(funcCall) 
 	{
@@ -529,7 +570,7 @@ Compiler.prototype =
 				varType = arg.type;
 				if(varType === this.varEnum.STRING_OBJ) {
 					output += "%s ";
-					argOutput += arg.value + " + sizeof(int32_t), ";
+					argOutput += arg.value + " + NUMBER_SIZE, ";
 				}
 				else {
 					output += "%f ";

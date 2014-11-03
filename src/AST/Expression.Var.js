@@ -7,6 +7,7 @@ Expression.Var = function(name, parentList)
 	this.var = null;
 	this.value = "";
 	this.parentList = parentList || null;
+	this.fullName = "";
 };
 
 Expression.Var.prototype = new Expression.Base(Expression.Type.VAR);
@@ -57,25 +58,53 @@ Expression.Var.prototype.analyse = function()
 {	
 	if(!this.expr) { return; }
 	
-	if(this.type !== 0 && this.type !== this.expr.type) 
-	{
-		Error.throw(Error.Type.INVALID_TYPE_CONVERSION, 
-	 			"\"" + this.var.name + "\" " + this.var.strType() + " to " + this.expr.strType());
+	if(this.expr.exprType === Expression.Type.BINARY) {
+		this.type = this.analyseExpr(this.expr);
 	}
-	
-	this.type = this.expr.type;
-
-	// if(this === this.var) {
-	// 	return;
-	// }
-	// else 
-	// {
-	// 	if(this.var.type === 0) { return; }
-
-	// 	if(this.type !== this.var.type) 
-	// 	{
-	// 		Error.throw(Error.Type.INVALID_TYPE_CONVERSION, 
-	// 			"\"" + this.var.name + "\" " + this.var.strType() + " to " + this.expr.strType());
-	// 	}
-	// }
+	else
+	{
+		if(this.type !== 0 && this.type !== this.expr.type) 
+		{
+			Error.throw(Error.Type.INVALID_TYPE_CONVERSION, 
+		 			"\"" + this.var.name + "\" " + this.var.strType() + " to " + this.expr.strType());
+		}
+		
+		this.type = this.expr.type;
+	}
 };
+
+Expression.Var.prototype.analyseExpr = function(expr)
+{
+	var lhsType, rhsType;
+
+	if(expr.lhs.exprType === Expression.Type.BINARY) {
+		lhsType = this.analyseExpr(expr.lhs);
+	}
+	else {
+		lhsType = expr.lhs.type;
+	}
+
+	if(expr.rhs.exprType === Expression.Type.BINARY) {
+		rhsType = this.analyseExpr(expr.rhs);
+	}
+	else {
+		rhsType = expr.rhs.type;
+	}
+
+	if(lhsType === rhsType) {
+		return lhsType;
+	}
+
+	var varEnum = Variable.Type;
+	if(lhsType === varEnum.STRING_OBJ || rhsType === varEnum.STRING_OBJ) {
+		return varEnum.STRING;
+	}
+	else 
+	{
+			Error.throw(Error.Type.INVALID_TYPE_CONVERSION, 
+		 			"\"" + this.var.name + "\" " + this.var.strType() + " to " + this.expr.strType());		
+	}
+
+	return 0;
+};
+
