@@ -15,3 +15,12 @@ if(typeof(exports) !== "undefined") {
 else {
 	dopple.isNodeJS = false;
 }
+
+dopple.Scope = function(parent)
+{
+	this.parent = parent || null;
+
+	this.vars = {};
+	this.defBuffer = [];
+	this.varBuffer = [];
+};

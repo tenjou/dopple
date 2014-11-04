@@ -1,6 +1,8 @@
 "use strict";
 
-function Lexer()
+var JavaScript = {};
+
+JavaScript.Lexer = function()
 {
 	this.tokenizer = new Tokenizer();
 	this.token = null;
@@ -34,7 +36,7 @@ function Lexer()
 	this.exprEnum = Expression.Type;
 };
 
-Lexer.prototype = 
+JavaScript.Lexer.prototype = 
 {
 	read: function(buffer) 
 	{
@@ -786,13 +788,4 @@ Lexer.prototype =
 			dopple.throw(dopple.Error.UNEXPECTED_TOKEN, this.token.str);
 		}
 	}
-};
-
-dopple.Scope = function(parent)
-{
-	this.parent = parent || null;
-
-	this.vars = {};
-	this.defBuffer = [];
-	this.varBuffer = [];
 };
