@@ -428,14 +428,33 @@ Compiler.prototype =
 		}
 		else if(expr.exprType === this.exprEnum.VAR) 
 		{
-			this.outputBuffer += this.tabs + "memcpy(" + name + " + __dopple_strOffset, " + 
-				expr.name + " + NUMBER_SIZE, (*(NUMBER *)" + expr.name + "));\n";
-			if(!last) {
-				this.outputBuffer += this.tabs + "__dopple_strOffset += (*(NUMBER *)" + expr.name + ");\n";
-				this.output += "(*(NUMBER *)" + expr.name + ") + ";
+			if(expr.type === this.varEnum.STRING) 
+			{
+				this.outputBuffer += this.tabs + "memcpy(" + name + " + __dopple_strOffset, " + 
+					expr.name + " + NUMBER_SIZE, (*(NUMBER *)" + expr.name + "));\n";
+				if(!last) {
+					this.outputBuffer += this.tabs + "__dopple_strOffset += (*(NUMBER *)" + expr.name + ");\n";
+					this.output += "(*(NUMBER *)" + expr.name + ") + ";
+				}
+				else {
+					this.output += "(*(NUMBER *)" + expr.name + ");\n";
+				}
+			}
+			else if(expr.type === this.varEnum.NUMBER)
+			{
+				this.outputBuffer += this.tabs + "__dopple_tmp = snprintf(NULL, 0, \"%.17g\", " + expr.value + ");\n";
+				this.outputBuffer += this.tabs + "snprintf(" + name + 
+					" + __dopple_strOffset, __dopple_tmp + 1, \"%.17g\", " + expr.name + ");\n"	
+				if(!last) {
+					this.outputBuffer += this.tabs + "__dopple_strOffset += __dopple_tmp;\n";
+					this.output += "__dopple_tmp + ";
+				}
+				else {
+					this.output += "__dopple_tmp;\n";
+				}								
 			}
 			else {
-				this.output += "(*(NUMBER *)" + expr.name + ");\n";
+				throw "genConcatExpr: Unhandled expression variable type!";
 			}
 		}
 		else if(expr.exprType === this.exprEnum.STRING_OBJ) 
@@ -452,7 +471,9 @@ Compiler.prototype =
 		}
 		else if(expr.exprType === this.exprEnum.NUMBER)
 		{
-			
+			this.outputBuffer += this.tabs + "__dopple_tmp = snprintf(NULL, 0, \"%.17g\", " + expr.value + ");\n";
+			this.outputBuffer += this.tabs + "snprintf(" + name + 
+				" + __dopple_strOffset, __dopple_tmp, \"%.17g%\, " + expr.value + ");\n"
 		}
 		else {
 			throw "genConcatExpr: Unhandled expression type!";
