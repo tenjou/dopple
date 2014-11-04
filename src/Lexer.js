@@ -2,7 +2,7 @@
 
 function Lexer()
 {
-	this.tokenizer = new Tokenizer();
+	this.tokenizer = null;
 	this.token = null;
 	this.prevToken = null;
 
@@ -29,7 +29,7 @@ function Lexer()
 
 	this._skipNextToken = false;
 
-	this.tokenEnum = Token.Type;
+	this.tokenEnum = dopple.TokenEnum;
 	this.varEnum = Variable.Type;
 	this.exprEnum = Expression.Type;
 };
@@ -39,7 +39,7 @@ Lexer.prototype =
 	read: function(buffer) 
 	{
 //		try {
-			this.tokenizer.setBuffer(buffer);
+			this.tokenizer = new dopple.Tokenizer(buffer);
 			this.parseBody();
 		// }
 		// catch(str) {
@@ -56,7 +56,7 @@ Lexer.prototype =
 
 	getTokenPrecendence: function()
 	{
-		if(this.token.type !== Token.Type.BINOP) {
+		if(this.token.type !== this.tokenEnum.BINOP) {
 			return -1;
 		}
 
@@ -72,8 +72,6 @@ Lexer.prototype =
 	parseBody: function()
 	{
 		var type;
-		var tokenType = Token.Type;
-
 		do
 		{
 			if(!this._skipNextToken) {
@@ -84,18 +82,18 @@ Lexer.prototype =
 			}
 
 			type = this.token.type;
-			if(type === tokenType.NAME || 
-			   type === tokenType.VAR) 
+			if(type === this.tokenEnum.NAME || 
+			   type === this.tokenEnum.VAR) 
 			{
 				this.parseVar();
 			}
-			else if(type === tokenType.FUNCTION) {
+			else if(type === this.tokenEnum.FUNCTION) {
 				this.parseFunc();
 			}
-			else if(type === tokenType.RETURN) {
+			else if(type === this.tokenEnum.RETURN) {
 				this.parseReturn();
 			}
-		} while(this.token.type !== tokenType.EOF && this.token.str !== "}");
+		} while(this.token.type !== this.tokenEnum.EOF && this.token.str !== "}");
 	},
 
 	parseExpression: function()
@@ -142,19 +140,19 @@ Lexer.prototype =
 
 	parsePrimary: function()
 	{
-		if(this.token.type === Token.Type.NUMBER) {
+		if(this.token.type === this.tokenEnum.NUMBER) {
 			return this.parseNumber();
 		}
-		else if(this.token.type === Token.Type.NAME) {
+		else if(this.token.type === this.tokenEnum.NAME) {
 			return this.parseName();
 		}
-		else if(this.token.type === Token.Type.STRING) {
+		else if(this.token.type === this.tokenEnum.STRING) {
 			return this.parseString();
 		}		
-		else if(this.token.type === Token.Type.BOOL) {
+		else if(this.token.type === this.tokenEnum.BOOL) {
 			return this.parseBool();
 		}
-		else if(this.token.type === Token.Type.FUNCTION) {
+		else if(this.token.type === this.tokenEnum.FUNCTION) {
 			return this.parseFunc();
 		}
 		else if(this.token.str === "{") {
@@ -229,10 +227,10 @@ Lexer.prototype =
 	parseVar: function()
 	{
 		var initial = false;
-		if(this.token.type === Token.Type.VAR)
+		if(this.token.type === this.tokenEnum.VAR)
 		{
 			this.nextToken();	
-			if(this.token.type !== Token.Type.NAME) {
+			if(this.token.type !== this.tokenEnum.NAME) {
 				this.handleTokenError();
 			}
 
@@ -655,12 +653,11 @@ Lexer.prototype =
 	parseReturn: function()
 	{
 		var expr = null;
-		var tokenType = Token.Type;
 
 		this.nextToken();
-		if(this.token.type === tokenType.VAR ||
-		   this.token.type === tokenType.NUMBER ||
-		   this.token.type === tokenType.STRING)
+		if(this.token.type === this.tokenEnum.VAR ||
+		   this.token.type === this.tokenEnum.NUMBER ||
+		   this.token.type === this.tokenEnum.STRING)
 		{
 			var varExpr = new Expression.Var("");
 			varExpr.expr = this.parseExpression();

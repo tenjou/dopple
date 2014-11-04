@@ -97,7 +97,7 @@ Expression.Var.prototype.analyseExpr = function(expr)
 
 	var varEnum = Variable.Type;
 	if(lhsType === varEnum.STRING_OBJ || rhsType === varEnum.STRING_OBJ) {
-		return varEnum.STRING;
+		return varEnum.STRING_OBJ;
 	}
 	else 
 	{

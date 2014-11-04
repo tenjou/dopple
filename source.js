@@ -1,7 +1,4 @@
 "use strict";
 
-console.log = function() {
-	
-}
-
-console.log();
+var a = "sdsd";
+var x = a + "aaa";

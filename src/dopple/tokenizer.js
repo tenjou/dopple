@@ -1,17 +1,55 @@
 "use strict";
 
-function Tokenizer()
+dopple.TokenEnum =
 {
-	this.buffer = "";
-	this.bufferLength = 0;
-	this.cursor = 0;
-	this.currChar = "";
-
-	this.token = new Token();
+	EOF: 0,
+	SYMBOL: 1,
+	BINOP: 2,
+	NUMBER: 3,
+	BOOL: 4,
+	NAME: 5,
+	STRING: 6,
+	VAR: 7,
+	RETURN: 8,
+	FUNCTION: 9,
+	COMMENT: 10
 };
 
-Tokenizer.prototype = 
-{
+dopple.Token = dopple.Class.extend
+({
+	print: function()
+	{
+		var tokenEnum = dopple.TokenEnum;
+		switch(this.type)
+		{
+			case tokenEnum.EOF: return "(EOF)";
+			case tokenEnum.SYMBOL: return "(SYMBOL:" + this.str + ")";
+			case tokenEnum.BINOP: return "(BINOP:" + this.str + ")";
+			case tokenEnum.NUMBER: return "(NUMBER:" + this.value + ")";
+			case tokenEnum.BOOL: return "(BOOL:" + this.value + ")";
+			case tokenEnum.NAME: return "(NAME:" + this.str + ")";
+			case tokenEnum.STRING: return "(STRING:" + this.str + ")";
+			case tokenEnum.VAR: return "(VAR)";
+			case tokenEnum.RETURN: return "(RETURN)";
+			case tokenEnum.FUNCTION: return "(FUNCTION)";
+			case tokenEnum.COMMENT: return "(COMMENT)";
+		}
+
+		return "(Unknown)";
+	},
+
+	//
+	type: 0,
+	str: "",
+	value: 0
+});
+
+dopple.Tokenizer = dopple.Class.extend
+({
+	init: function(buffer) {
+		this.setBuffer(buffer);
+	},
+
 	setBuffer: function(buffer) 
 	{
 		this.buffer = buffer;
@@ -45,27 +83,27 @@ Tokenizer.prototype =
 			this.cursor--;
 
 			if(this.token.str === "var") {
-				this.token.type = Token.Type.VAR;
+				this.token.type = this.tokenEnum.VAR;
 			}
 			else if(this.token.str === "return") {
-				this.token.type = Token.Type.RETURN;
+				this.token.type = this.tokenEnum.RETURN;
 			}
 			else if(this.token.str === "function") {
-				this.token.type = Token.Type.FUNCTION;
+				this.token.type = this.tokenEnum.FUNCTION;
 			}
 			else if(this.token.str === "true") {
-				this.token.type = Token.Type.BOOL;
+				this.token.type = this.tokenEnum.BOOL;
 				this.token.value = 1;
 			}
 			else if(this.token.str === "false") {
-				this.token.type = Token.Type.BOOL;			
+				this.token.type = this.tokenEnum.BOOL;			
 			}
 			else if(this.token.str === "NaN") {
-				this.token.type = Token.Type.NUMBER;
+				this.token.type = this.tokenEnum.NUMBER;
 				this.token.value = NaN;
 			}
 			else {
-				this.token.type = Token.Type.NAME;
+				this.token.type = this.tokenEnum.NAME;
 			}
 
 			return this.token;
@@ -85,12 +123,12 @@ Tokenizer.prototype =
 
 			// Only a symbol:
 			if(this.token.str === ".") {
-				this.token.type = Token.Type.SYMBOL;
+				this.token.type = this.tokenEnum.SYMBOL;
 				this.token.value = this.token.str;
 				return this.token;
 			}
 
-			this.token.type = Token.Type.NUMBER;
+			this.token.type = this.tokenEnum.NUMBER;
 			this.token.value = parseFloat(this.token.str);
 			return this.token;
 		}
@@ -109,7 +147,7 @@ Tokenizer.prototype =
 						this.nextChar();
 					}					
 					this.token.value = parseFloat(this.token.str);
-					this.token.type = Token.Type.NUMBER;
+					this.token.type = this.tokenEnum.NUMBER;
 					this.cursor--;
 					return this.token;
 				}
@@ -121,19 +159,19 @@ Tokenizer.prototype =
 				this.nextChar();
 				if(this.currChar === "/") {
 					this.skipUntilNewline();
-					this.token.type = Token.Type.COMMENT;
+					this.token.type = this.tokenEnum.COMMENT;
 					return this.token;
 				}	
 				else if(this.currChar === "*") {
 					this.skipUntil("/");
-					this.token.type = Token.Type.COMMENT;
+					this.token.type = this.tokenEnum.COMMENT;
 					return this.token;
 				}
 				
 				this.cursor--;
 			}					
 
-			this.token.type = Token.Type.BINOP;
+			this.token.type = this.tokenEnum.BINOP;
 			return this.token;
 		}		
 
@@ -153,17 +191,17 @@ Tokenizer.prototype =
 				this.nextChar();
 			}
 
-			this.token.type = Token.Type.STRING;
+			this.token.type = this.tokenEnum.STRING;
 			return this.token;
 		}
 
 		// EOF
 		if(this.currChar === "\0") {
-			this.token.type = Token.Type.EOF;
+			this.token.type = this.tokenEnum.EOF;
 			return this.token;
 		}
 
-		this.token.type = Token.Type.SYMBOL;
+		this.token.type = this.tokenEnum.SYMBOL;
 		this.token.str = this.currChar;
 		return this.token;
 	},
@@ -213,5 +251,15 @@ Tokenizer.prototype =
 		while(this.currChar !== "\r" && this.currChar !== "\n" && this.currChar !== "\0") {
 			this.nextChar();
 		}
-	}	
-};
+	},
+
+
+	//
+	buffer: "",
+	bufferLength: 0,
+	cursor: 0,
+	currChar: "",
+
+	token: new dopple.Token(),
+	tokenEnum: dopple.TokenEnum
+});

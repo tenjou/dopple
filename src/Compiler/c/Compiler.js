@@ -428,7 +428,7 @@ Compiler.prototype =
 		}
 		else if(expr.exprType === this.exprEnum.VAR) 
 		{
-			if(expr.type === this.varEnum.STRING) 
+			if(expr.type === this.varEnum.STRING_OBJ) 
 			{
 				this.outputBuffer += this.tabs + "memcpy(" + name + " + __dopple_strOffset, " + 
 					expr.name + " + NUMBER_SIZE, (*(NUMBER *)" + expr.name + "));\n";
