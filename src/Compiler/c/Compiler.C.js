@@ -1,34 +1,20 @@
 "use strict";
 
-function Compiler()
-{
-	this.lexer = null;
-	this.createLexer();
+Compiler.C = Compiler.Basic.extend
+({
+	init: function() 
+	{
+		this.createLexer();
 
-	this.varMap = {};
-	this.varMap[Variable.Type.VOID] = "void ";
-	this.varMap[Variable.Type.NUMBER] = "double ";
-	this.varMap[Variable.Type.BOOL] = "int32_t ";
-	this.varMap[Variable.Type.STRING] = "const char *";
-	this.varMap[Variable.Type.STRING_OBJ] = "char *";
+		this.varMap[Variable.Type.VOID] = "void ";
+		this.varMap[Variable.Type.NUMBER] = "double ";
+		this.varMap[Variable.Type.BOOL] = "int32_t ";
+		this.varMap[Variable.Type.STRING] = "const char *";
+		this.varMap[Variable.Type.STRING_OBJ] = "char *";
+	},
 
-	this.tabs = "";
-	this.output = "";
-	this.outputBuffer = "";
-
-	this.global = this.lexer.global;
-	this.scope = null;
-
-	this.exprEnum = Expression.Type;
-	this.varEnum = Variable.Type;
-};
-
-Compiler.prototype = 
-{
 	createLexer: function()
 	{
-		this.lexer = new Lexer();
-
 		var extern = this.lexer.extern;
 		
 		var console = extern.obj("console");
@@ -42,21 +28,6 @@ Compiler.prototype =
 
 		extern.func("alert", [ Variable.Type.STRING_OBJ ]);
 		extern.func("confirm", [ Variable.Type.STRING_OBJ ]);
-	},
-
-	compile: function(str)
-	{
-		if(this.lexer.read(str)) 
-		{
-//			try {
-				return this.make();
-			// }
-			// catch(str) {
-			// 	console.error(str);
-			// }
-		}
-
-		return "";	
 	},
 
 	make: function()
@@ -608,13 +579,6 @@ Compiler.prototype =
 		this.output += output + ", " + argOutput;
 	},
 
-
-	incTabs: function() {
-		this.tabs += "\t";
-	},
-
-	decTabs: function() {
-		this.tabs = this.tabs.substr(0, this.tabs.length - 1);
-	}
-};
-
+	//
+	varMap: {}
+});

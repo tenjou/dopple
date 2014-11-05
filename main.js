@@ -3,20 +3,13 @@
 function main()
 {
 	meta.ajax({
-		url: "source.mtr",
+		url: "source.js",
 		success: compile
 	});
 };
 
 function compile(source) 
 {
-	var token;
-	var tokenizer = new dopple.Tokenizer(source);
-
-	do {
-		token = tokenizer.nextToken();
-		console.log(token.print());
-	} while(token.type !== dopple.TokenEnum.EOF);
-
-	//console.log(dopple.compile(source));
+	var compiler = new Compiler.C();
+	console.log("\n" + compiler.compile(source));
 };

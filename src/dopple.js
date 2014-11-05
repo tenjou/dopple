@@ -1,12 +1,6 @@
 "use strict";
 
-var dopple = 
-{
-	compile: function(source) {
-		var compiler = new Compiler();
-		return compiler.compile(source);
-	}
-};
+var dopple = {};
 
 if(typeof(exports) !== "undefined") {
 	dopple.isNodeJS = true;	

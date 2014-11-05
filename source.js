@@ -1,4 +1,4 @@
 "use strict";
 
-var a = "sdsd";
-var x = a + "aaa";
+var a = 10;
+var b = a + "aaa";
