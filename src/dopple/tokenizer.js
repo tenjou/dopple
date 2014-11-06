@@ -23,12 +23,12 @@ dopple.Token = dopple.Class.extend
 		switch(this.type)
 		{
 			case tokenEnum.EOF: return "(EOF)";
-			case tokenEnum.SYMBOL: return "(SYMBOL:" + this.str + ")";
-			case tokenEnum.BINOP: return "(BINOP:" + this.str + ")";
-			case tokenEnum.NUMBER: return "(NUMBER:" + this.value + ")";
-			case tokenEnum.BOOL: return "(BOOL:" + this.value + ")";
-			case tokenEnum.NAME: return "(NAME:" + this.str + ")";
-			case tokenEnum.STRING: return "(STRING:" + this.str + ")";
+			case tokenEnum.SYMBOL: return "(SYMBOL " + this.str + ")";
+			case tokenEnum.BINOP: return "(BINOP \"" + this.str + "\")";
+			case tokenEnum.NUMBER: return "(NUMBER " + this.value + ")";
+			case tokenEnum.BOOL: return "(BOOL " + this.value + ")";
+			case tokenEnum.NAME: return "(NAME \"" + this.str + "\")";
+			case tokenEnum.STRING: return "(STRING " + this.str + ")";
 			case tokenEnum.VAR: return "(VAR)";
 			case tokenEnum.RETURN: return "(RETURN)";
 			case tokenEnum.FUNCTION: return "(FUNCTION)";

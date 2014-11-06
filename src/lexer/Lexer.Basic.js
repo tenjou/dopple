@@ -199,76 +199,7 @@ Lexer.Basic = dopple.Class.extend
 		var expr = new Expression.StringObj(this.token.str);
 		this.nextToken();
 		return expr;
-	},	
-
-	parseVar: function()
-	{
-		var initial = false;
-		if(this.token.type === this.tokenEnum.VAR)
-		{
-			this.nextToken();	
-			if(this.token.type !== this.tokenEnum.NAME) {
-				this.handleTokenError();
-			}
-
-			initial = true;
-		}
-
-		this.currName = this.token.str;
-		this.nextToken();
-
-		if(this.token.str === "(") {
-			this.parseFuncCall();
-		}
-		else if(this.token.str === ".") 
-		{
-			// Invalid if initialized as: var <objName>.<memberName>
-			if(initial) {
-				dopple.throw(dopple.Error.UNEXPECTED_TOKEN, this.token.str);
-			}
-
-			this.parseParentList();
-
-			if(this.token.str === "=") {
-				this._defineObjVar();
-			}
-			else if(this.token.str === "(") {
-				this.parseFuncCall();
-			}
-			else {
-				throw "Lexer::parseVar: Unhandled case!";
-			}
-
-			this.parentList = null;
-		}
-		else
-		{	
-			if(this.token.str === "=")
-			{
-				this.nextToken();
-
-				var expr = this.parseExpression();
-				if(expr.exprType !== this.exprEnum.OBJECT &&
-				   expr.exprType !== this.exprEnum.FUNCTION) 
-				{
-					this._defineVar(expr, initial);			
-				}
-			}
-			else 
-			{
-				if(!initial && this.token.type === this.tokenEnum.NAME) {
-					this.handleTokenError();
-				}
-				else if(initial && this.token.type === this.tokenEnum.SYMBOL) {
-					this.handleUnexpectedToken();
-				}
-
-				this._defineVar(null, initial);
-			}
-		}
-
-		this.currName = "";
-	},	
+	},		
 
 	_defineVar: function(expr, initial)
 	{
@@ -278,7 +209,7 @@ Lexer.Basic = dopple.Class.extend
 			return;
 		}
 
-		var varExpr = new Expression.Var(this.currName, this.parentList);
+		var varExpr = new Expression.Var(this.currName, this.parentList, this.process.varType);
 		var scopeVarExpr = this.scope.vars[this.currName];
 		var definition = false;
 
@@ -771,6 +702,17 @@ Lexer.Basic = dopple.Class.extend
 
 	global: null, 
 	scope: null,
+
+	varTypes: {
+		VOID: 0,
+		NUMBER: 1
+	},
+
+	defTypes: {},
+
+	process: {
+		varType: 0
+	},	
 
 	precedence: {
 		"=": 2,

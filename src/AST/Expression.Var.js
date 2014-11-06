@@ -1,8 +1,9 @@
 "use strict";
 
-Expression.Var = function(name, parentList)
+Expression.Var = function(name, parentList, type)
 {
 	this.name = name || "";
+	this.type = type || 0;
 	this.expr = null;
 	this.var = null;
 	this.value = "";
