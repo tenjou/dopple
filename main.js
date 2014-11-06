@@ -10,6 +10,7 @@ function main()
 
 function compile(source) 
 {
-	var compiler = new Compiler.C();
+	var lexer = new Lexer.Mantra();
+	var compiler = new Compiler.JS(lexer);
 	console.log("\n" + compiler.compile(source));
 };

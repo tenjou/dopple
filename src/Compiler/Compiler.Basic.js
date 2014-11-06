@@ -4,8 +4,14 @@ var Compiler = {};
 
 Compiler.Basic = dopple.Class.extend
 ({
-	_init: function() {
-		this.lexer = new Lexer();
+	_init: function(lexer) 
+	{
+		if(!lexer) {
+			console.error("Compiler:", "Invalid lexer has been passed in the constructor.");
+			return;
+		}
+
+		this.lexer = lexer;
 	},
 
 	compile: function(source)

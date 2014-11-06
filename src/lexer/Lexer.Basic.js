@@ -1,41 +1,18 @@
 "use strict";
 
-function Lexer()
-{
-	this.tokenizer = null;
-	this.token = null;
-	this.prevToken = null;
+var Lexer = {};
 
-	this.global = new dopple.Scope();
-	this.scope = this.global;	
+Lexer.Basic = dopple.Class.extend
+({
+	init: function() 
+	{
+		this.optimizer = new Optimizer();
+		this.extern = new dopple.Extern(this);
 
-	this.optimizer = new Optimizer();
-	this.extern = new dopple.Extern(this);
+		this.global = new dopple.Scope();
+		this.scope = this.global;
+	},
 
-	this.precedence = {
-		"=": 2,
-		"<": 100,
-		">": 100,
-		"+": 200,
-		"-": 200,
-		"*": 400,
-		"/": 400
-	};
-
-	this.genID = 0;
-	this.currName = "";
-	this.currVar = null;
-	this.parentList = null;
-
-	this._skipNextToken = false;
-
-	this.tokenEnum = dopple.TokenEnum;
-	this.varEnum = Variable.Type;
-	this.exprEnum = Expression.Type;
-};
-
-Lexer.prototype = 
-{
 	read: function(buffer) 
 	{
 //		try {
@@ -782,8 +759,40 @@ Lexer.prototype =
 		else {
 			dopple.throw(dopple.Error.UNEXPECTED_TOKEN, this.token.str);
 		}
-	}
-};
+	},
+
+	//
+	tokenizer: null,
+	token: null,
+	prevToken: null,
+
+	optimizer: null,
+	extern: null,
+
+	global: null, 
+	scope: null,
+
+	precedence: {
+		"=": 2,
+		"<": 100,
+		">": 100,
+		"+": 200,
+		"-": 200,
+		"*": 400,
+		"/": 400
+	},
+
+	genID: 0,
+	currName: "",
+	currVar: null,
+	parentList: null,
+
+	_skipNextToken: false,
+
+	tokenEnum: dopple.TokenEnum,
+	varEnum: Variable.Type,
+	exprEnum: Expression.Type
+});
 
 dopple.Scope = function(parent)
 {
