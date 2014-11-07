@@ -6,23 +6,21 @@ Lexer.Basic = dopple.Class.extend
 ({
 	init: function() 
 	{
-		this.optimizer = new Optimizer();
+		this.optimizer = new dopple.Optimizer(this);
 		this.extern = new dopple.Extern(this);
 
 		this.global = new dopple.Scope();
 		this.scope = this.global;
+		
+		this.process.varType = 0;
 	},
 
 	read: function(buffer) 
 	{
-//		try {
-			this.tokenizer = new dopple.Tokenizer(buffer);
-			this.parseBody();
-		// }
-		// catch(str) {
-		// 	console.error(str);
-		// 	return false;
-		// }
+		this.tokenizer = new dopple.Tokenizer(buffer);
+		if(!this.parseBody()) {
+			return false;
+		}
 
 		return true;
 	},
@@ -62,7 +60,9 @@ Lexer.Basic = dopple.Class.extend
 			if(type === this.tokenEnum.NAME || 
 			   type === this.tokenEnum.VAR) 
 			{
-				this.parseVar();
+				if(!this.parseVar()) {
+					return false;
+				}
 			}
 			else if(type === this.tokenEnum.FUNCTION) {
 				this.parseFunc();
@@ -71,6 +71,8 @@ Lexer.Basic = dopple.Class.extend
 				this.parseReturn();
 			}
 		} while(this.token.type !== this.tokenEnum.EOF && this.token.str !== "}");
+
+		return true;
 	},
 
 	parseExpression: function()
@@ -196,7 +198,7 @@ Lexer.Basic = dopple.Class.extend
 
 	parseString: function()
 	{
-		var expr = new Expression.StringObj(this.token.str);
+		var expr = new Expression.String(this.token.str);
 		this.nextToken();
 		return expr;
 	},		
@@ -245,7 +247,9 @@ Lexer.Basic = dopple.Class.extend
 		if(expr)
 		{
 			varExpr.expr = this.optimizer.do(expr);
-			varExpr.analyse();
+			if(!varExpr.analyse()) {
+				return false;
+			}
 
 			if(definition && this.scope === this.global)
 			{
@@ -258,7 +262,9 @@ Lexer.Basic = dopple.Class.extend
 			if(this.token.str !== ";") {
 				this._skipNextToken = true;
 			}	
-		}			
+		}	
+
+		return true;		
 	},
 
 	_defineObjVar: function()
@@ -348,7 +354,7 @@ Lexer.Basic = dopple.Class.extend
 		while(this.token.str !== "}") 
 		{
 			if(this.token.type === this.tokenEnum.NAME ||
-			   this.token.type === this.tokenEnum.STRING) 
+			   this.token.type === this.tokenEnum.NAME) 
 			{
 				this.currName = this.token.str;
 
@@ -565,7 +571,7 @@ Lexer.Basic = dopple.Class.extend
 		this.nextToken();
 		if(this.token.type === this.tokenEnum.VAR ||
 		   this.token.type === this.tokenEnum.NUMBER ||
-		   this.token.type === this.tokenEnum.STRING)
+		   this.token.type === this.tokenEnum.NAME)
 		{
 			var varExpr = new Expression.Var("");
 			varExpr.expr = this.parseExpression();
@@ -703,16 +709,10 @@ Lexer.Basic = dopple.Class.extend
 	global: null, 
 	scope: null,
 
-	varTypes: {
-		VOID: 0,
-		NUMBER: 1
-	},
-
+	varTypes: {},
 	defTypes: {},
-
-	process: {
-		varType: 0
-	},	
+	process: {},
+	numVarTypes: 0,	
 
 	precedence: {
 		"=": 2,
@@ -732,8 +732,8 @@ Lexer.Basic = dopple.Class.extend
 	_skipNextToken: false,
 
 	tokenEnum: dopple.TokenEnum,
-	varEnum: Variable.Type,
-	exprEnum: Expression.Type
+	varEnum: dopple.VarEnum,
+	exprEnum: dopple.ExprEnum
 });
 
 dopple.Scope = function(parent)

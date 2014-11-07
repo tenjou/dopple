@@ -17,7 +17,7 @@ Compiler.Basic = dopple.Class.extend
 	compile: function(source)
 	{
 		this.output = "";
-
+		
 		if(this.lexer.read(source)) {
 			this.global = this.lexer.global;
 			this.make();
@@ -45,6 +45,6 @@ Compiler.Basic = dopple.Class.extend
 	output: "",
 	outputBuffer: "",	
 
-	exprEnum: Expression.Type,
-	varEnum: Variable.Type
+	exprEnum: dopple.ExprEnum,
+	varEnum: dopple.VarEnum
 });

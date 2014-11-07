@@ -1,16 +1,18 @@
 "use strict";
 
-function Optimizer() {
-	this.exprEnum = Expression.Type;
+dopple.Optimizer = function(lexer) {
+	this.lexer = lexer;
+	this.varEnum = lexer.varTypes;
+	this.exprEnum = dopple.ExprEnum;
 };
 
-Optimizer.prototype =
+dopple.Optimizer.prototype =
 {
 	do: function(expr) 
 	{
 		// Check if we have something to optimize.
 		if(!expr) { return expr; }
-		if(expr.exprType !== Expression.Type.BINARY) { return expr; }
+		if(expr.exprType !== this.exprEnum.BINARY) { return expr; }
 		if(!expr.lhs && !expr.rhs) { return expr; }
 
 		return this._doExpr(expr);
@@ -18,20 +20,18 @@ Optimizer.prototype =
 
 	_doExpr: function(expr)
 	{
-		var lhsType = expr.lhs.exprType;
-		var rhsType = expr.rhs.exprType;
-
-		if(lhsType === this.exprEnum.BINARY) {
+		if(expr.lhs.exprType === this.exprEnum.BINARY) {
 			expr.lhs = this._doExpr(expr.lhs);
-			lhsType = expr.lhs.exprType;
 		}
-		if(rhsType === this.exprEnum.BINARY) {
+		if(expr.rhs.exprType === this.exprEnum.BINARY) {
 			expr.rhs = this._doExpr(expr.rhs);
-			rhsType = expr.rhs.exprType;
 		}
 
-		if((lhsType === this.exprEnum.NUMBER || lhsType === this.exprEnum.STRING_OBJ) &&
-		   (rhsType === this.exprEnum.NUMBER || rhsType === this.exprEnum.STRING_OBJ)) 
+		var lhsType = lhsType = expr.lhs.type;
+		var rhsType = rhsType = expr.rhs.type;
+
+		if((lhsType === this.varEnum.NUMBER || lhsType === this.varEnum.STRING) &&
+		   (rhsType === this.varEnum.NUMBER || rhsType === this.varEnum.STRING)) 
 		{}
 		else { return expr; }
 
@@ -52,7 +52,7 @@ Optimizer.prototype =
 		}
 
 		if(typeof(result) === "string") {
-			return new Expression.StringObj(result);
+			return new Expression.String(result);
 		}
 
 		return new Expression.Number(result);

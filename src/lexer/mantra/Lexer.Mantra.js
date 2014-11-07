@@ -52,7 +52,7 @@ Lexer.Mantra = Lexer.Basic.extend
 				}
 			}
 			else {
-				this.process.varType = this.varType.VOID;
+				this.process.varType = this.varTypes.VOID;
 			}
 
 			if(this.token.str === "=")
@@ -63,7 +63,9 @@ Lexer.Mantra = Lexer.Basic.extend
 				if(expr.exprType !== this.exprEnum.OBJECT &&
 				   expr.exprType !== this.exprEnum.FUNCTION) 
 				{
-					this._defineVar(expr, initial);			
+					if(!this._defineVar(expr, initial)) {
+						return false;
+					}	
 				}
 			}
 			else 
@@ -75,7 +77,9 @@ Lexer.Mantra = Lexer.Basic.extend
 					this.handleUnexpectedToken();
 				}
 
-				this._defineVar(null, initial);
+				if(!this._defineVar(null, initial)) {
+					return false;
+				}
 			}
 		}
 
@@ -94,13 +98,13 @@ Lexer.Mantra = Lexer.Basic.extend
 		}
 
 		// Check if defined as primary variable type:
-		var varType = this.varTypes[this.token.str.toUpperCase()];
+		var varType = this.varEnum[this.token.str.toUpperCase()];
 		if(!varType) 
 		{
 			// Check if defined as user defined variable type:
 			varType = this.defTypes[this.token.str];
 			if(!varType) {
-				console.error("PARSE_VAR: Undefined type definition: " + this.token.str);
+				console.error("PARSE_VAR: Undefined type definition: \"" + this.token.str + "\"");
 				return false;				
 			}
 		}

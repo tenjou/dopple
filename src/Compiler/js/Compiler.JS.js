@@ -60,7 +60,7 @@ Compiler.JS = Compiler.Basic.extend
 			// 		this.output += this.varMap[varExpr.type] + varExpr.name + " = " + expr.name + ";\n";
 			// 	}
 			// }
-			// else if(exprType === this.exprEnum.STRING_OBJ) {
+			// else if(exprType === this.exprEnum.STRING) {
 			// 	this.output += this.varMap[varExpr.type] + varExpr.name + " = \"" + expr.hexLength + "\"\"" + expr.value + "\";\n";
 			// }
 			// else 
@@ -84,7 +84,7 @@ Compiler.JS = Compiler.Basic.extend
 		if(exprType === this.exprEnum.NUMBER || exprType === this.exprEnum.VAR) {
 			this.output += expr.value;
 		}
-		else if(exprType === this.exprEnum.STRING_OBJ) {
+		else if(exprType === this.exprEnum.STRING) {
 			this.output += "\"" + expr.value + "\"";
 		}
 		else if(exprType === this.exprEnum.BINARY) {

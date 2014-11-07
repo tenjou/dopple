@@ -1,20 +1,5 @@
 "use strict";
 
-dopple.TokenEnum =
-{
-	EOF: 0,
-	SYMBOL: 1,
-	BINOP: 2,
-	NUMBER: 3,
-	BOOL: 4,
-	NAME: 5,
-	STRING: 6,
-	VAR: 7,
-	RETURN: 8,
-	FUNCTION: 9,
-	COMMENT: 10
-};
-
 dopple.Token = dopple.Class.extend
 ({
 	print: function()
@@ -27,8 +12,8 @@ dopple.Token = dopple.Class.extend
 			case tokenEnum.BINOP: return "(BINOP \"" + this.str + "\")";
 			case tokenEnum.NUMBER: return "(NUMBER " + this.value + ")";
 			case tokenEnum.BOOL: return "(BOOL " + this.value + ")";
-			case tokenEnum.NAME: return "(NAME \"" + this.str + "\")";
-			case tokenEnum.STRING: return "(STRING " + this.str + ")";
+			case tokenEnum.NAME: return "(NAME " + this.str + ")";
+			case tokenEnum.STRING: return "(STRING \"" + this.str + "\")";
 			case tokenEnum.VAR: return "(VAR)";
 			case tokenEnum.RETURN: return "(RETURN)";
 			case tokenEnum.FUNCTION: return "(FUNCTION)";
@@ -71,7 +56,7 @@ dopple.Tokenizer = dopple.Class.extend
 			this.nextChar();
 		}		
 
-		// String
+		// NAME
 		if(isAlpha(this.currChar)) 
 		{
 			this.token.str += this.currChar;
@@ -175,7 +160,7 @@ dopple.Tokenizer = dopple.Class.extend
 			return this.token;
 		}		
 
-		// String
+		// NAME
 		if(this.currChar === "\"" || this.currChar === "'") 
 		{
 			var endChar = this.currChar;

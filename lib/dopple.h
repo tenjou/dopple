@@ -11,7 +11,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <math.h>
-#include <string.h>
+#include <NAME.h>
 
 #ifndef NAN
 	#define NaN = 0.0 / 0.0;
@@ -23,7 +23,7 @@
 	#define NaN NAN;
 #endif
 
-static inline int32_t isStringEmpty(const char *str) 
+static inline int32_t isSTRING_PUREEmpty(const char *str) 
 {
 	int32_t length = (int32_t)(*str);
 	if(length == 9)
@@ -96,12 +96,12 @@ static int32_t Array$exist(Array *this, int32_t index)
 	return 1;
 }
 
-/* STRING */
-static inline double String$get$length(const char *str) {
+/* NAME */
+static inline double NAME$get$length(const char *str) {
 	return (double)((int32_t)(*str));
 }
 
-static inline double String$set$length(const char *str, double value) {
+static inline double NAME$set$length(const char *str, double value) {
 	return value;
 }
 
@@ -133,7 +133,7 @@ static void console$error(const char *format, ...)
 /* MISC */
 static void alert(const char *str)
 {
-	if(isStringEmpty(str)) {
+	if(isSTRING_PUREEmpty(str)) {
 		printf("ALERT:\n");
 		return;
 	}
@@ -143,7 +143,7 @@ static void alert(const char *str)
 
 static void confirm(const char *str)
 {
-	if(isStringEmpty(str)) {
+	if(isSTRING_PUREEmpty(str)) {
 		printf("CONFIRM:\n");
 		return;
 	}

@@ -6,28 +6,28 @@ Compiler.C = Compiler.Basic.extend
 	{
 		this.createLexer();
 
-		this.varMap[Variable.Type.VOID] = "void ";
-		this.varMap[Variable.Type.NUMBER] = "double ";
-		this.varMap[Variable.Type.BOOL] = "int32_t ";
-		this.varMap[Variable.Type.STRING] = "const char *";
-		this.varMap[Variable.Type.STRING_OBJ] = "char *";
+		this.varMap[this.varEnum.VOID] = "void ";
+		this.varMap[this.varEnum.NUMBER] = "double ";
+		this.varMap[this.varEnum.BOOL] = "int32_t ";
+		this.varMap[this.varEnum.NAME] = "const char *";
+		this.varMap[this.varEnum.STRING] = "char *";
 	},
 
 	createLexer: function()
 	{
 		var extern = this.lexer.extern;
 		
-		var console = extern.obj("console");
-		console.func("log", [ Variable.Type.FORMAT ]);
-		console.func("warn", [ Variable.Type.FORMAT ]);
-		console.func("error", [ Variable.Type.FORMAT ]);
+		// var console = extern.obj("console");
+		// console.func("log", [ this.varEnum.FORMAT ]);
+		// console.func("warn", [ this.varEnum.FORMAT ]);
+		// console.func("error", [ this.varEnum.FORMAT ]);
 
-		// var string = extern.obj("String");
-		// string.getter("length", null, Variable.Type.NUMBER);
-		// string.setter("length", [ Variable.Type.NUMBER, "value" ]);
+		// // var NAME = extern.obj("NAME");
+		// // NAME.getter("length", null, Variable.Type.NUMBER);
+		// // NAME.setter("length", [ Variable.Type.NUMBER, "value" ]);
 
-		extern.func("alert", [ Variable.Type.STRING_OBJ ]);
-		extern.func("confirm", [ Variable.Type.STRING_OBJ ]);
+		// extern.func("alert", [ this.varEnum.STRING ]);
+		// extern.func("confirm", [ this.varEnum.STRING ]);
 	},
 
 	make: function()
@@ -47,20 +47,19 @@ Compiler.C = Compiler.Basic.extend
 		if(numExpr)
 		{
 			var expr, exprType;
-			var exprEnum = Expression.Type;
 
 			for(i = 0; i < numExpr; i++)
 			{
 				expr = varBuffer[i];
 				exprType = expr.exprType;
 
-				if(exprType === exprEnum.VAR) {
+				if(exprType === this.exprEnum.VAR) {
 					this.makeVar(expr);
 				}
-				else if(exprType === exprEnum.FUNCTION) {
+				else if(exprType === this.exprEnum.FUNCTION) {
 					this.output += this.tabs + this.makeFunction(expr);
 				}
-				else if(exprType === exprEnum.FUNCTION_CALL) {
+				else if(exprType === this.exprEnum.FUNCTION_CALL) {
 					this.makeFuncCall(expr);
 				}				
 			}
@@ -149,7 +148,7 @@ Compiler.C = Compiler.Basic.extend
 
 	defineVar: function(varExpr)
 	{
-		if(varExpr.type === Variable.Type.VOID) {
+		if(varExpr.type === this.varEnum.VOID) {
 			console.warn("[Compiler.makeVar]:", "Variable \"" + this.makeVarName(varExpr) + "\" is discarded - void type.");
 			return;
 		}
@@ -166,7 +165,7 @@ Compiler.C = Compiler.Basic.extend
 				if(exprType === this.exprEnum.VAR) {
 					this.output += this.makeVarName(expr) + expr.name + ";\n";
 				}
-				else if(exprType === this.exprEnum.STRING_OBJ) {
+				else if(exprType === this.exprEnum.STRING) {
 					this.output += this.makeVarName(varExpr) + " = \"" + expr.hexLength + "\"\"" + expr.value + "\";\n";
 				}
 				else {
@@ -186,12 +185,12 @@ Compiler.C = Compiler.Basic.extend
 						this.output += this.varMap[varExpr.type] + varExpr.name + " = " + expr.name + ";\n";
 					}
 				}
-				else if(exprType === this.exprEnum.STRING_OBJ) {
+				else if(exprType === this.exprEnum.STRING) {
 					this.output += this.varMap[varExpr.type] + varExpr.name + " = \"" + expr.hexLength + "\"\"" + expr.value + "\";\n";
 				}
 				else 
 				{
-					if(this.scope === this.global && varExpr.expr.exprType === Expression.Type.BINARY) {
+					if(this.scope === this.global && varExpr.expr.exprType === this.exprEnum.BINARY) {
 						this.output += this.varMap[varExpr.type] + varExpr.name + ";\n";
 					}
 					else {				
@@ -210,12 +209,11 @@ Compiler.C = Compiler.Basic.extend
 	defineExpr: function(expr)
 	{
 		var exprType = expr.exprType;
-		var exprEnum = Expression.Type;
 
-		if(exprType === exprEnum.NUMBER || exprType === exprEnum.VAR) {
+		if(exprType === this.exprEnum.NUMBER || exprType === this.exprEnum.VAR) {
 			this.output += expr.value;
 		}
-		else if(exprType === exprEnum.BINARY) {
+		else if(exprType === this.exprEnum.BINARY) {
 			this.defineExpr(expr.lhs);
 			this.output += " " + expr.op + " ";
 			this.defineExpr(expr.rhs);
@@ -305,7 +303,7 @@ Compiler.C = Compiler.Basic.extend
 
 	makeVar: function(varExpr)
 	{
-		if(varExpr.type === Variable.Type.VOID) {
+		if(varExpr.type === this.varEnum.VOID) {
 			console.warn("[Compiler.makeVar]:", "Variable \"" + varExpr.name + "\" is discarded - void type.");
 			return "";
 		}
@@ -313,18 +311,17 @@ Compiler.C = Compiler.Basic.extend
 		varExpr.fullName = this.makeVarName(varExpr);
 		this.outputBuffer += this.tabs + varExpr.fullName + " = ";
 
-		var exprType = Expression.Type;
 		var expr = varExpr.expr;
-		if(expr.exprType === exprType.NUMBER) {
+		if(expr.exprType === this.exprEnum.NUMBER) {
 			this.outputBuffer += expr.value;
 		}
-		else if(expr.exprType === exprType.VAR) {
+		else if(expr.exprType === this.exprEnum.VAR) {
 			this.outputBuffer += expr.name;
 		}		
-		else if(expr.exprType === exprType.STRING_OBJ) {
+		else if(expr.exprType === this.exprEnum.STRING) {
 			this.outputBuffer += "\"" + expr.hexLength + "\"\"" + expr.value + "\"";
 		}
-		else if(expr.exprType === exprType.BINARY) {
+		else if(expr.exprType === this.exprEnum.BINARY) {
 			this._makeVarBinary(varExpr, expr);
 		}
 		else {
@@ -341,7 +338,7 @@ Compiler.C = Compiler.Basic.extend
 	{
 		var output = "";
 
-		if(varExpr.type === this.varEnum.STRING_OBJ) 
+		if(varExpr.type === this.varEnum.STRING) 
 		{
 			this.genConcat(varExpr.fullName, binExpr.lhs, binExpr.rhs);
 
@@ -354,7 +351,7 @@ Compiler.C = Compiler.Basic.extend
 		}
 		else 
 		{
-			if(binExpr.lhs.type === this.varEnum.STRING_OBJ) {
+			if(binExpr.lhs.type === this.varEnum.STRING) {
 				lhsValue = "\"" + binExpr.lhs.str + "\"";
 			}
 			else {
@@ -363,12 +360,12 @@ Compiler.C = Compiler.Basic.extend
 		}
 
 		var rhsValue;
-		if(binExpr.rhs.exprType === Expression.Type.BINARY) {
+		if(binExpr.rhs.exprType === this.exprEnum.BINARY) {
 			rhsValue = this._makeVarBinary(binExpr.rhs);
 		}
 		else 
 		{
-			if(binExpr.rhs.type === Variable.Type.STRING) {
+			if(binExpr.rhs.type === this.varEnum.NAME) {
 				rhsValue = "\"" + binExpr.rhs.str + "\"";
 			}
 			else {
@@ -399,7 +396,7 @@ Compiler.C = Compiler.Basic.extend
 		}
 		else if(expr.exprType === this.exprEnum.VAR) 
 		{
-			if(expr.type === this.varEnum.STRING_OBJ) 
+			if(expr.type === this.varEnum.STRING) 
 			{
 				this.outputBuffer += this.tabs + "memcpy(" + name + " + __dopple_strOffset, " + 
 					expr.name + " + NUMBER_SIZE, (*(NUMBER *)" + expr.name + "));\n";
@@ -428,7 +425,7 @@ Compiler.C = Compiler.Basic.extend
 				throw "genConcatExpr: Unhandled expression variable type!";
 			}
 		}
-		else if(expr.exprType === this.exprEnum.STRING_OBJ) 
+		else if(expr.exprType === this.exprEnum.STRING) 
 		{
 			this.outputBuffer += this.tabs + "memcpy(" + name + " + __dopple_strOffset, \"" + 
 				expr.value + "\", " + expr.length + ");\n"
@@ -553,14 +550,14 @@ Compiler.C = Compiler.Basic.extend
 				output += "%f ";
 				argOutput += "(double)" + arg.value + ", ";
 			}
-			else if(exprType === this.exprEnum.STRING_OBJ) {
+			else if(exprType === this.exprEnum.STRING) {
 				output += "%s ";
 				argOutput += "\"" + arg.value + "\"" + ", ";
 			}
 			else if(exprType === this.exprEnum.VAR) 
 			{
 				varType = arg.type;
-				if(varType === this.varEnum.STRING_OBJ) {
+				if(varType === this.varEnum.STRING) {
 					output += "%s ";
 					argOutput += arg.value + " + NUMBER_SIZE, ";
 				}

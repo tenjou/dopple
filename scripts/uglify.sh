@@ -11,8 +11,8 @@ cat dopple.js \
 	AST/Expression.js \
 	AST/Expression.Number.js \
 	AST/Expression.Bool.js \
-	AST/Expression.String.js \
-	AST/Expression.StringObj.js \
+	AST/Expression.NAME.js \
+	AST/Expression.STRING_PUREObj.js \
 	AST/Expression.Var.js \
 	AST/Expression.Binary.js \
 	AST/Expression.Function.js \

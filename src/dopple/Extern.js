@@ -6,8 +6,8 @@ dopple.Extern = function(lexer)
 	this.global = lexer.global;
 	this.scope = this.global;
 
-	this.varEnum = Variable.Type;
-	this.exprEnum = Expression.Type;	
+	this.varEnum = dopple.VarEnum;
+	this.exprEnum = dopple.ExprEnum;	
 };
 
 dopple.Extern.prototype =
@@ -28,11 +28,11 @@ dopple.Extern.prototype =
 				if(type === this.varEnum.NUMBER) {
 					expr = new Expression.Number(0);
 				}
-				else if(type === this.varEnum.STRING) {
-					expr = new Expression.String("");
+				else if(type === this.varEnum.NAME) {
+					expr = new Expression.NAME("");
 				}
-				else if(type === this.varEnum.STRING_OBJ) {
-					expr = new Expression.StringObj("");
+				else if(type === this.varEnum.STRING) {
+					expr = new Expression.STRING_PUREObj("");
 				}
 				else if(type === this.varEnum.FORMAT) {
 					expr = new Expression.Format();
@@ -52,20 +52,20 @@ dopple.Extern.prototype =
 	obj: function(name)
 	{
 		var scope = new dopple.Scope(this.scope);
-		var objExpr = new Expression.Object(name, scope);
+		var objExpr = new Expression.Class(name, scope);
 		this.scope.vars[name] = objExpr;
 
-		return new dopple.ExternObj(this, objExpr);
+		return new dopple.ExternClass(this, objExpr);
 	},
 };
 
-dopple.ExternObj = function(extern, objExpr)
+dopple.ExternClass = function(extern, objExpr)
 {
 	this.extern = extern;
 	this.objExpr = objExpr;
 };
 
-dopple.ExternObj.prototype =
+dopple.ExternClass.prototype =
 {
 	func: function(name, params, returnType) {
 		this.extern.scope = this.objExpr.scope;

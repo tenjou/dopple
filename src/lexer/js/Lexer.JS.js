@@ -69,5 +69,7 @@ Lexer.JS = Lexer.Basic.extend
 		}
 
 		this.currName = "";
+
+		return true;
 	}	
 });
