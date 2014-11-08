@@ -203,7 +203,7 @@ Expression.Var = Expression.Basic.extend
 		if(!this.expr) { return true; }
 		
 		if(this.expr.exprType === this.exprEnum.BINARY) {
-			this.type = this.analyseExpr(this.expr);
+			this.type = this.expr.analyse();
 		}
 		else
 		{
@@ -217,40 +217,6 @@ Expression.Var = Expression.Basic.extend
 		}
 
 		return true;
-	},
-
-	analyseExpr: function(expr)
-	{
-		var lhsType, rhsType;
-
-		if(expr.lhs.exprType === this.exprEnum.BINARY) {
-			lhsType = this.analyseExpr(expr.lhs);
-		}
-		else {
-			lhsType = expr.lhs.type;
-		}
-
-		if(expr.rhs.exprType === this.exprEnum.BINARY) {
-			rhsType = this.analyseExpr(expr.rhs);
-		}
-		else {
-			rhsType = expr.rhs.type;
-		}
-
-		if(lhsType === rhsType) {
-			return lhsType;
-		}
-
-		if(lhsType === this.varEnum.STRING || rhsType === this.varEnum.STRING) {
-			return this.varEnum.STRING;
-		}
-		else 
-		{
-				Error.throw(Error.Type.INVALID_TYPE_CONVERSION, 
-			 			"\"" + this.var.name + "\" " + this.var.strType() + " to " + this.expr.strType());		
-		}
-
-		return 0;
 	},	
 
 	//
@@ -263,6 +229,56 @@ Expression.Var = Expression.Basic.extend
 	var: null,
 	expr: null,
 	value: ""
+});
+
+/* Expression Binary */
+Expression.Binary = Expression.Basic.extend
+({
+	init: function(op, lhs, rhs) {
+		this.op = op;
+		this.lhs = lhs;
+		this.rhs = rhs;		
+	},
+
+	analyse: function()
+	{
+		var lhsType, rhsType;
+
+		if(this.lhs.exprType === this.exprEnum.BINARY) {
+			lhsType = this.lhs.analyse();
+		}
+		else {
+			lhsType = this.lhs.type;
+		}
+
+		if(this.rhs.exprType === this.exprEnum.BINARY) {
+			rhsType = this.rhs.analyse();
+		}
+		else {
+			rhsType = this.rhs.type;
+		}
+
+		if(lhsType === rhsType) {
+			this.type = this.lhs.type;
+			return lhsType;
+		}
+
+		if(lhsType === this.varEnum.STRING || rhsType === this.varEnum.STRING) {
+			this.type = this.varEnum.STRING;
+			return this.varEnum.STRING;
+		}
+
+		Error.throw(Error.Type.INVALID_TYPE_CONVERSION, this.lhs.strType() + " to " + this.rhs.strType());		
+
+		return 0;
+	},	
+
+	//
+	exprType: dopple.ExprEnum.BINARY,
+
+	op: "",
+	lhs: null,
+	rhs: null
 });
 
 /* Expression Function */
@@ -301,56 +317,6 @@ Expression.FunctionCall = Expression.Basic.extend
 
 	func: null,
 	args: null
-});
-
-/* Expression Binary */
-Expression.Binary = Expression.Basic.extend
-({
-	init: function(op, lhs, rhs) {
-		this.op = op;
-		this.lhs = lhs;
-		this.rhs = rhs;		
-	},
-
-	analyse: function()
-	{
-		var lhsType;
-		if(binExpr.lhs.exprType === this.exprEnum.BINARY) {
-			lhsType = this.analyseBinExpr(binExpr.lhs);
-		}
-		else {
-			lhsType = binExpr.lhs.type;
-		}
-
-		var rhsType;
-		if(binExpr.rhs.exprType === this.exprEnum.BINARY) {
-			rhsType = this.analyseBinExpr(binExpr.rhs);
-		}
-		else {
-			rhsType = binExpr.rhs.type;
-		}
-
-		if(lhsType !== rhsType) 
-		{
-			if(lhsType === this.varEnum.STRING || rhsType === this.varEnum.STRING) {
-				return Variable.Type.STRING;
-			}
-			else 
-			{
-				Lexer.throw(Lexer.Error.INVALID_TYPE_CONVERSION, "\"" + 
-					this.var.name + "\" " + binExpr.lhs.strType() + " to " + binExpr.rhs.strType());
-			}
-		}
-
-		this.type = lhsType;	
-	},	
-
-	//
-	exprType: dopple.ExprEnum.BINARY,
-
-	op: "",
-	lhs: null,
-	rhs: null
 });
 
 /* Expression Name */
