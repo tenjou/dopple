@@ -91,6 +91,9 @@ Compiler.JS = Compiler.Basic.extend
 			this.defineExpr(expr.lhs);
 			this.output += " " + expr.op + " ";
 			this.defineExpr(expr.rhs);
+		}
+		else if(exprType === this.exprEnum.BOOL) {
+			this.output += expr.str();
 		}		
 	}
 });
