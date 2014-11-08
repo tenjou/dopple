@@ -166,7 +166,7 @@ Compiler.C = Compiler.Basic.extend
 					this.output += this.makeVarName(expr) + expr.name + ";\n";
 				}
 				else if(exprType === this.exprEnum.STRING) {
-					this.output += this.makeVarName(varExpr) + " = \"" + expr.hexLength + "\"\"" + expr.value + "\";\n";
+					this.output += this.makeVarName(varExpr) + " = \"" + expr.createHex() + "\"\"" + expr.value + "\";\n";
 				}
 				else {
 					this.output += this.makeVarName(varExpr) + " = ";
@@ -186,7 +186,7 @@ Compiler.C = Compiler.Basic.extend
 					}
 				}
 				else if(exprType === this.exprEnum.STRING) {
-					this.output += this.varMap[varExpr.type] + varExpr.name + " = \"" + expr.hexLength + "\"\"" + expr.value + "\";\n";
+					this.output += this.varMap[varExpr.type] + varExpr.name + " = \"" + expr.createHex() + "\"\"" + expr.value + "\";\n";
 				}
 				else 
 				{
@@ -210,7 +210,10 @@ Compiler.C = Compiler.Basic.extend
 	{
 		var exprType = expr.exprType;
 
-		if(exprType === this.exprEnum.NUMBER || exprType === this.exprEnum.VAR) {
+		if(exprType === this.exprEnum.NUMBER || 
+		   exprType === this.exprEnum.VAR || 
+		   exprType === this.exprEnum.BOOL) 
+		{
 			this.output += expr.value;
 		}
 		else if(exprType === this.exprEnum.BINARY) {
@@ -322,7 +325,7 @@ Compiler.C = Compiler.Basic.extend
 			this.outputBuffer += "\"" + expr.hexLength + "\"\"" + expr.value + "\"";
 		}
 		else if(expr.exprType === this.exprEnum.BINARY) {
-			this._makeVarBinary(varExpr, expr);
+			this.outputBuffer += this._makeVarBinary(varExpr, expr);
 		}
 		else {
 			this.outputBuffer += expr.value;
@@ -338,16 +341,16 @@ Compiler.C = Compiler.Basic.extend
 	{
 		var output = "";
 
-		if(varExpr.type === this.varEnum.STRING) 
-		{
-			this.genConcat(varExpr.fullName, binExpr.lhs, binExpr.rhs);
+		// if(varExpr.type === this.varEnum.STRING) 
+		// {
+		// 	this.genConcat(varExpr.fullName, binExpr.lhs, binExpr.rhs);
 
-			return output;
-		}
+		// 	return output;
+		// }
 
 		var lhsValue;
 		if(binExpr.lhs.exprType === this.exprEnum.BINARY) {
-			lhsValue = this._makeVarBinary(binExpr.lhs);
+			lhsValue = this._makeVarBinary(varExpr, binExpr.lhs);
 		}
 		else 
 		{
@@ -361,7 +364,7 @@ Compiler.C = Compiler.Basic.extend
 
 		var rhsValue;
 		if(binExpr.rhs.exprType === this.exprEnum.BINARY) {
-			rhsValue = this._makeVarBinary(binExpr.rhs);
+			rhsValue = this._makeVarBinary(varExpr, binExpr.rhs);
 		}
 		else 
 		{
@@ -378,6 +381,10 @@ Compiler.C = Compiler.Basic.extend
 
 	genConcat: function(name, lhs, rhs)
 	{
+
+
+		return;
+
 		this.outputBuffer = this.tabs + name + " = malloc(__dopple_strLength + NUMBER_SIZE);\n";
 		this.output += this.tabs + "__dopple_strOffset = NUMBER_SIZE;\n";
 		this.output += this.tabs + "__dopple_strLength = ";
@@ -410,6 +417,7 @@ Compiler.C = Compiler.Basic.extend
 			}
 			else if(expr.type === this.varEnum.NUMBER)
 			{
+
 				this.outputBuffer += this.tabs + "__dopple_tmp = snprintf(NULL, 0, \"%.17g\", " + expr.value + ");\n";
 				this.outputBuffer += this.tabs + "snprintf(" + name + 
 					" + __dopple_strOffset, __dopple_tmp + 1, \"%.17g\", " + expr.name + ");\n"	

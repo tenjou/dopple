@@ -52,7 +52,7 @@ Lexer.Mantra = Lexer.Basic.extend
 				}
 			}
 			else {
-				this.process.varType = this.varTypes.VOID;
+				this.process.varType = this.varEnum.VOID;
 			}
 
 			if(this.token.str === "=")
@@ -62,7 +62,7 @@ Lexer.Mantra = Lexer.Basic.extend
 				var expr = this.parseExpression();
 				if(!expr) { return false; }
 
-				if(expr.exprType !== this.exprEnum.OBJECT &&
+				if(expr.exprType !== this.exprEnum.CLASS &&
 				   expr.exprType !== this.exprEnum.FUNCTION) 
 				{
 					if(!this._defineVar(expr, initial)) {

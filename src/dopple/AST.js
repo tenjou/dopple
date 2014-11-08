@@ -13,11 +13,9 @@ Expression.Basic = dopple.Class.extend
 
 	strType: function()
 	{
-		var type = Variable.Type;
-
-		for(var key in type) 
+		for(var key in this.varEnum) 
 		{
-			if(type[key] === this.type) {
+			if(this.varEnum[key] === this.type) {
 				return key;
 			}
 		}
@@ -27,11 +25,9 @@ Expression.Basic = dopple.Class.extend
 
 	strExprType: function()
 	{
-		var type = Variable.Type;
-
-		for(var key in Expression.Type) 
+		for(var key in this.exprEnum) 
 		{
-			if(type[key] === this.exprType) {
+			if(this.exprEnum[key] === this.exprType) {
 				return key;
 			}
 		}
@@ -89,9 +85,8 @@ Expression.String = Expression.Basic.extend
 	init: function(str) 
 	{
 		if(str) {
-			this.str = str;
+			this.value = str;
 			this.length = str.length;
-			this.hexLength = this.createHex();
 		}
 	},
 
@@ -125,13 +120,19 @@ Expression.String = Expression.Basic.extend
 		return ToHex(this.length) + "\\x0\\x0\\x0";
 	},	
 
+	set value(str) {
+		this._value = str;
+		this.length = str.length;
+	},
+
+	get value() { return this._value; },
+
 	//
 	type: dopple.VarEnum.STRING,
 	exprType: dopple.ExprEnum.STRING,
 
-	value: "",
-	length: 0,
-	hexLength: ""
+	_value: "",
+	length: 0
 });
 
 /* Expression Bool */
@@ -139,6 +140,19 @@ Expression.Bool = Expression.Basic.extend
 ({
 	init: function(value) {
 		this.value = value * 1;
+	},
+
+	str: function() 
+	{
+		if(typeof this.value === "string") {
+			return this.value;
+		}
+
+		if(this.value > 0) {
+			return "true"
+		}
+		
+		return "false";
 	},
 
 	//

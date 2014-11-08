@@ -27,34 +27,102 @@ dopple.Optimizer.prototype =
 			expr.rhs = this._doExpr(expr.rhs);
 		}
 
-		var lhsType = lhsType = expr.lhs.type;
-		var rhsType = rhsType = expr.rhs.type;
+		// if(expr.lhs.exprType === this.exprEnum.BINARY) {
+		// 	expr.lhs = this._tryMerge(expr.lhs, expr.rhs);
+		// }
 
-		if((lhsType === this.varEnum.NUMBER || lhsType === this.varEnum.STRING) &&
-		   (rhsType === this.varEnum.NUMBER || rhsType === this.varEnum.STRING)) 
-		{}
-		else { return expr; }
+		var srcExpr;
+		var lhsExprType = expr.lhs.exprType;
+		var rhsExprType = expr.rhs.exprType;
 
-		var result;
+		if(lhsExprType === this.exprEnum.NUMBER)
+		{
+			if(rhsExprType === this.exprEnum.NUMBER ||
+			   rhsExprType === this.exprEnum.BOOL) 
+			{ 
+				srcExpr = expr.lhs; 
+			}
+			else if(rhsExprType === this.exprEnum.STRING) { srcExpr = expr.rhs; }
+			else {
+				return expr;
+			}
+		}
+		else if(lhsExprType === this.exprEnum.STRING) 
+		{
+			if(rhsExprType === this.exprEnum.NUMBER || 
+		       rhsExprType === this.exprEnum.STRING) 
+			{ 
+				srcExpr = expr.lhs;
+			}
+			else if(rhsExprType === this.exprEnum.BOOL) {
+				expr.rhs.value = expr.rhs.str();
+				srcExpr = expr.lhs; 				
+			}
+			else {
+				return expr;
+			}		
+		}		
+		else if(lhsExprType === this.exprEnum.BOOL)
+		{
+			if(rhsExprType === this.exprEnum.NUMBER) { srcExpr = expr.rhs; }
+			else if(rhsExprType === this.exprEnum.STRING) { 
+				expr.lhs.value = expr.lhs.str();
+				srcExpr = expr.rhs; 
+			}
+			else if(rhsExprType === this.exprEnum.BOOL) { srcExpr = new Expression.Number(0); }
+			else { 
+				return expr;
+			}
+		}
+		else {
+			return expr;
+		}	
+
+		// var lhsType = expr.lhs.type;
+		// var rhsType = expr.rhs.type;
+
+		// if((lhsType === this.varEnum.NUMBER || lhsType === this.varEnum.STRING) &&
+		//    (rhsType === this.varEnum.NUMBER || rhsType === this.varEnum.STRING)) 
+		// {}
+		// else { return expr; }
+
 		var op = expr.op;
-
 		if(op === "+") {
-			result = expr.lhs.value + expr.rhs.value;
+			srcExpr.value = expr.lhs.value + expr.rhs.value;
 		}
 		else if(op === "-") {
-			result = expr.lhs.value - expr.rhs.value;
+			srcExpr.value = expr.lhs.value - expr.rhs.value;
 		} 
 		else if(op === "*") {
-			result = expr.lhs.value * expr.rhs.value;
+			srcExpr.value = expr.lhs.value * expr.rhs.value;
 		}
 		else if(op === "/") {
-			result = expr.lhs.value / expr.rhs.value;
+			srcExpr.value = expr.lhs.value / expr.rhs.value;
 		}
 
-		if(typeof(result) === "string") {
-			return new Expression.String(result);
+		return srcExpr;
+	},
+
+	_tryMerge: function(expr, rhs)
+	{
+		while(rhs.exprType === this.exprEnum.BINARY) {
+			rhs = rhs.lhs;
 		}
 
-		return new Expression.Number(result);
+		var op = expr.op;
+		if(op === "+") {
+			srcExpr.value = expr.lhs.value + rhs.value;
+		}
+		else if(op === "-") {
+			srcExpr.value = expr.lhs.value - rhs.value;
+		} 
+		else if(op === "*") {
+			srcExpr.value = expr.lhs.value * rhs.value;
+		}
+		else if(op === "/") {
+			srcExpr.value = expr.lhs.value / rhs.value;
+		}		
+
+		return;
 	}
 };
