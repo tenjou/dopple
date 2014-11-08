@@ -2,7 +2,7 @@
 
 dopple.Optimizer = function(lexer) {
 	this.lexer = lexer;
-	this.varEnum = lexer.varTypes;
+	this.varEnum = dopple.VarEnum;
 	this.exprEnum = dopple.ExprEnum;
 };
 

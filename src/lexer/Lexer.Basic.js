@@ -134,6 +134,9 @@ Lexer.Basic = dopple.Class.extend
 		else if(this.token.type === this.tokenEnum.FUNCTION) {
 			return this.parseFunc();
 		}
+		else if(this.token.str === "(") {
+			return this.parseExprParenthesis();
+		}
 		else if(this.token.str === "{") {
 			return this.parseObject();
 		}
@@ -201,7 +204,25 @@ Lexer.Basic = dopple.Class.extend
 		var expr = new Expression.String(this.token.str);
 		this.nextToken();
 		return expr;
-	},		
+	},	
+
+	parseExprParenthesis: function()
+	{
+		this.nextToken();
+
+		var expr = this.parseExpression();
+		if(!expr) {
+			return null;
+		}
+
+		if(this.token.str !== ")") {
+			console.error(dopple.Error.UNEXPECTED_EOI);
+			return null;
+		}
+		this.nextToken();
+		
+		return expr;
+	},	
 
 	_defineVar: function(expr, initial)
 	{

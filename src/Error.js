@@ -4,7 +4,7 @@ dopple.Error = {
 	REFERENCE_ERROR: 1,
 	UNEXPECTED_TOKEN: 2,
 	UNEXPECTED_TOKEN_ILLEGAL: 3,
-	UNEXPECTED_EOI: 4,
+	UNEXPECTED_EOI: "SyntaxError: Unexpected end of input",
 	UNEXPECTED_NUMBER: 5,
 	UNEXPECTED_ID: 6,
 	INVALID_REGEXP: 10,
@@ -26,7 +26,7 @@ dopple.throw = function(type, arg)
 		throw "SyntaxError: Unexpected token ILLEGAL";
 	}	
 	else if(type === this.Error.UNEXPECTED_EOI) {
-		throw "SyntaxError: Unexpected end of input";
+		console.error("SyntaxError: Unexpected end of input");
 	}
 	else if(type === this.Error.UNEXPECTED_NUMBER) {
 		throw "SyntaxError: Unexpected number";
@@ -49,6 +49,7 @@ dopple.throw = function(type, arg)
 	else if(type === this.Error.UNSUPPORTED_FEATURE) {
 		throw "Unsupported feature used: \"" + arg + "\"";
 	}
-
-	throw "Unknown";
+	else {
+		console.error("Unknown Error");
+	}
 };

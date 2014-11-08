@@ -60,6 +60,8 @@ Lexer.Mantra = Lexer.Basic.extend
 				this.nextToken();
 
 				var expr = this.parseExpression();
+				if(!expr) { return false; }
+
 				if(expr.exprType !== this.exprEnum.OBJECT &&
 				   expr.exprType !== this.exprEnum.FUNCTION) 
 				{
