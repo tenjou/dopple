@@ -135,7 +135,7 @@ Lexer.Basic = dopple.Class.extend
 			return this.parseFunc();
 		}
 		else if(this.token.str === "(") {
-			return this.parseExprParenthesis();
+			return this.parseExprParentheses();
 		}
 		else if(this.token.str === "{") {
 			return this.parseObject();
@@ -206,7 +206,7 @@ Lexer.Basic = dopple.Class.extend
 		return expr;
 	},	
 
-	parseExprParenthesis: function()
+	parseExprParentheses: function()
 	{
 		this.nextToken();
 
