@@ -29,10 +29,10 @@ dopple.Extern.prototype =
 					expr = new AST.Number(0);
 				}
 				else if(type === this.varEnum.NAME) {
-					expr = new AST.NAME("");
+					expr = new AST.Name("");
 				}
 				else if(type === this.varEnum.STRING) {
-					expr = new AST.STRING_PUREObj("");
+					expr = new AST.String("");
 				}
 				else if(type === this.varEnum.FORMAT) {
 					expr = new AST.Format();

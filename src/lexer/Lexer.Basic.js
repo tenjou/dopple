@@ -6,11 +6,11 @@ Lexer.Basic = dopple.Class.extend
 ({
 	init: function() 
 	{
-		this.optimizer = new dopple.Optimizer(this);
-		this.extern = new dopple.Extern(this);
-
 		this.global = new dopple.Scope();
 		this.scope = this.global;
+		
+		this.optimizer = new dopple.Optimizer(this);
+		this.extern = new dopple.Extern(this);
 		
 		this.process.varType = 0;
 	},

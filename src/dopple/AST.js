@@ -335,7 +335,7 @@ AST.FunctionCall = AST.Basic.extend
 	},
 
 	//
-	exprEnum: dopple.ExprEnum.FUNCTION_CALL,
+	exprType: dopple.ExprEnum.FUNCTION_CALL,
 
 	func: null,
 	args: null

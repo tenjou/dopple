@@ -17,17 +17,17 @@ Compiler.C = Compiler.Basic.extend
 	{
 		var extern = this.lexer.extern;
 		
-		// var console = extern.obj("console");
-		// console.func("log", [ this.varEnum.FORMAT ]);
-		// console.func("warn", [ this.varEnum.FORMAT ]);
-		// console.func("error", [ this.varEnum.FORMAT ]);
+		var console = extern.obj("console");
+		console.func("log", [ this.varEnum.FORMAT ]);
+		console.func("warn", [ this.varEnum.FORMAT ]);
+		console.func("error", [ this.varEnum.FORMAT ]);
 
-		// // var NAME = extern.obj("NAME");
-		// // NAME.getter("length", null, Variable.Type.NUMBER);
-		// // NAME.setter("length", [ Variable.Type.NUMBER, "value" ]);
+		// var NAME = extern.obj("NAME");
+		// NAME.getter("length", null, Variable.Type.NUMBER);
+		// NAME.setter("length", [ Variable.Type.NUMBER, "value" ]);
 
-		// extern.func("alert", [ this.varEnum.STRING ]);
-		// extern.func("confirm", [ this.varEnum.STRING ]);
+		extern.func("alert", [ this.varEnum.STRING ]);
+		extern.func("confirm", [ this.varEnum.STRING ]);
 	},
 
 	make: function()
@@ -341,12 +341,12 @@ Compiler.C = Compiler.Basic.extend
 	{
 		var output = "";
 
-		// if(varExpr.type === this.varEnum.STRING) 
-		// {
-		// 	this.genConcat(varExpr.fullName, binExpr.lhs, binExpr.rhs);
+		if(varExpr.type === this.varEnum.STRING) 
+		{
+			this.genConcat(varExpr.fullName, binExpr.lhs, binExpr.rhs);
 
-		// 	return output;
-		// }
+			return output;
+		}
 
 		var lhsValue;
 		if(binExpr.lhs.exprType === this.exprEnum.BINARY) {
@@ -381,10 +381,6 @@ Compiler.C = Compiler.Basic.extend
 
 	genConcat: function(name, lhs, rhs)
 	{
-
-
-		return;
-
 		this.outputBuffer = this.tabs + name + " = malloc(__dopple_strLength + NUMBER_SIZE);\n";
 		this.output += this.tabs + "__dopple_strOffset = NUMBER_SIZE;\n";
 		this.output += this.tabs + "__dopple_strLength = ";
@@ -392,7 +388,8 @@ Compiler.C = Compiler.Basic.extend
 		this.genConcatExpr(name, lhs);
 		this.genConcatExpr(name, rhs, true);
 
-		this.outputBuffer += this.tabs + "APPEND_LENGTH(" + name + ", __dopple_strLength);\n\n";		
+		this.outputBuffer += this.tabs + "APPEND_LENGTH(" + name + ", __dopple_strLength);\n\n";
+		this.output += this.outputBuffer;		
 	},
 
 	genConcatExpr: function(name, expr, last)
@@ -418,9 +415,9 @@ Compiler.C = Compiler.Basic.extend
 			else if(expr.type === this.varEnum.NUMBER)
 			{
 
-				this.outputBuffer += this.tabs + "__dopple_tmp = snprintf(NULL, 0, \"%.17g\", " + expr.value + ");\n";
+				this.outputBuffer += this.tabs + "__dopple_tmp = snprintf(NULL, 0, \"%.15g\", " + expr.value + ");\n";
 				this.outputBuffer += this.tabs + "snprintf(" + name + 
-					" + __dopple_strOffset, __dopple_tmp + 1, \"%.17g\", " + expr.name + ");\n"	
+					" + __dopple_strOffset, __dopple_tmp + 1, \"%.15g\", " + expr.name + ");\n"	
 				if(!last) {
 					this.outputBuffer += this.tabs + "__dopple_strOffset += __dopple_tmp;\n";
 					this.output += "__dopple_tmp + ";
@@ -447,9 +444,9 @@ Compiler.C = Compiler.Basic.extend
 		}
 		else if(expr.exprType === this.exprEnum.NUMBER)
 		{
-			this.outputBuffer += this.tabs + "__dopple_tmp = snprintf(NULL, 0, \"%.17g\", " + expr.value + ");\n";
+			this.outputBuffer += this.tabs + "__dopple_tmp = snprintf(NULL, 0, \"%.15g\", " + expr.value + ");\n";
 			this.outputBuffer += this.tabs + "snprintf(" + name + 
-				" + __dopple_strOffset, __dopple_tmp, \"%.17g%\, " + expr.value + ");\n"
+				" + __dopple_strOffset, __dopple_tmp, \"%.15g%\, " + expr.value + ");\n"
 		}
 		else {
 			throw "genConcatExpr: Unhandled expression type!";
@@ -556,7 +553,7 @@ Compiler.C = Compiler.Basic.extend
 
 			if(exprType === this.exprEnum.NUMBER) {
 				output += "%f ";
-				argOutput += "(double)" + arg.value + ", ";
+				argOutput += arg.value + ", ";
 			}
 			else if(exprType === this.exprEnum.STRING) {
 				output += "%s ";
@@ -571,7 +568,7 @@ Compiler.C = Compiler.Basic.extend
 				}
 				else {
 					output += "%f ";
-					argOutput += "(double)" + arg.value + ", ";
+					argOutput += arg.value + ", ";
 				}
 			}
 			else {
