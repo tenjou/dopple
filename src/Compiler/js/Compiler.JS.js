@@ -65,7 +65,7 @@ Compiler.JS = Compiler.Basic.extend
 			// }
 			// else 
 			// {
-			// 	if(this.scope === this.global && varExpr.expr.exprType === Expression.Type.BINARY) {
+			// 	if(this.scope === this.global && varExpr.expr.exprType === AST.Type.BINARY) {
 			// 		this.output += this.varMap[varExpr.type] + varExpr.name + ";\n";
 			// 	}
 			// 	else {				

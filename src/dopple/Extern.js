@@ -26,33 +26,33 @@ dopple.Extern.prototype =
 			{
 				type = params[i];
 				if(type === this.varEnum.NUMBER) {
-					expr = new Expression.Number(0);
+					expr = new AST.Number(0);
 				}
 				else if(type === this.varEnum.NAME) {
-					expr = new Expression.NAME("");
+					expr = new AST.NAME("");
 				}
 				else if(type === this.varEnum.STRING) {
-					expr = new Expression.STRING_PUREObj("");
+					expr = new AST.STRING_PUREObj("");
 				}
 				else if(type === this.varEnum.FORMAT) {
-					expr = new Expression.Format();
+					expr = new AST.Format();
 				}
 
-				varExpr = new Expression.Var();
+				varExpr = new AST.Var();
 				varExpr.type = type;
 				varExpr.var = expr;
 				funcParams.push(varExpr);
 			}
 		}
 
-		var func = new Expression.Function(name, this.scope, funcParams);
+		var func = new AST.Function(name, this.scope, funcParams);
 		this.scope.vars[name] = func;
 	},
 
 	obj: function(name)
 	{
 		var scope = new dopple.Scope(this.scope);
-		var objExpr = new Expression.Class(name, scope);
+		var objExpr = new AST.Class(name, scope);
 		this.scope.vars[name] = objExpr;
 
 		return new dopple.ExternClass(this, objExpr);

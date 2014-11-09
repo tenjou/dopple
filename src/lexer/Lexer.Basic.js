@@ -111,7 +111,7 @@ Lexer.Basic = dopple.Class.extend
 				}
 			}
 
-			lhs = new Expression.Binary(binop, lhs, rhs);
+			lhs = new AST.Binary(binop, lhs, rhs);
 		}
 
 		return lhs;
@@ -146,14 +146,14 @@ Lexer.Basic = dopple.Class.extend
 
 	parseNumber: function() 
 	{
-		var expr = new Expression.Number(this.token.value);
+		var expr = new AST.Number(this.token.value);
 		this.nextToken();
 		return expr;
 	},
 
 	parseBool: function()
 	{
-		var expr = new Expression.Bool(this.token.value);
+		var expr = new AST.Bool(this.token.value);
 		this.nextToken();
 		return expr;
 	},
@@ -191,7 +191,7 @@ Lexer.Basic = dopple.Class.extend
 			} while(this.token.str === ".");
 		}
 
-		var varExpr = new Expression.Var(varName, parentList);
+		var varExpr = new AST.Var(varName, parentList);
 		varExpr.expr = varExpr;
 		varExpr.var = expr;
 		varExpr.type = expr.type;
@@ -201,7 +201,7 @@ Lexer.Basic = dopple.Class.extend
 
 	parseString: function()
 	{
-		var expr = new Expression.String(this.token.str);
+		var expr = new AST.String(this.token.str);
 		this.nextToken();
 		return expr;
 	},	
@@ -232,7 +232,7 @@ Lexer.Basic = dopple.Class.extend
 			return;
 		}
 
-		var varExpr = new Expression.Var(this.currName, this.parentList, this.process.varType);
+		var varExpr = new AST.Var(this.currName, this.parentList, this.process.varType);
 		var scopeVarExpr = this.scope.vars[this.currName];
 		var definition = false;
 
@@ -310,10 +310,10 @@ Lexer.Basic = dopple.Class.extend
 			}
 			else
 			{
-				memberExpr = new Expression.Var(this.currName, parentList);
+				memberExpr = new AST.Var(this.currName, parentList);
 				memberExpr.var = memberExpr;
 
-				var varExpr = new Expression.Var(this.currName, parentList);
+				var varExpr = new AST.Var(this.currName, parentList);
 				varExpr.expr = expr;
 				varExpr.var = memberExpr;
 				varExpr.analyse();
@@ -326,7 +326,7 @@ Lexer.Basic = dopple.Class.extend
 		}
 		else
 		{	
-			var varExpr = new Expression.Var(this.currName, parentList);
+			var varExpr = new AST.Var(this.currName, parentList);
 			varExpr.expr = this.parseExpression();
 			varExpr.expr = this.optimizer.do(varExpr.expr);
 			varExpr.var = memberExpr;
@@ -356,17 +356,17 @@ Lexer.Basic = dopple.Class.extend
 		var parentScope = this.scope;
 		this.scope = new dopple.Scope(this.scope);
 
-		var objExpr = new Expression.Object(name, this.scope);
+		var objExpr = new AST.Object(name, this.scope);
 		parentScope.vars[name] = objExpr;
 		parentScope.defBuffer.push(objExpr);
 		this.parentList = [ objExpr ];
 
 		// Constructor:
-		var initFunc = new Expression.Function("__init", this.scope, null, this.parentList);
+		var initFunc = new AST.Function("__init", this.scope, null, this.parentList);
 		this.scope.vars["__init"] = initFunc;
 		parentScope.defBuffer.push(initFunc);
 
-		var initFuncCall = new Expression.FunctionCall(initFunc);
+		var initFuncCall = new AST.FunctionCall(initFunc);
 		parentScope.varBuffer.push(initFuncCall);
 
 		// Parse object members:
@@ -417,7 +417,7 @@ Lexer.Basic = dopple.Class.extend
 		
 				if(expr.exprType !== this.exprEnum.FUNCTION)
 				{
-					varExpr = new Expression.Var(this.currName, this.parentList);
+					varExpr = new AST.Var(this.currName, this.parentList);
 					varExpr.expr = expr;
 					varExpr.analyse();
 
@@ -474,7 +474,7 @@ Lexer.Basic = dopple.Class.extend
 		this.nextToken();
 		while(this.token.type === Token.Type.NAME) 
 		{
-			newVar = new Expression.Var(this.token.str);
+			newVar = new AST.Var(this.token.str);
 			newVar.var = newVar;
 			vars.push(newVar);
 			this.scope.vars[newVar.name] = newVar;
@@ -511,7 +511,7 @@ Lexer.Basic = dopple.Class.extend
 			dopple.throw(dopple.Error.UNEXPECTED_EOI);
 		}
 
-		var funcExpr = new Expression.Function(name, this.scope, vars, this.parentList);
+		var funcExpr = new AST.Function(name, this.scope, vars, this.parentList);
 		funcExpr.rootName = rootName;
 		
 		this.currName = name;
@@ -581,7 +581,7 @@ Lexer.Basic = dopple.Class.extend
 			args[i] = funcParams[i];				
 		}		
 
-		var funcCall = new Expression.FunctionCall(funcExpr, args);
+		var funcCall = new AST.FunctionCall(funcExpr, args);
 		this.scope.varBuffer.push(funcCall);
 	},
 
@@ -594,14 +594,14 @@ Lexer.Basic = dopple.Class.extend
 		   this.token.type === this.tokenEnum.NUMBER ||
 		   this.token.type === this.tokenEnum.NAME)
 		{
-			var varExpr = new Expression.Var("");
+			var varExpr = new AST.Var("");
 			varExpr.expr = this.parseExpression();
 			varExpr.expr = this.optimizer.do(varExpr.expr);
 			varExpr.var = varExpr.expr;
 			varExpr.analyse();
 		}
 
-		var returnExpr = new Expression.Return(varExpr);
+		var returnExpr = new AST.Return(varExpr);
 		this.scope.varBuffer.push(returnExpr);
 	},
 

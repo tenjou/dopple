@@ -83,7 +83,7 @@ dopple.Optimizer.prototype =
 				lhs.value = lhs.str();
 				srcExpr = rhs; 
 			}
-			else if(rhsExprType === this.exprEnum.BOOL) { srcExpr = new Expression.Number(0); }
+			else if(rhsExprType === this.exprEnum.BOOL) { srcExpr = new AST.Number(0); }
 			else { 
 				return expr;
 			}

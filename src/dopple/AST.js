@@ -1,9 +1,9 @@
 "use strict";
 
-var Expression = {};
+var AST = {};
 
 /* Expression Basic */
-Expression.Basic = dopple.Class.extend
+AST.Basic = dopple.Class.extend
 ({
 	analyse: function() {},
 
@@ -44,7 +44,7 @@ Expression.Basic = dopple.Class.extend
 });
 
 /* Expression Number */
-Expression.Number = Expression.Basic.extend
+AST.Number = AST.Basic.extend
 ({
 	init: function(value) {
 		this.value = value;
@@ -80,7 +80,7 @@ Expression.Number = Expression.Basic.extend
 });
 
 /* Expression String */
-Expression.String = Expression.Basic.extend
+AST.String = AST.Basic.extend
 ({
 	init: function(str) 
 	{
@@ -136,7 +136,7 @@ Expression.String = Expression.Basic.extend
 });
 
 /* Expression Bool */
-Expression.Bool = Expression.Basic.extend
+AST.Bool = AST.Basic.extend
 ({
 	init: function(value) {
 		this.value = value * 1;
@@ -162,7 +162,7 @@ Expression.Bool = Expression.Basic.extend
 });
 
 /* Expression Var */
-Expression.Var = Expression.Basic.extend
+AST.Var = AST.Basic.extend
 ({
 	init: function(name, parentList, type)  
 	{
@@ -208,7 +208,7 @@ Expression.Var = Expression.Basic.extend
 			return "\"\\x9\\x0\\x0\\x0\"\"undefined\"";
 		}
 		else {
-			throw "Expression.Var.defaultValue: Invalid conversion.";
+			throw "AST.Var.defaultValue: Invalid conversion.";
 		}
 	},
 
@@ -247,7 +247,7 @@ Expression.Var = Expression.Basic.extend
 });
 
 /* Expression Binary */
-Expression.Binary = Expression.Basic.extend
+AST.Binary = AST.Basic.extend
 ({
 	init: function(op, lhs, rhs) {
 		this.op = op;
@@ -304,7 +304,7 @@ Expression.Binary = Expression.Basic.extend
 });
 
 /* Expression Function */
-Expression.Function = Expression.Basic.extend
+AST.Function = AST.Basic.extend
 ({
 	init: function(name, scope, params, parentList) 
 	{
@@ -314,7 +314,7 @@ Expression.Function = Expression.Basic.extend
 		this.numParams = (params) ? params.length : 0;
 		this.parentList = parentList || null;
 
-		this.returnVar = new Expression.Var("");
+		this.returnVar = new AST.Var("");
 	},
 
 	//
@@ -327,7 +327,7 @@ Expression.Function = Expression.Basic.extend
 });
 
 /* Expression Function Call */
-Expression.FunctionCall = Expression.Basic.extend
+AST.FunctionCall = AST.Basic.extend
 ({
 	init: function(func, args) {
 		this.func = func;
@@ -342,7 +342,7 @@ Expression.FunctionCall = Expression.Basic.extend
 });
 
 /* Expression Name */
-Expression.Name = Expression.Basic.extend
+AST.Name = AST.Basic.extend
 ({
 	init: function(str) {
 		this.value = str || "";
@@ -358,7 +358,7 @@ Expression.Name = Expression.Basic.extend
 });
 
 /* Expression Format */
-Expression.Format = Expression.Basic.extend
+AST.Format = AST.Basic.extend
 ({
 	init: function(name) {
 		this.name = name;
@@ -374,7 +374,7 @@ Expression.Format = Expression.Basic.extend
 });
 
 /* Expression Class */
-Expression.Class = Expression.Basic.extend
+AST.Class = AST.Basic.extend
 ({
 	init: function(name, scope) 
 	{
@@ -382,7 +382,7 @@ Expression.Class = Expression.Basic.extend
 		this.scope = scope;
 
 		var scope = new dopple.Scope(scope);
-		this.constructFunc = new Expression.Function(name, scope, []);			
+		this.constructFunc = new AST.Function(name, scope, []);			
 	},
 
 	//
