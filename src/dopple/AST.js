@@ -223,8 +223,9 @@ Expression.Var = Expression.Basic.extend
 		{
 			if(this.type !== 0 && this.type !== this.expr.type) 
 			{
-				console.error("INVALID_TYPE_CONVERSION: Can't convert a strict variable " + this.var.name + ":" + 
+				console.error("INVALID_TYPE_CONVERSION: Can't convert a variable " + this.var.name + ":" + 
 					this.var.strType() + " to " + this.expr.strType());
+				return false;
 			}
 			
 			this.type = this.expr.type;
@@ -272,9 +273,16 @@ Expression.Binary = Expression.Basic.extend
 			rhsType = this.rhs.type;
 		}
 
-		if(lhsType === rhsType) {
-			this.type = this.lhs.type;
-			return lhsType;
+		if(lhsType === rhsType) 
+		{
+			if(this.lhs.type === this.varEnum.BOOL && this.rhs.type === this.varEnum.BOOL) {
+				this.type = this.varEnum.NUMBER;
+			}
+			else {
+				this.type = lhsType;
+			}
+
+			return this.type;
 		}
 
 		if(lhsType === this.varEnum.STRING || rhsType === this.varEnum.STRING) {

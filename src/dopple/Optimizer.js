@@ -10,7 +10,7 @@ dopple.Optimizer.prototype =
 {
 	do: function(expr) 
 	{
-		// Check if we have something to optimize.
+		// Check if we have something to optimize:
 		if(!expr) { return expr; }
 		if(expr.exprType !== this.exprEnum.BINARY) { return expr; }
 		if(!expr.lhs && !expr.rhs) { return expr; }
@@ -27,22 +27,36 @@ dopple.Optimizer.prototype =
 			expr.rhs = this._doExpr(expr.rhs);
 		}
 
-		// if(expr.lhs.exprType === this.exprEnum.BINARY) {
-		// 	expr.lhs = this._tryMerge(expr.lhs, expr.rhs);
-		// }
+		if(expr.lhs.exprType === this.exprEnum.BINARY) 
+		{
+			var lhsRhs = expr.lhs.rhs;
+			var lhsRhs = this._resolve(expr, lhsRhs, expr.rhs);
+			if(lhsRhs !== expr) {
+				lhs.rhs = lhsRhs;
+				return expr.lhs;
+			}
+			else {
+				return expr;
+			}			
+		}
 
+		return this._resolve(expr, expr.lhs, expr.rhs);
+	},
+
+	_resolve: function(expr, lhs, rhs)
+	{
 		var srcExpr;
-		var lhsExprType = expr.lhs.exprType;
-		var rhsExprType = expr.rhs.exprType;
+		var lhsExprType = lhs.exprType;
+		var rhsExprType = rhs.exprType;
 
 		if(lhsExprType === this.exprEnum.NUMBER)
 		{
 			if(rhsExprType === this.exprEnum.NUMBER ||
 			   rhsExprType === this.exprEnum.BOOL) 
 			{ 
-				srcExpr = expr.lhs; 
+				srcExpr = lhs; 
 			}
-			else if(rhsExprType === this.exprEnum.STRING) { srcExpr = expr.rhs; }
+			else if(rhsExprType === this.exprEnum.STRING) { srcExpr = rhs; }
 			else {
 				return expr;
 			}
@@ -52,11 +66,11 @@ dopple.Optimizer.prototype =
 			if(rhsExprType === this.exprEnum.NUMBER || 
 		       rhsExprType === this.exprEnum.STRING) 
 			{ 
-				srcExpr = expr.lhs;
+				srcExpr = lhs;
 			}
 			else if(rhsExprType === this.exprEnum.BOOL) {
-				expr.rhs.value = expr.rhs.str();
-				srcExpr = expr.lhs; 				
+				rhs.value = rhs.str();
+				srcExpr = lhs; 				
 			}
 			else {
 				return expr;
@@ -64,10 +78,10 @@ dopple.Optimizer.prototype =
 		}		
 		else if(lhsExprType === this.exprEnum.BOOL)
 		{
-			if(rhsExprType === this.exprEnum.NUMBER) { srcExpr = expr.rhs; }
+			if(rhsExprType === this.exprEnum.NUMBER) { srcExpr = rhs; }
 			else if(rhsExprType === this.exprEnum.STRING) { 
-				expr.lhs.value = expr.lhs.str();
-				srcExpr = expr.rhs; 
+				lhs.value = lhs.str();
+				srcExpr = rhs; 
 			}
 			else if(rhsExprType === this.exprEnum.BOOL) { srcExpr = new Expression.Number(0); }
 			else { 
@@ -78,51 +92,20 @@ dopple.Optimizer.prototype =
 			return expr;
 		}	
 
-		// var lhsType = expr.lhs.type;
-		// var rhsType = expr.rhs.type;
-
-		// if((lhsType === this.varEnum.NUMBER || lhsType === this.varEnum.STRING) &&
-		//    (rhsType === this.varEnum.NUMBER || rhsType === this.varEnum.STRING)) 
-		// {}
-		// else { return expr; }
-
 		var op = expr.op;
 		if(op === "+") {
-			srcExpr.value = expr.lhs.value + expr.rhs.value;
+			srcExpr.value = lhs.value + rhs.value;
 		}
 		else if(op === "-") {
-			srcExpr.value = expr.lhs.value - expr.rhs.value;
+			srcExpr.value = lhs.value - rhs.value;
 		} 
 		else if(op === "*") {
-			srcExpr.value = expr.lhs.value * expr.rhs.value;
+			srcExpr.value = lhs.value * rhs.value;
 		}
 		else if(op === "/") {
-			srcExpr.value = expr.lhs.value / expr.rhs.value;
+			srcExpr.value = lhs.value / rhs.value;
 		}
 
 		return srcExpr;
-	},
-
-	_tryMerge: function(expr, rhs)
-	{
-		while(rhs.exprType === this.exprEnum.BINARY) {
-			rhs = rhs.lhs;
-		}
-
-		var op = expr.op;
-		if(op === "+") {
-			srcExpr.value = expr.lhs.value + rhs.value;
-		}
-		else if(op === "-") {
-			srcExpr.value = expr.lhs.value - rhs.value;
-		} 
-		else if(op === "*") {
-			srcExpr.value = expr.lhs.value * rhs.value;
-		}
-		else if(op === "/") {
-			srcExpr.value = expr.lhs.value / rhs.value;
-		}		
-
-		return;
 	}
 };
