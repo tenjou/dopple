@@ -40,11 +40,57 @@ Compiler.Basic = dopple.Class.extend
 
 	global: null,
 	scope: null,
+	scopeInfo: null,
 
 	tabs: "",
 	output: "",
-	outputBuffer: "",	
+	outputBuffer: "",
+	outputExpr: "",
+	outputScope: "",
+
+	outputPre: "",
+	outputPost: "",
+	outputLength: "",	
 
 	exprEnum: dopple.ExprEnum,
 	varEnum: dopple.VarEnum
 });
+
+dopple.ScopeInfo = function() {
+	this.parent = null;
+	this.tmps = null;
+};
+
+dopple.ScopeInfo.prototype = 
+{
+	addTmpNumber: function() 
+	{
+		if(!this.tmps) {
+			this.tmps = [];
+		}
+
+		var tmp = "temp" + this.tmps.length;
+		this.tmps.push(tmp);
+		return tmp;
+	},
+
+	emitTmpNumbers: function() 
+	{
+		if(!this.tmps) {
+			return "";
+		}
+
+		var numTmps = this.tmps.length;
+		if(numTmps > 1)
+		{
+			var output = "";
+			for(var i = 0; i < numTmps; i++) {
+				output += this.tmps[i] + ", ";
+			}
+
+			return output;
+		}
+
+		return this.tmps[0];
+	},
+};
