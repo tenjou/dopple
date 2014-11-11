@@ -31,8 +31,8 @@ dopple.Token = dopple.Class.extend
 
 dopple.Tokenizer = dopple.Class.extend
 ({
-	init: function(buffer) {
-		this.setBuffer(buffer);
+	init: function(buffer)  {
+		this.customKeyword = {};
 	},
 
 	setBuffer: function(buffer) 
@@ -86,6 +86,9 @@ dopple.Tokenizer = dopple.Class.extend
 			else if(this.token.str === "NaN") {
 				this.token.type = this.tokenEnum.NUMBER;
 				this.token.value = NaN;
+			}
+			else if(this.customKeyword[this.token.str]) {
+				this.token.type = this.customKeyword[this.token.str];
 			}
 			else {
 				this.token.type = this.tokenEnum.NAME;
@@ -244,6 +247,8 @@ dopple.Tokenizer = dopple.Class.extend
 	bufferLength: 0,
 	cursor: 0,
 	currChar: "",
+
+	customKeyword: null,
 
 	token: new dopple.Token(),
 	tokenEnum: dopple.TokenEnum

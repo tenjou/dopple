@@ -2,6 +2,10 @@
 
 Lexer.Mantra = Lexer.Basic.extend
 ({
+	init: function() {
+		this.tokenizer.customKeyword["func"] = this.tokenEnum.FUNCTION;
+	},
+
 	parseVar: function()
 	{
 		var initial = false;
@@ -18,8 +22,11 @@ Lexer.Mantra = Lexer.Basic.extend
 		this.currName = this.token.str;
 		this.nextToken();
 
-		if(this.token.str === "(") {
-			this.parseFuncCall();
+		if(this.token.str === "(") 
+		{
+			if(!this.parseFuncCall()) {
+				return false;
+			}
 		}
 		else if(this.token.str === ".") 
 		{
@@ -33,8 +40,11 @@ Lexer.Mantra = Lexer.Basic.extend
 			if(this.token.str === "=") {
 				this._defineObjVar();
 			}
-			else if(this.token.str === "(") {
-				this.parseFuncCall();
+			else if(this.token.str === "(") 
+			{
+				if(!this.parseFuncCall()) {
+					return false;
+				}
 			}
 			else {
 				throw "Lexer::parseVar: Unhandled case!";
@@ -90,6 +100,51 @@ Lexer.Mantra = Lexer.Basic.extend
 		return true;
 	},
 
+	parseFuncParams: function()
+	{
+		var newVar;
+		var vars = [];
+		this.nextToken();
+		while(this.token.type === this.tokenEnum.NAME) 
+		{
+			newVar = new AST.Var(this.token.str);
+			newVar.var = newVar;
+			vars.push(newVar);
+			this.scope.vars[newVar.name] = newVar;
+			
+			this.nextToken();
+
+			// Check if variable has a defined type:
+			if(this.token.str === ":") 
+			{
+				if(!this.readType()) { 
+					return null; 
+				}
+				newVar.type = this.process.varType;
+			}
+			else {
+				newVar.type = 0;
+			}
+			
+			if(this.token.str !== ",") 
+			{
+				if(this.token.str === ")") {
+					break;
+				}
+
+				this.handleUnexpectedToken();
+			}
+
+			this.nextToken();
+		}
+
+		if(this.token.str !== ")") {
+			this.handleUnexpectedToken();
+		}	
+
+		return vars;		
+	},
+
 	readType: function()
 	{
 		this.nextToken();
@@ -115,5 +170,5 @@ Lexer.Mantra = Lexer.Basic.extend
 		this.nextToken();
 
 		return true;
-	}
+	}		
 });

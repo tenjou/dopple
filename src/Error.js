@@ -9,7 +9,7 @@ dopple.Error = {
 	UNEXPECTED_ID: 6,
 	INVALID_REGEXP: 10,
 	REDEFINITION: 100,
-	INVALID_TYPE_CONVERSION: 1000,
+	INVALID_TYPE_CONVERSION: "Invalid Type Conversion: ",
 	TOO_MANY_ARGUMENTS: 1001,
 	UNSUPPORTED_FEATURE: 1002
 };
@@ -41,7 +41,7 @@ dopple.throw = function(type, arg)
 		throw "Redefined: " + arg;
 	}		
 	else if(type === this.Error.INVALID_TYPE_CONVERSION) {
-		throw "Invalid Type Conversion: " + arg;
+		console.error("Invalid Type Conversion: " + arg);
 	}
 	else if(type === this.Error.TOO_MANY_ARGUMENTS) {
 		throw "Too many arguments passed.";

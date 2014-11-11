@@ -4,11 +4,12 @@ var Lexer = {};
 
 Lexer.Basic = dopple.Class.extend
 ({
-	init: function() 
+	_init: function() 
 	{
 		this.global = new dopple.Scope();
 		this.scope = this.global;
 		
+		this.tokenizer = new dopple.Tokenizer();
 		this.optimizer = new dopple.Optimizer(this);
 		this.extern = new dopple.Extern(this);
 		
@@ -17,7 +18,7 @@ Lexer.Basic = dopple.Class.extend
 
 	read: function(buffer) 
 	{
-		this.tokenizer = new dopple.Tokenizer(buffer);
+		this.tokenizer.setBuffer(buffer);
 		if(!this.parseBody()) {
 			return false;
 		}
@@ -469,33 +470,10 @@ Lexer.Basic = dopple.Class.extend
 		// Create a new scope.
 		this.scope = new dopple.Scope(this.scope);	
 
-		// Parse all variables.
-		var newVar;
-		var vars = [];
-		this.nextToken();
-		while(this.token.type === Token.Type.NAME) 
-		{
-			newVar = new AST.Var(this.token.str);
-			newVar.var = newVar;
-			vars.push(newVar);
-			this.scope.vars[newVar.name] = newVar;
-			
-			this.nextToken();
-			if(this.token.str !== ",") 
-			{
-				if(this.token.str === ")") {
-					break;
-				}
-
-				this.handleUnexpectedToken();
-			}
-
-			this.nextToken();
-		}
-
-		if(this.token.str !== ")") {
-			this.handleUnexpectedToken();
-		}		
+		var vars = this.parseFuncParams();
+		if(!vars) {
+			return null;
+		}	
 
 		this.nextToken();
 		if(this.token.str !== "{") {
@@ -527,6 +505,38 @@ Lexer.Basic = dopple.Class.extend
 
 		return funcExpr;
 	},	
+
+	parseFuncParams: function()
+	{
+		var newVar;
+		var vars = [];
+		this.nextToken();
+		while(this.token.type === this.tokenEnum.NAME) 
+		{
+			newVar = new AST.Var(this.token.str);
+			newVar.var = newVar;
+			vars.push(newVar);
+			this.scope.vars[newVar.name] = newVar;
+			
+			this.nextToken();
+			if(this.token.str !== ",") 
+			{
+				if(this.token.str === ")") {
+					break;
+				}
+
+				this.handleUnexpectedToken();
+			}
+
+			this.nextToken();
+		}
+
+		if(this.token.str !== ")") {
+			this.handleUnexpectedToken();
+		}	
+
+		return vars;		
+	},
 
 	parseFuncCall: function()
 	{
@@ -564,7 +574,13 @@ Lexer.Basic = dopple.Class.extend
 				if(!isFormat) 
 				{
 					param = funcParams[i];
-					if(param.type === 0) {
+					if(param.type !== expr.type) 
+					{
+						console.error("INVALID_TYPE_CONVERSION: Can't convert a function parameter " + param.var.name + ":" + 
+							param.strType() + " to " + expr.strType());
+						return false;
+					}
+					else if(param.type === 0) {
 						param.type = expr.type;
 					}
 				}
@@ -584,6 +600,8 @@ Lexer.Basic = dopple.Class.extend
 
 		var funcCall = new AST.FunctionCall(funcExpr, args);
 		this.scope.varBuffer.push(funcCall);
+
+		return true;
 	},
 
 	parseReturn: function()
