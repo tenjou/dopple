@@ -30,9 +30,13 @@ dopple.Optimizer.prototype =
 		if(expr.lhs.exprType === this.exprEnum.BINARY) 
 		{
 			var lhsRhs = expr.lhs.rhs;
+			if(lhsRhs.type === this.varEnum.NUMBER && expr.rhs.type === this.varEnum.STRING) { 
+				return expr;
+			}			
+
 			var lhsRhs = this._resolve(expr, lhsRhs, expr.rhs);
 			if(lhsRhs !== expr) {
-				lhs.rhs = lhsRhs;
+				expr.lhs.rhs = lhsRhs;
 				return expr.lhs;
 			}
 			else {

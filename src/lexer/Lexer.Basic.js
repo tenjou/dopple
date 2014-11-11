@@ -267,7 +267,8 @@ Lexer.Basic = dopple.Class.extend
 
 		if(expr)
 		{
-			varExpr.expr = this.optimizer.do(expr);
+			//varExpr.expr = this.optimizer.do(expr);
+			varExpr.expr = expr;
 			if(!varExpr.analyse()) {
 				return false;
 			}

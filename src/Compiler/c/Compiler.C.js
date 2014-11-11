@@ -66,9 +66,12 @@ Compiler.C = Compiler.Basic.extend
 				}				
 			}
 
-			if(this.scopeInfo.tmps) {
-				this.output += this.tabs + "static NUMBER " + this.scopeInfo.emitTmpNumbers() + ";\n\n";
+			if(this.scopeInfo.tmp_double) {
+				this.output += this.tabs + "static double " + this.scopeInfo.emitTmpDouble() + ";\n";
 			}
+			if(this.scopeInfo.tmp_i32) {
+				this.output += this.tabs + "static NUMBER " + this.scopeInfo.emitTmpI32() + ";\n\n";
+			}			
 			
 			this.output += this.outputScope + "\n";
 		}
@@ -358,6 +361,7 @@ Compiler.C = Compiler.Basic.extend
 			this.genConcatExpr(varExpr.fullName, binExpr.lhs, false);
 			this.genConcatExpr(varExpr.fullName, binExpr.rhs, true);
 
+			this.outputLength += "5;\n";
 			this.outputPost += this.tabs + "APPEND_LENGTH(" + varExpr.fullName + ", __dopple_strLength);\n\n";		
 
 			return "malloc(__dopple_strLength + NUMBER_SIZE)";
@@ -398,38 +402,52 @@ Compiler.C = Compiler.Basic.extend
 	{
 		var tmpNum;
 
-		if(expr.exprType === this.exprEnum.BINARY) {
-			this.genConcatExpr(name, expr.lhs, false);
-			this.genConcatExpr(name, expr.rhs, last);
+		if(expr.exprType === this.exprEnum.BINARY) 
+		{
+			if(expr.type !== this.varEnum.NUMBER) {
+				this.genConcatExpr(name, expr.lhs, false);
+				this.genConcatExpr(name, expr.rhs, last);
+			}
+			else 
+			{
+				var tmpTotal = this.scopeInfo.addTmpDouble();
+				tmpNum = this.scopeInfo.addTmpI32();
+
+				this.outputPre += this.tabs + tmpTotal + " = " + this.emitNumBinaryExpr(expr) + ";\n";
+				this.outputPre += this.tabs + tmpNum + " = snprintf(NULL, 0, \"%.17g\", " + tmpTotal + ");\n";
+				this.outputPost += this.tabs + "snprintf(" + name + 
+					" + __dopple_strOffset, " + tmpNum + " + 1, \"%.17g\", " + tmpTotal + ");\n";
+				if(!last) {
+					this.outputPost += this.tabs + "__dopple_strOffset += " + tmpNum + ";\n";	
+				}
+
+				this.outputLength += tmpNum + " + ";
+			}
 		}
 		else if(expr.exprType === this.exprEnum.VAR) 
 		{
 			if(expr.type === this.varEnum.STRING) 
 			{
-				this.outputPre += this.tabs + "memcpy(" + name + " + __dopple_strOffset, " + 
+				this.outputPost += this.tabs + "memcpy(" + name + " + __dopple_strOffset, " + 
 					expr.name + " + NUMBER_SIZE, (*(NUMBER *)" + expr.name + "));\n";
 				if(!last) {
-					this.outputBuffer += this.tabs + "__dopple_strOffset += (*(NUMBER *)" + expr.name + ");\n";
-					this.output += "(*(NUMBER *)" + expr.name + ") + ";
+					this.outputPost += this.tabs + "__dopple_strOffset += (*(NUMBER *)" + expr.name + ");\n";
 				}
-				else {
-					this.output += "(*(NUMBER *)" + expr.name + ");\n";
-				}
+
+				this.outputLength += "(*(NUMBER *)" + expr.name + ") + ";
 			}
 			else if(expr.type === this.varEnum.NUMBER)
 			{
-				tmpNum = this.scopeInfo.addTmpNumber();
+				tmpNum = this.scopeInfo.addTmpI32();
 
-				this.outputPre += this.tabs + tmpNum + " = snprintf(NULL, 0, \"%.15g\", " + expr.value + ");\n";
+				this.outputPre += this.tabs + tmpNum + " = snprintf(NULL, 0, \"%.17g\", " + expr.value + ");\n";
 				this.outputPost += this.tabs + "snprintf(" + name + 
-					" + __dopple_strOffset, " + tmpNum + " + 1, \"%.15g\", " + expr.name + ");\n"	
+					" + __dopple_strOffset, " + tmpNum + " + 1, \"%.17g\", " + expr.name + ");\n"	
 				if(!last) {
-					this.outputPost += this.tabs + "__dopple_strOffset += " + tmpNum + ";\n";
-					this.outputLength += tmpNum + " + ";
+					this.outputPost += this.tabs + "__dopple_strOffset += " + tmpNum + ";\n";	
 				}
-				else {
-					this.outputLength += tmpNum + ";\n";
-				}								
+
+				this.outputLength += tmpNum + " + ";								
 			}
 			else {
 				throw "genConcatExpr: Unhandled expression variable type!";
@@ -437,21 +455,36 @@ Compiler.C = Compiler.Basic.extend
 		}
 		else if(expr.exprType === this.exprEnum.STRING) 
 		{
-			this.outputPost += this.tabs + "memcpy(" + name + " + __dopple_strOffset, \"" + 
-			 	expr.value + "\", " + expr.length + ");\n"
-			if(!last) {
-				this.outputPost += this.tabs + "__dopple_strOffset += " + expr.length + ";\n";
-				this.outputLength += expr.length + " + ";
+			if(!last) 
+			{
+				this.outputPost += this.tabs + "memcpy(" + name + " + __dopple_strOffset, \"" + 
+				 	expr.value + "\", " + expr.length + ");\n"				
+				this.outputPost += this.tabs + "__dopple_strOffset += " + expr.length + ";\n";	
 			}
 			else {
-				this.outputLength += expr.length + ";\n";
+				this.outputPost += this.tabs + "memcpy(" + name + " + __dopple_strOffset, \"" + 
+				 	expr.value + "\\0\", " + (expr.length + 1) + ");\n"
 			}
+
+			this.outputLength += expr.length + " + ";
 		}
 		else if(expr.exprType === this.exprEnum.NUMBER)
 		{
-			this.outputBuffer += this.tabs + "__dopple_tmp = snprintf(NULL, 0, \"%.15g\", " + expr.value + ");\n";
-			this.outputBuffer += this.tabs + "snprintf(" + name + 
-				" + __dopple_strOffset, __dopple_tmp, \"%.15g\", " + expr.value + ");\n"
+			tmpNum = this.scopeInfo.addTmpI32();
+
+			var value = expr.value;
+			if(Math.floor(value) === value) {
+				value += ".0";
+			}
+
+			this.outputPre += this.tabs + tmpNum + " = snprintf(NULL, 0, \"%.17g\", " + value + ");\n";
+			this.outputPost += this.tabs + "snprintf(" + name + 
+				" + __dopple_strOffset, " + tmpNum + " + 1, \"%.17g\", " + value + ");\n";
+			if(!last) {
+				this.outputPost += this.tabs + "__dopple_strOffset += " + tmpNum + ";\n";	
+			}
+
+			this.outputLength += tmpNum + " + ";
 		}
 		else {
 			throw "genConcatExpr: Unhandled expression type!";
@@ -557,7 +590,7 @@ Compiler.C = Compiler.Basic.extend
 			exprType = arg.exprType;
 
 			if(exprType === this.exprEnum.NUMBER) {
-				output += "%f ";
+				output += "%.17g ";
 				argOutput += arg.value + ", ";
 			}
 			else if(exprType === this.exprEnum.STRING) {
@@ -572,7 +605,7 @@ Compiler.C = Compiler.Basic.extend
 					argOutput += arg.value + " + NUMBER_SIZE, ";
 				}
 				else {
-					output += "%f ";
+					output += "%.17g ";
 					argOutput += arg.value + ", ";
 				}
 			}
