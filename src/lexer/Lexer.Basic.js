@@ -30,6 +30,14 @@ Lexer.Basic = dopple.Class.extend
 		this.token = this.tokenizer.nextToken();
 	},
 
+	peekToken: function() {
+		this.peekToken = this.tokenizer.peek();
+	},
+
+	eatToken: function() {
+		this.tokenizer.eat();
+	},
+
 	getTokenPrecendence: function()
 	{
 		if(this.token.type !== this.tokenEnum.BINOP) {
@@ -123,7 +131,17 @@ Lexer.Basic = dopple.Class.extend
 		if(this.token.type === this.tokenEnum.NUMBER) {
 			return this.parseNumber();
 		}
-		else if(this.token.type === this.tokenEnum.NAME) {
+		else if(this.token.type === this.tokenEnum.NAME) 
+		{	
+			this.currName = this.token.str;
+
+			// Check if it's a function call:
+			this.peekToken();
+			if(this.peekToken.str === "(") {
+				this.eatToken();
+				return this.parseFuncCall();
+			}
+
 			return this.parseName();
 		}
 		else if(this.token.type === this.tokenEnum.STRING) {
@@ -161,10 +179,10 @@ Lexer.Basic = dopple.Class.extend
 
 	parseName: function()
 	{
-		var varName = this.token.str;
-		var expr = this.scope.vars[varName];
+		var expr = this.scope.vars[this.currName];
 		if(!expr) {
-			dopple.throw(dopple.Error.REFERENCE_ERROR, varName);
+			dopple.error(dopple.Error.REFERENCE_ERROR, this.currName);
+			return null;
 		}
 
 		var parentList = null;
@@ -182,21 +200,22 @@ Lexer.Basic = dopple.Class.extend
 					this.handleTokenError();
 				}
 
-				varName = this.token.str;
-				expr = scope.vars[varName];
+				this.currName = this.token.str;
+				expr = scope.vars[this.currName];
 				if(!expr) {
-					dopple.throw(dopple.Error.REFERENCE_ERROR, varName);
+					dopple.error(dopple.Error.REFERENCE_ERROR, this.currName);
+					return null;
 				}
 
 				this.nextToken();		
 			} while(this.token.str === ".");
 		}
 
-		var varExpr = new AST.Var(varName, parentList);
+		var varExpr = new AST.Var(this.currName, parentList);
 		varExpr.expr = varExpr;
 		varExpr.var = expr;
 		varExpr.type = expr.type;
-		varExpr.value = varName;
+		varExpr.value = this.currName;
 		return varExpr;
 	},
 
@@ -476,22 +495,27 @@ Lexer.Basic = dopple.Class.extend
 		}	
 
 		this.nextToken();
+
+		var parentList = this.parentList;
+		this.parentList = null;		
+
+		var funcExpr = new AST.Function(name, this.scope, vars, this.parentList);
+		funcExpr.rootName = rootName;		
+
+		if(!this.parseFuncPost(funcExpr)) {
+			return null;
+		}
+
 		if(this.token.str !== "{") {
 			dopple.throw(dopple.Error.UNEXPECTED_EOI);
 		}		
 
-		// Parse function body:
-		var parentList = this.parentList;
-		this.parentList = null;
 		this.parseBody();
 		this.parentList = parentList;
 		
 		if(this.token.str !== "}") {
 			dopple.throw(dopple.Error.UNEXPECTED_EOI);
 		}
-
-		var funcExpr = new AST.Function(name, this.scope, vars, this.parentList);
-		funcExpr.rootName = rootName;
 		
 		this.currName = name;
 		var parentScope = this.scope.parent;
@@ -538,9 +562,16 @@ Lexer.Basic = dopple.Class.extend
 		return vars;		
 	},
 
+	parseFuncPre: function(funcExpr) { return true; },
+
+	parseFuncPost: function(funcExpr) { return true; },
+
 	parseFuncCall: function()
 	{
 		var funcExpr = this.getFunc();
+		if(!funcExpr) {
+			return null;
+		}
 
 		var i = 0;
 		var args = new Array(funcExpr.numParams);
@@ -563,10 +594,13 @@ Lexer.Basic = dopple.Class.extend
 			{
 				// Too many arguments:
 				if(i >= numFuncParams && !isFormat) {
-					dopple.throw(dopple.Error.TOO_MANY_ARGUMENTS);
+					dopple.error(dopple.Error.TOO_MANY_ARGUMENTS, this.currName);
+					return null;
 				}
 
 				expr = this.parseExpression();
+				if(!expr) { return null; }
+
 				expr = this.optimizer.do(expr);
 				expr.analyse();
 				args[i] = expr;
@@ -574,14 +608,14 @@ Lexer.Basic = dopple.Class.extend
 				if(!isFormat) 
 				{
 					param = funcParams[i];
-					if(param.type !== expr.type) 
+					if(param.type === 0) {
+						param.type = expr.type;
+					}
+					else if(param.type !== expr.type)
 					{
-						console.error("INVALID_TYPE_CONVERSION: Can't convert a function parameter " + param.var.name + ":" + 
+						console.error("INVALID_TYPE_CONVERSION: Can't convert a function argument " + param.var.name + ":" + 
 							param.strType() + " to " + expr.strType());
 						return false;
-					}
-					else if(param.type === 0) {
-						param.type = expr.type;
 					}
 				}
 		
@@ -601,7 +635,7 @@ Lexer.Basic = dopple.Class.extend
 		var funcCall = new AST.FunctionCall(funcExpr, args);
 		this.scope.varBuffer.push(funcCall);
 
-		return true;
+		return funcCall;
 	},
 
 	parseReturn: function()
@@ -681,7 +715,8 @@ Lexer.Basic = dopple.Class.extend
 		}
 
 		if(!funcExpr) {
-			dopple.throw(dopple.Error.REFERENCE_ERROR, name);
+			dopple.error(dopple.Error.REFERENCE_ERROR, this.currName);
+			return null;
 		}		
 
 		return funcExpr;

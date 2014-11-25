@@ -194,6 +194,19 @@ dopple.Tokenizer = dopple.Class.extend
 		return this.token;
 	},
 
+	peek: function() 
+	{
+		var tmpCursor = this.cursor;
+		var token = this.nextToken();
+		this.peekCursor = this.cursor;
+		this.cursor = tmpCursor;
+		return token;
+	},
+
+	eat: function() {
+		this.cursor = this.peekCursor;
+	},
+
 	nextChar: function(inc) 
 	{
 		if(this.cursor >= this.bufferLength) {
@@ -245,7 +258,7 @@ dopple.Tokenizer = dopple.Class.extend
 	//
 	buffer: "",
 	bufferLength: 0,
-	cursor: 0,
+	cursor: 0, peekCursor: 0,
 	currChar: "",
 
 	customKeyword: null,

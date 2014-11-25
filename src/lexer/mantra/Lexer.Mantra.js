@@ -140,9 +140,25 @@ Lexer.Mantra = Lexer.Basic.extend
 
 		if(this.token.str !== ")") {
 			this.handleUnexpectedToken();
-		}	
+		}
 
 		return vars;		
+	},
+
+	parseFuncPost: function(funcExpr) 
+	{
+		if(this.token.str === ":") 
+		{
+			if(!this.readType()) { 
+				return false; 
+			}
+			funcExpr.type = this.process.varType;
+		}
+		else {
+			funcExpr.type = 0;
+		}
+
+		return true;
 	},
 
 	readType: function()

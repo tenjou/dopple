@@ -34,7 +34,10 @@ Compiler.C = Compiler.Basic.extend
 	{
 		this.output = "#include \"dopple.h\"\n\n";
 
-		this.define(this.global);
+		if(!this.define(this.global)) { 
+			this.output = "";
+			return false; 
+		}
 
 		// Main start.
 		this.output += "\nint main(int argc, char *argv[]) \n{\n";
@@ -108,8 +111,9 @@ Compiler.C = Compiler.Basic.extend
 				if(exprType === this.exprEnum.VAR) {
 					this.defineVar(expr);
 				}
-				else if(exprType === this.exprEnum.FUNCTION) {
-					this.defineFunc(expr);
+				else if(exprType === this.exprEnum.FUNCTION) 
+				{
+					if(!this.defineFunc(expr)) return false;
 					exprType = 0;
 				}
 				else if(exprType === this.exprEnum.FUNCTION_CALL) {
@@ -152,6 +156,8 @@ Compiler.C = Compiler.Basic.extend
 				}
 			}
 		}
+
+		return true;
 	},
 
 
@@ -234,46 +240,55 @@ Compiler.C = Compiler.Basic.extend
 
 	defineFunc: function(func)
 	{
+		var output = "";
+
 		var params = func.params;
 		var numParams = 0;
 		if(params) {
 			numParams = params.length;
 		}
 
+		var funcName = this.makeFuncName(func);
+
 		// Write head:
-		this.output += this.varMap[func.returnVar.type] + this.makeFuncName(func) + "(";
+		output += this.varMap[func.returnVar.type] + funcName + "(";
 
 		// Write parameters:
 		if(numParams) 
 		{
 			var varDef;
-			for(var i = 0; i < numParams - 1; i++) 
+			for(var i = 0; i < numParams; i++) 
 			{
 				varDef = params[i];
-				if(varDef.type !== 0) {
-					this.output += this.varMap[varDef.type] + varDef.name + ", ";
+				if(varDef.type === this.varEnum.NUMBER) {
+					output += "double " + varDef.name;
+				}
+				else if(varDef.type === this.varEnum.STRING) {
+					output += this.varMap[varDef.type] + varDef.name;
 				}
 				else {
-					this.output += "double " + varDef.name + ", ";
+					console.error("UNRESOLVED_ARGUMENT:", 
+						"Function \"" + funcName + "\" has an unresolved argument \"" + varDef.name + "\"");
+					return false;
 				}
-			}
-			varDef = params[i];
-			if(varDef.type !== 0) {
-				this.output += this.varMap[varDef.type] + varDef.name;
-			}
-			else {
-				this.output += "double " + varDef.name;
+
+				if(i < numParams - 1) {
+					output += ", ";
+				}
 			}
 		}
 
-		this.output += ") \n{\n";
+		output += ") \n{\n";
+		this.output += output;
 		
 		// Write body:
 		this.incTabs();
-		this.define(func.scope);
+		if(!this.define(func.scope)) { return false; }
 		this.decTabs();
 
 		this.output += "}\n";
+
+		return true;
 	},
 
 	defineObject: function(obj)
@@ -335,6 +350,9 @@ Compiler.C = Compiler.Basic.extend
 		}
 		else if(expr.exprType === this.exprEnum.BINARY) {
 			this.outputExpr += this._makeVarBinary(varExpr, expr);
+		}
+		else if(expr.exprType === this.exprEnum.FUNCTION_CALL) {
+			console.log("func call");
 		}
 		else {
 			this.outputExpr += expr.value;

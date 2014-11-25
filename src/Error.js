@@ -14,6 +14,17 @@ dopple.Error = {
 	UNSUPPORTED_FEATURE: 1002
 };
 
+dopple.error = function(type, arg)
+{
+	var errorEnum = this.Error;
+	if(type === errorEnum.REFERENCE_ERROR) {
+		console.error("ReferenceError: " + arg + " is not defined");
+	} 
+	else if(type === errorEnum.TOO_MANY_ARGUMENTS) {
+		console.error("Too many arguments passed to the \"" + arg + "\" function");
+	}	
+};
+
 dopple.throw = function(type, arg)
 {
 	if(type === this.Error.REFERENCE_ERROR) {

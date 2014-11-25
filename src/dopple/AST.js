@@ -197,8 +197,7 @@ AST.Var = AST.Basic.extend
 
 	defaultValue: function() 
 	{
-		var varEnum = dopple.varTypes;
-		if(this.type === 0 || this.type === varEnum.NUMBER) {
+		if(this.type === 0 || this.type === this.varEnum.NUMBER) {
 			return "NaN";
 		}
 		else if(this.type === this.varEnum.NAME) {
