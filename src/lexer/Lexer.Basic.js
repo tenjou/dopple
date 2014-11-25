@@ -31,7 +31,7 @@ Lexer.Basic = dopple.Class.extend
 	},
 
 	peekToken: function() {
-		this.peekToken = this.tokenizer.peek();
+		this.peekedToken = this.tokenizer.peek();
 	},
 
 	eatToken: function() {
@@ -137,7 +137,7 @@ Lexer.Basic = dopple.Class.extend
 
 			// Check if it's a function call:
 			this.peekToken();
-			if(this.peekToken.str === "(") {
+			if(this.peekedToken.str === "(") {
 				this.eatToken();
 				return this.parseFuncCall();
 			}
@@ -594,7 +594,7 @@ Lexer.Basic = dopple.Class.extend
 			{
 				// Too many arguments:
 				if(i >= numFuncParams && !isFormat) {
-					dopple.error(dopple.Error.TOO_MANY_ARGUMENTS, this.currName);
+					dopple.error(dopple.Error.TOO_MANY_ARGUMENTS, funcExpr.name);
 					return null;
 				}
 
@@ -613,8 +613,8 @@ Lexer.Basic = dopple.Class.extend
 					}
 					else if(param.type !== expr.type)
 					{
-						console.error("INVALID_TYPE_CONVERSION: Can't convert a function argument " + param.var.name + ":" + 
-							param.strType() + " to " + expr.strType());
+						console.error("INVALID_TYPE_CONVERSION:", 
+							"Can't convert a function argument " + param.var.name + ":" + param.strType() + " to " + expr.strType());
 						return false;
 					}
 				}
@@ -776,6 +776,7 @@ Lexer.Basic = dopple.Class.extend
 	//
 	tokenizer: null,
 	token: null,
+	peekedToken: null,
 	prevToken: null,
 
 	optimizer: null,
