@@ -792,6 +792,10 @@ Lexer.Basic = dopple.Class.extend
 				return false; 
 			}
 			args[i] = expr;
+
+			if(params[i].type === 0) {
+				params[i].type = expr.type;
+			}
 		}	
 
 		return true;
