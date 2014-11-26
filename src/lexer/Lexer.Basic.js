@@ -74,7 +74,7 @@ Lexer.Basic = dopple.Class.extend
 				}
 			}
 			else if(type === this.tokenEnum.FUNCTION) {
-				this.parseFunc();
+				if(!this.parseFunc()) return false;
 			}
 			else if(type === this.tokenEnum.RETURN) {
 				this.parseReturn();
@@ -244,23 +244,24 @@ Lexer.Basic = dopple.Class.extend
 		return expr;
 	},	
 
-	_defineVar: function(expr, initial)
+	_defineVar: function(name, expr, initial)
 	{
 		// Ignore if it's not a definition and without a body.
 		if(!expr && !initial) {
-			this.getExprFromVar(this.scope, this.currName);
-			return;
+			this.getExprFromVar(this.scope, name);
+			return true;
 		}
 
-		var varExpr = new AST.Var(this.currName, this.parentList, this.process.varType);
-		var scopeVarExpr = this.scope.vars[this.currName];
+		var varExpr = new AST.Var(name, this.parentList, this.process.varType);
+		var scopeVarExpr = this.scope.vars[name];
 		var definition = false;
 
 		// Expression is function:
 		if(expr && expr.exprType === this.exprEnum.FUNCTION)
 		{
 			if(scopeVarExpr) {
-				dopple.throw(dopple.Error.UNSUPPORTED_FEATURE, "Redefining function pointer");
+				dopple.error(dopple.Error.UNSUPPORTED_FEATURE, "Redefining function pointer");
+				return false;
 			}
 		}
 		//
@@ -270,12 +271,13 @@ Lexer.Basic = dopple.Class.extend
 			{
 				// No such variable defined.
 				if(!initial) {
-					dopple.throw(dopple.Error.REFERENCE_ERROR, this.currName);
+					dopple.error(dopple.Error.REFERENCE_ERROR, this.currName);
+					return false;
 				}
 
 				definition = true;
 				scopeVarExpr = varExpr;
-				this.scope.vars[this.currName] = varExpr;
+				this.scope.vars[name] = varExpr;
 				this.scope.defBuffer.push(varExpr);
 			}
 			else {
@@ -510,7 +512,9 @@ Lexer.Basic = dopple.Class.extend
 			dopple.throw(dopple.Error.UNEXPECTED_EOI);
 		}		
 
-		this.parseBody();
+		if(!this.parseBody()) {
+			return null;
+		}
 		this.parentList = parentList;
 		
 		if(this.token.str !== "}") {

@@ -19,7 +19,7 @@ Lexer.Mantra = Lexer.Basic.extend
 			initial = true;
 		}
 
-		this.currName = this.token.str;
+		var varName = this.token.str;
 		this.nextToken();
 
 		if(this.token.str === "(") 
@@ -75,7 +75,7 @@ Lexer.Mantra = Lexer.Basic.extend
 				if(expr.exprType !== this.exprEnum.CLASS &&
 				   expr.exprType !== this.exprEnum.FUNCTION) 
 				{
-					if(!this._defineVar(expr, initial)) {
+					if(!this._defineVar(varName, expr, initial)) {
 						return false;
 					}	
 				}
@@ -89,7 +89,7 @@ Lexer.Mantra = Lexer.Basic.extend
 					this.handleUnexpectedToken();
 				}
 
-				if(!this._defineVar(null, initial)) {
+				if(!this._defineVar(varName, null, initial)) {
 					return false;
 				}
 			}

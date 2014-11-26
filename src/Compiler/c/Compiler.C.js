@@ -134,6 +134,8 @@ Compiler.C = Compiler.Basic.extend
 			}
 		}
 
+		this.outputScope = "";
+
 		if(scope !== this.global)
 		{
 			var vars = scope.varBuffer;
@@ -156,6 +158,8 @@ Compiler.C = Compiler.Basic.extend
 				}
 			}
 		}
+
+		this.output += this.outputScope;
 
 		return true;
 	},
