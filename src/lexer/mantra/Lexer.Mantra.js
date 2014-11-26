@@ -20,6 +20,7 @@ Lexer.Mantra = Lexer.Basic.extend
 		}
 
 		var varName = this.token.str;
+		this.currName = varName;
 		this.nextToken();
 
 		if(this.token.str === "(") 

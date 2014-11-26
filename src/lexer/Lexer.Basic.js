@@ -14,6 +14,7 @@ Lexer.Basic = dopple.Class.extend
 		this.extern = new dopple.Extern(this);
 		
 		this.process.varType = 0;
+		this.toResolve = [];
 	},
 
 	read: function(buffer) 
@@ -23,7 +24,7 @@ Lexer.Basic = dopple.Class.extend
 			return false;
 		}
 
-		return true;
+		return this.resolve();
 	},
 
 	nextToken: function() {
@@ -488,22 +489,20 @@ Lexer.Basic = dopple.Class.extend
 			this.handleUnexpectedToken();
 		}
 
-		// Create a new scope.
-		this.scope = new dopple.Scope(this.scope);	
-
+		var funcExpr = this.getFunc(name);
+		funcExpr.parentList = this.parentList;
+		funcExpr.rootName = rootName;
+		funcExpr.empty = false;
+		funcExpr.scope = new dopple.Scope(this.scope);	
+		this.scope = funcExpr.scope;
+		
 		var vars = this.parseFuncParams();
 		if(!vars) {
 			return null;
 		}	
+		funcExpr.params = vars;
 
 		this.nextToken();
-
-		var parentList = this.parentList;
-		this.parentList = null;		
-
-		var funcExpr = new AST.Function(name, this.scope, vars, this.parentList);
-		funcExpr.rootName = rootName;		
-
 		if(!this.parseFuncPost(funcExpr)) {
 			return null;
 		}
@@ -512,20 +511,19 @@ Lexer.Basic = dopple.Class.extend
 			dopple.throw(dopple.Error.UNEXPECTED_EOI);
 		}		
 
+		var parentList = this.parentList;
+		this.parentList = null;		
+
 		if(!this.parseBody()) {
 			return null;
 		}
+
 		this.parentList = parentList;
 		
 		if(this.token.str !== "}") {
 			dopple.throw(dopple.Error.UNEXPECTED_EOI);
 		}
 		
-		this.currName = name;
-		var parentScope = this.scope.parent;
-		parentScope.vars[this.makeFuncName(this.currName)] = funcExpr;
-
-		this.global.defBuffer.push(funcExpr);
 		this.scope = this.scope.parent;
 
 		this.nextToken();
@@ -572,12 +570,8 @@ Lexer.Basic = dopple.Class.extend
 
 	parseFuncCall: function()
 	{
-		var funcExpr = this.getFunc();
-		if(!funcExpr) {
-			return null;
-		}
-
 		var i = 0;
+		var funcExpr = this.getFunc(this.currName);
 		var args = new Array(funcExpr.numParams);
 		var param, expr;
 		var funcParams = funcExpr.params;
@@ -587,41 +581,13 @@ Lexer.Basic = dopple.Class.extend
 		this.nextToken();
 		if(this.token.str !== ")") 
 		{
-			// Check if first argument is FORMAT:
-			var isFormat = false;
-			if(numFuncParams > 0 && funcParams[0].type === this.varEnum.FORMAT) {
-				isFormat = true;
-			}
-
-			// Parse all variable expressions:	
+			// Parse all arguments:	
 			for(;; i++)
 			{
-				// Too many arguments:
-				if(i >= numFuncParams && !isFormat) {
-					dopple.error(dopple.Error.TOO_MANY_ARGUMENTS, funcExpr.name);
-					return null;
-				}
-
 				expr = this.parseExpression();
 				if(!expr) { return null; }
 
-				expr = this.optimizer.do(expr);
-				expr.analyse();
 				args[i] = expr;
-
-				if(!isFormat) 
-				{
-					param = funcParams[i];
-					if(param.type === 0) {
-						param.type = expr.type;
-					}
-					else if(param.type !== expr.type)
-					{
-						console.error("INVALID_TYPE_CONVERSION:", 
-							"Can't convert a function argument " + param.var.name + ":" + param.strType() + " to " + expr.strType());
-						return false;
-					}
-				}
 		
 				if(this.token.str !== ",") {
 					i++;
@@ -631,14 +597,19 @@ Lexer.Basic = dopple.Class.extend
 			}
 		}
 
-		// Add missing variables with default value:
-		for(; i < numFuncParams; i++) {
-			args[i] = funcParams[i];				
-		}		
-
 		var funcCall = new AST.FunctionCall(funcExpr, args);
 		this.scope.varBuffer.push(funcCall);
 		funcExpr.numCalls++;
+
+		if(funcExpr.empty) {
+			this.toResolve.push(funcCall);
+		}
+		else 
+		{
+			if(!this.resolveFuncCall(funcCall)) {
+				return null;
+			}
+		}
 
 		return funcCall;
 	},
@@ -693,35 +664,40 @@ Lexer.Basic = dopple.Class.extend
 		return expr;
 	},
 
-	getFunc: function() 
+	getFunc: function(name) 
 	{
 		var funcExpr = null;
 
 		if(!this.parentList) {
-			funcExpr = this.global.vars[this.currName];
+			funcExpr = this.global.vars[name];
 		}
 		else
 		{
 			var numItems = this.parentList.length;
 			if(numItems <= 0) {
-				funcExpr = this.global.vars[this.currName];
+				funcExpr = this.global.vars[name];
 			}
 			else
 			{
-				var name = "";
+				var fullName = "";
 				for(var i = 0; i < numItems; i++) {
-					name += this.parentList[i].name + "$";
+					fullName += this.parentList[i].name + "$";
 				}
-				name += this.currName;
+				fullName += name;
 
 				var parentExpr = this.parentList[numItems - 1];
-				funcExpr = parentExpr.scope.vars[name];				
+				funcExpr = parentExpr.scope.vars[fullName];				
 			}
 		}
 
-		if(!funcExpr) {
-			dopple.error(dopple.Error.REFERENCE_ERROR, this.currName);
-			return null;
+		if(!funcExpr) 
+		{
+			funcExpr = new AST.Function(name, null, null, this.parentList);
+			funcExpr.empty = true;
+			funcExpr.rootName = name;
+
+			this.scope.vars[this.makeFuncName(name)] = funcExpr;
+			this.global.defBuffer.push(funcExpr);			
 		}		
 
 		return funcExpr;
@@ -745,6 +721,80 @@ Lexer.Basic = dopple.Class.extend
 		name += this.currName;
 
 		return name;		
+	},
+
+	resolve: function()
+	{
+		var expr;
+		var numExpr = this.toResolve.length;
+		for(var i = 0; i < numExpr; i++)
+		{
+			expr = this.toResolve[i];
+			if(expr.exprType === this.exprEnum.FUNCTION_CALL) {
+				if(!this.resolveFuncCall(expr)) return false;
+			}
+		}
+
+		return true;
+	},
+
+	resolveFunc: function(expr) 
+	{
+		if(expr.empty) {
+			dopple.error(dopple.Error.REFERENCE_ERROR, expr.name);
+			return false;
+		}
+
+		return true;
+	},
+
+	resolveFuncCall: function(expr) 
+	{
+		var funcExpr = expr.func;
+		if(!this.resolveFunc(funcExpr)) return false;
+
+		var i;
+		var args = expr.args;
+		var params = funcExpr.params;
+		var numArgs = args.length;
+		var numParams = params.length;
+
+		// If function call has too many arguments, check first if any of argument is FORMAT:
+		if(numArgs > numParams) 
+		{
+			var error = true; 
+
+			for(i = 0; i < numArgs; i++) 
+			{
+				if(i >= numParams && args[i].type !== this.varEnum.FORMAT) { break; } 
+				if(args[i].type === this.varEnum.FORMAT) 
+				{
+					if(params[i].type !== this.varEnum.FORMAT) { break; }
+
+					error = false;
+					break;
+				}
+			}
+
+			if(error) {
+				console.error("TOO_MANY_ARGS: Function call \"" + funcExpr.name + "\" has " 
+					+ numArgs + " args, expecting maximum of " + numParams + " args");
+				return false;				
+			}
+		}	
+
+		// Analyse all argument expressions:
+		var expr;
+		for(i = 0; i < numArgs; i++)
+		{
+			expr = this.optimizer.do(args[i]);
+			if(!expr.analyse()) { 
+				return false; 
+			}
+			args[i] = expr;
+		}	
+
+		return true;
 	},
 
 	validateToken: function()
@@ -794,6 +844,8 @@ Lexer.Basic = dopple.Class.extend
 	defTypes: {},
 	process: {},
 	numVarTypes: 0,	
+
+	toResolveList: null,
 
 	precedence: {
 		"=": 2,

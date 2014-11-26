@@ -520,43 +520,32 @@ Compiler.C = Compiler.Basic.extend
 
 	makeFuncCall: function(funcCall) 
 	{
+		var i;
 		var params = funcCall.func.params;
 		var args = funcCall.args;
-		var numArgs = funcCall.func.numParams;
+		var numParams = params.length;
+		var numArgs = args.length;
 
 		this.outputScope += this.tabs + this.makeFuncName(funcCall.func) + "(";
 
-		// Write arguments, if there is any:
-		if(numArgs > 0)
+		// Write arguments:
+		for(i = 0; i < numArgs; i++)
 		{
-			if(params[0].type === this.varEnum.FORMAT) {
-				this.makeFormat(args);
-			}
-			else
-			{
-				var arg = args[0];
-				var param = params[0];
-				if(arg === param) {
-					this.outputScope += param.var.defaultValue();
-				}
-				else {
-					this.outputScope += arg.castTo(param);
-				}
+			this.outputScope += args[i].castTo(params[i]);
 
-				for(var i = 1; i < numArgs; i++) 
-				{
-					this.outputScope += ", ";
-
-					arg = args[i];
-					param = params[i];
-					if(arg === param) {
-						this.outputScope += param.var.defaultValue();
-					}
-					else {
-						this.outputScope += arg.castTo(param);
-					}
-				}
+			if(i < numParams - 1) {
+				this.outputScope += ", ";
 			}
+		}
+
+		// Write missing parameters:
+		for(; i < numParams; i++) 
+		{
+			this.outputScope += params[i].var.defaultValue();
+
+			if(i < numParams - 1) {
+				this.outputScope += ", ";
+			}			
 		}
 
 		this.outputScope += ");\n";

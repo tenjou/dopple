@@ -5,7 +5,7 @@ var AST = {};
 /* Expression Basic */
 AST.Basic = dopple.Class.extend
 ({
-	analyse: function() {},
+	analyse: function() { return true; },
 
 	to: function(type) {
 		return "void";
@@ -38,6 +38,7 @@ AST.Basic = dopple.Class.extend
 	//
 	type: 0,
 	exprType: 0,
+	empty: false,
 
 	exprEnum: dopple.ExprEnum,
 	varEnum: dopple.VarEnum
