@@ -323,6 +323,7 @@ AST.Function = AST.Basic.extend
 	name: "",
 	rootName: null,
 	returnVar: null,
+	numCalls: 0
 });
 
 /* Expression Function Call */
@@ -338,6 +339,18 @@ AST.FunctionCall = AST.Basic.extend
 
 	func: null,
 	args: null
+});
+
+/* Expression Function Call */
+AST.Return = AST.Basic.extend
+({
+	init: function(expr) {
+		this.expr = expr;
+	},
+
+	//
+	exprType: dopple.ExprEnum.RETURN,
+	expr: null
 });
 
 /* Expression Name */

@@ -24,9 +24,9 @@ dopple.ExprEnum = {
 	BINARY: 6,
 	FUNCTION: 7,
 	FUNCTION_CALL: 8,
-	PROTOTYPE: 9,
-	CLASS: 10,
-	RETURN: 11,
+	RETURN: 9,
+	PROTOTYPE: 10,
+	CLASS: 11,
 	FORMAT: 12
 };
 

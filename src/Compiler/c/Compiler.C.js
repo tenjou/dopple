@@ -168,7 +168,7 @@ Compiler.C = Compiler.Basic.extend
 	defineVar: function(varExpr)
 	{
 		if(varExpr.type === this.varEnum.VOID) {
-			console.warn("[Compiler.makeVar]:", "Variable \"" + this.makeVarName(varExpr) + "\" is discarded - void type.");
+			console.warn("UNRESOLVED_VARIABLE: Variable \"" + this.makeVarName(varExpr) + "\" was discarded because of void type");
 			return;
 		}
 
@@ -244,6 +244,11 @@ Compiler.C = Compiler.Basic.extend
 
 	defineFunc: function(func)
 	{
+		if(func.numCalls === 0) {
+			console.warn("DEAD_CODE_ELEMINATION: Function \"" + func.name + "\" was discarded");
+			return true;
+		}
+
 		var output = "";
 
 		var params = func.params;
@@ -324,7 +329,7 @@ Compiler.C = Compiler.Basic.extend
 
 		if(returnExpr.expr) {
 			this.output += "return ";
-			this.defineExpr(returnExpr.expr);
+			this.defineExpr(returnExpr.expr.expr);
 			this.output += ";\n";
 		}
 		else {
@@ -335,7 +340,7 @@ Compiler.C = Compiler.Basic.extend
 	makeVar: function(varExpr)
 	{
 		if(varExpr.type === this.varEnum.VOID) {
-			console.warn("[Compiler.makeVar]:", "Variable \"" + varExpr.name + "\" is discarded - void type.");
+			console.warn("UNRESOLVED_VARIABLE: Variable \"" + varExpr.name + "\" was discarded because of void type");
 			return "";
 		}
 

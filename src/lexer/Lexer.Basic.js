@@ -379,7 +379,7 @@ Lexer.Basic = dopple.Class.extend
 		var parentScope = this.scope;
 		this.scope = new dopple.Scope(this.scope);
 
-		var objExpr = new AST.Object(name, this.scope);
+		var objExpr = new AST.Class(name, this.scope);
 		parentScope.vars[name] = objExpr;
 		parentScope.defBuffer.push(objExpr);
 		this.parentList = [ objExpr ];
@@ -638,6 +638,7 @@ Lexer.Basic = dopple.Class.extend
 
 		var funcCall = new AST.FunctionCall(funcExpr, args);
 		this.scope.varBuffer.push(funcCall);
+		funcExpr.numCalls++;
 
 		return funcCall;
 	},
