@@ -14,7 +14,6 @@ Lexer.Basic = dopple.Class.extend
 		this.extern = new dopple.Extern(this);
 		
 		this.process.varType = 0;
-		this.toResolve = [];
 	},
 
 	read: function(buffer) 
@@ -24,7 +23,7 @@ Lexer.Basic = dopple.Class.extend
 			return false;
 		}
 
-		return this.resolve();
+		return this.resolve(this.global);
 	},
 
 	nextToken: function() {
@@ -287,11 +286,7 @@ Lexer.Basic = dopple.Class.extend
 
 		if(expr)
 		{
-			//varExpr.expr = this.optimizer.do(expr);
 			varExpr.expr = expr;
-			if(!varExpr.analyse()) {
-				return false;
-			}
 
 			if(definition && this.scope === this.global)
 			{
@@ -598,17 +593,6 @@ Lexer.Basic = dopple.Class.extend
 		var funcCall = new AST.FunctionCall(funcExpr, args);
 		this.scope.varBuffer.push(funcCall);
 		funcExpr.numCalls++;
-
-		if(funcExpr.empty) {
-			this.toResolve.push(funcCall);
-		}
-		else 
-		{
-			if(!this.resolveFuncCall(funcCall)) {
-				return null;
-			}
-		}
-
 		return funcCall;
 	},
 
@@ -619,12 +603,12 @@ Lexer.Basic = dopple.Class.extend
 			return false;
 		}
 
-		var expr = null;
+		var varExpr = null;
 
 		this.nextToken();
 		if(this.token.type > 2 && this.token.type < 9)
 		{
-			var varExpr = new AST.Var("");
+			varExpr = new AST.Var("");
 			varExpr.expr = this.parseExpression();
 			varExpr.expr = this.optimizer.do(varExpr.expr);
 			varExpr.var = varExpr.expr;
@@ -727,19 +711,53 @@ Lexer.Basic = dopple.Class.extend
 		return parentName;		
 	},
 
-	resolve: function()
+	resolve: function(scope)
 	{
-		var expr;
-		var numExpr = this.toResolve.length;
-		for(var i = 0; i < numExpr; i++)
+		// Resolve definitions:
+		var expr, type, i;
+		var exprBuffer = this.scope.defBuffer;
+		var numExpr = exprBuffer.length;
+		for(i = 0; i < numExpr; i++)
 		{
-			expr = this.toResolve[i];
-			if(expr.exprType === this.exprEnum.FUNCTION_CALL) {
-				if(!this.resolveFuncCall(expr)) return false;
+			expr = exprBuffer[i];
+			type = expr.exprType;
+			if(type === this.exprEnum.VAR) 
+			{
+				expr = this.resolveVar(expr);
+				if(!expr) { return false; }
+				exprBuffer[i] = expr;
 			}
 		}
 
+		// Resolve the rest of expresisons:
+		exprBuffer = this.scope.varBuffer;
+		numExpr = exprBuffer.length;
+		for(i = 0; i < numExpr; i++)
+		{
+			expr = exprBuffer[i];
+			type = expr.exprType;
+			if(type === this.exprEnum.FUNCTION_CALL) 
+			{
+				if(!this.resolveFuncCall(expr)) {
+					return false;
+				}
+			}			
+		}
+
 		return true;
+	},
+
+	resolveVar: function(expr)
+	{
+		expr = this.optimizer.do(expr);
+		expr.analyse();
+
+		if(expr.exprType === this.exprEnum.BINARY) {
+			this.resolveVar(expr.lhs);
+			this.resolveVar(expr.rhs);
+		}
+
+		return expr;
 	},
 
 	resolveFunc: function(expr) 
@@ -767,7 +785,10 @@ Lexer.Basic = dopple.Class.extend
 
 		for(i = 0; i < numItems; i++)
 		{
-			item = this.optimizer.do(items[i].expr);
+			item = items[i];
+			if(!item.expr) { continue; }
+
+			item = this.optimizer.do(item.expr);
 			item.analyse();
 
 			if(expr.type === 0) {
@@ -890,8 +911,6 @@ Lexer.Basic = dopple.Class.extend
 	defTypes: {},
 	process: {},
 	numVarTypes: 0,	
-
-	toResolveList: null,
 
 	precedence: {
 		"=": 2,
