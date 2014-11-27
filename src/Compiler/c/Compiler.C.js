@@ -235,6 +235,9 @@ Compiler.C = Compiler.Basic.extend
 		{
 			this.output += expr.value;
 		}
+		else if(exprType === this.exprEnum.STRING) {
+			this.output += "\"" + expr.createHex() + "\"\"" + expr.value + "\"";
+		}
 		else if(exprType === this.exprEnum.BINARY) {
 			this.defineExpr(expr.lhs);
 			this.output += " " + expr.op + " ";
@@ -265,14 +268,12 @@ Compiler.C = Compiler.Basic.extend
 		// Write parameters:
 		if(numParams) 
 		{
-			var varDef;
+			var varDef, type;
 			for(var i = 0; i < numParams; i++) 
 			{
 				varDef = params[i];
-				if(varDef.type === this.varEnum.NUMBER) {
-					output += "double " + varDef.value;
-				}
-				else if(varDef.type === this.varEnum.STRING) {
+				type = varDef.type;
+				if(type === this.varEnum.NUMBER || type === this.varEnum.STRING || type === this.varEnum.BOOL) {
 					output += this.varMap[varDef.type] + varDef.value;
 				}
 				else {

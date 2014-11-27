@@ -144,6 +144,25 @@ AST.Bool = AST.Basic.extend
 		this.value = value * 1;
 	},
 
+	castTo: function(param)
+	{
+		if(this.type === param.type) {
+			return this.value;
+		}
+		else 
+		{
+			if(param.type === this.varEnum.NAME) {
+				return "\"" + this.value + "\"";
+			}
+			else if(param.type === this.varEnum.STRING) {
+				return "\"" + param.var.hexLength(this.value) + "\"\"" + this.value + "\"";
+			}
+			else {
+				dopple.throw(dopple.Error.INVALID_TYPE_CONVERSION, this);
+			}		
+		}
+	},	
+
 	str: function() 
 	{
 		if(typeof this.value === "string") {

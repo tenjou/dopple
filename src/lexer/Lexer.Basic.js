@@ -80,6 +80,8 @@ Lexer.Basic = dopple.Class.extend
 			else if(type === this.tokenEnum.RETURN) {
 				this.parseReturn();
 			}
+
+			this.currName = "";
 		} while(this.token.type !== this.tokenEnum.EOF && this.token.str !== "}");
 
 		return true;
@@ -789,7 +791,7 @@ Lexer.Basic = dopple.Class.extend
 	{
 		var funcExpr = expr.func;
 		if(funcExpr.empty) {
-			dopple.error(dopple.Error.REFERENCE_ERROR, expr.name);
+			dopple.error(dopple.Error.REFERENCE_ERROR, funcExpr.name);
 			return false;
 		}
 
