@@ -111,7 +111,7 @@ Lexer.Mantra = Lexer.Basic.extend
 			newVar = new AST.Var(this.token.str);
 			newVar.var = newVar;
 			vars.push(newVar);
-			this.scope.vars[newVar.name] = newVar;
+			this.scope.vars[newVar.value] = newVar;
 			
 			this.nextToken();
 

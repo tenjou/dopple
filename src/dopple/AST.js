@@ -39,6 +39,7 @@ AST.Basic = dopple.Class.extend
 	type: 0,
 	exprType: 0,
 	empty: false,
+	resolved: false,
 
 	exprEnum: dopple.ExprEnum,
 	varEnum: dopple.VarEnum
@@ -167,7 +168,7 @@ AST.Var = AST.Basic.extend
 ({
 	init: function(name, parentList, type)  
 	{
-		this.name = name || "unknown";
+		this.value = name || "unknown";
 		this.parentList = parentList || null;
 		this.type = type || 0;
 	},
@@ -237,7 +238,6 @@ AST.Var = AST.Basic.extend
 	//
 	exprType: dopple.ExprEnum.VAR,
 
-	name: "", 
 	fullName: "",
 	parentList: null,
 

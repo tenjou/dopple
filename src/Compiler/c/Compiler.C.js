@@ -182,7 +182,7 @@ Compiler.C = Compiler.Basic.extend
 			if(varExpr.parentList)
 			{
 				if(exprType === this.exprEnum.VAR) {
-					this.output += this.makeVarName(expr) + expr.name + ";\n";
+					this.output += this.makeVarName(expr) + expr.value + ";\n";
 				}
 				else if(exprType === this.exprEnum.STRING) {
 					this.output += this.makeVarName(varExpr) + " = \"" + expr.createHex() + "\"\"" + expr.value + "\";\n";
@@ -198,22 +198,22 @@ Compiler.C = Compiler.Basic.extend
 				if(exprType === this.exprEnum.VAR) 
 				{
 					if(this.scope === this.global) {
-						this.output += this.varMap[varExpr.type] + varExpr.name + ";\n";
+						this.output += this.varMap[varExpr.type] + varExpr.value + ";\n";
 					}
 					else {
-						this.output += this.varMap[varExpr.type] + varExpr.name + " = " + expr.name + ";\n";
+						this.output += this.varMap[varExpr.type] + varExpr.value + " = " + expr.value + ";\n";
 					}
 				}
 				else if(exprType === this.exprEnum.STRING) {
-					this.output += this.varMap[varExpr.type] + varExpr.name + " = \"" + expr.createHex() + "\"\"" + expr.value + "\";\n";
+					this.output += this.varMap[varExpr.type] + varExpr.value + " = \"" + expr.createHex() + "\"\"" + expr.value + "\";\n";
 				}
 				else 
 				{
 					if(this.scope === this.global && varExpr.expr.exprType === this.exprEnum.BINARY) {
-						this.output += this.varMap[varExpr.type] + varExpr.name + ";\n";
+						this.output += this.varMap[varExpr.type] + varExpr.value + ";\n";
 					}
 					else {				
-						this.output += this.varMap[varExpr.type] + varExpr.name + " = ";
+						this.output += this.varMap[varExpr.type] + varExpr.value + " = ";
 						this.defineExpr(expr);
 						this.output += ";\n";
 					}
@@ -270,14 +270,14 @@ Compiler.C = Compiler.Basic.extend
 			{
 				varDef = params[i];
 				if(varDef.type === this.varEnum.NUMBER) {
-					output += "double " + varDef.name;
+					output += "double " + varDef.value;
 				}
 				else if(varDef.type === this.varEnum.STRING) {
-					output += this.varMap[varDef.type] + varDef.name;
+					output += this.varMap[varDef.type] + varDef.value;
 				}
 				else {
 					console.error("UNRESOLVED_ARGUMENT:", 
-						"Function \"" + funcName + "\" has an unresolved argument \"" + varDef.name + "\"");
+						"Function \"" + funcName + "\" has an unresolved argument \"" + varDef.value + "\"");
 					return false;
 				}
 
@@ -555,19 +555,19 @@ Compiler.C = Compiler.Basic.extend
 	{
 		var parentList = varExpr.parentList;
 		if(!parentList) {
-			return varExpr.name;
+			return varExpr.value;
 		}
 
 		var numItems = parentList.length;
 		if(numItems <= 0) {
-			return varExpr.name;
+			return varExpr.value;
 		}
 		
 		var name = "";
 		for(var i = 0; i < numItems; i++) {
-			name += parentList[i].name + ".";
+			name += parentList[i].value + ".";
 		}
-		name += varExpr.name;
+		name += varExpr.value;
 
 		return name;
 	},

@@ -212,12 +212,7 @@ Lexer.Basic = dopple.Class.extend
 			} while(this.token.str === ".");
 		}
 
-		var varExpr = new AST.Var(this.currName, parentList);
-		varExpr.expr = varExpr;
-		varExpr.var = expr;
-		varExpr.type = expr.type;
-		varExpr.value = this.currName;
-		return varExpr;
+		return expr;
 	},
 
 	parseString: function()
@@ -535,14 +530,14 @@ Lexer.Basic = dopple.Class.extend
 	parseFuncParams: function()
 	{
 		var newVar;
-		var vars = [];
+		var params = [];
 		this.nextToken();
 		while(this.token.type === this.tokenEnum.NAME) 
 		{
 			newVar = new AST.Var(this.token.str);
 			newVar.var = newVar;
-			vars.push(newVar);
-			this.scope.vars[newVar.name] = newVar;
+			params.push(newVar);
+			this.scope.vars[newVar.value] = newVar;
 			
 			this.nextToken();
 			if(this.token.str !== ",") 
@@ -561,7 +556,7 @@ Lexer.Basic = dopple.Class.extend
 			this.handleUnexpectedToken();
 		}	
 
-		return vars;		
+		return params;		
 	},
 
 	parseFuncPre: function(funcExpr) { return true; },
@@ -703,24 +698,24 @@ Lexer.Basic = dopple.Class.extend
 		return funcExpr;
 	},
 
-	makeFuncName: function()
+	makeFuncName: function(name)
 	{
 		if(!this.parentList) {
-			return this.currName;
+			return name;
 		}
 
 		var numItems = this.parentList.length;
 		if(numItems <= 0) {
-			return this.currName;
+			return name;
 		}
 		
-		var name = "";
+		var parentName = "";
 		for(var i = 0; i < numItems; i++) {
-			name += this.parentList[i].name + "$";
+			parentName += this.parentList[i].name + "$";
 		}
-		name += this.currName;
-
-		return name;		
+		parentName += name;
+		
+		return parentName;		
 	},
 
 	resolve: function()
@@ -740,18 +735,27 @@ Lexer.Basic = dopple.Class.extend
 
 	resolveFunc: function(expr) 
 	{
-		if(expr.empty) {
-			dopple.error(dopple.Error.REFERENCE_ERROR, expr.name);
-			return false;
+		if(expr.resolved) { return; }
+
+		var def;
+		var defs = expr.scope.defBuffer;
+		var numDefs = defs.length;
+		for(var i = 0; i < numDefs; i++)
+		{
+			def = defs[i];
+			def.analyse();
 		}
 
-		return true;
+		expr.resolved = true;
 	},
 
 	resolveFuncCall: function(expr) 
 	{
 		var funcExpr = expr.func;
-		if(!this.resolveFunc(funcExpr)) return false;
+		if(funcExpr.empty) {
+			dopple.error(dopple.Error.REFERENCE_ERROR, expr.name);
+			return false;
+		}
 
 		var i;
 		var args = expr.args;
@@ -797,6 +801,8 @@ Lexer.Basic = dopple.Class.extend
 				params[i].type = expr.type;
 			}
 		}	
+
+		this.resolveFunc(funcExpr);
 
 		return true;
 	},
