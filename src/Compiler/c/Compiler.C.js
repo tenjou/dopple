@@ -260,7 +260,7 @@ Compiler.C = Compiler.Basic.extend
 		var funcName = this.makeFuncName(func);
 
 		// Write head:
-		output += this.varMap[func.returnVar.type] + funcName + "(";
+		output += this.varMap[func.type] + funcName + "(";
 
 		// Write parameters:
 		if(numParams) 

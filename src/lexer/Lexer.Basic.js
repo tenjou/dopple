@@ -490,6 +490,7 @@ Lexer.Basic = dopple.Class.extend
 		funcExpr.empty = false;
 		funcExpr.scope = new dopple.Scope(this.scope);	
 		this.scope = funcExpr.scope;
+		this.scope.funcExpr = funcExpr;
 		
 		var vars = this.parseFuncParams();
 		if(!vars) {
@@ -611,12 +612,15 @@ Lexer.Basic = dopple.Class.extend
 
 	parseReturn: function()
 	{
+		if(!this.scope.funcExpr) {
+			console.error("Error: Illegal return in the global scope");
+			return false;
+		}
+
 		var expr = null;
 
 		this.nextToken();
-		if(this.token.type === this.tokenEnum.VAR ||
-		   this.token.type === this.tokenEnum.NUMBER ||
-		   this.token.type === this.tokenEnum.NAME)
+		if(this.token.type > 2 && this.token.type < 9)
 		{
 			var varExpr = new AST.Var("");
 			varExpr.expr = this.parseExpression();
@@ -627,6 +631,9 @@ Lexer.Basic = dopple.Class.extend
 
 		var returnExpr = new AST.Return(varExpr);
 		this.scope.varBuffer.push(returnExpr);
+		this.scope.funcExpr.returnBuffer.push(returnExpr);
+
+		return true;
 	},
 
 	parseParentList: function()
@@ -714,7 +721,7 @@ Lexer.Basic = dopple.Class.extend
 			parentName += this.parentList[i].name + "$";
 		}
 		parentName += name;
-		
+
 		return parentName;		
 	},
 
@@ -737,16 +744,45 @@ Lexer.Basic = dopple.Class.extend
 	{
 		if(expr.resolved) { return; }
 
-		var def;
-		var defs = expr.scope.defBuffer;
-		var numDefs = defs.length;
-		for(var i = 0; i < numDefs; i++)
+		var i, def, item;
+		var items = expr.scope.defBuffer;
+		var numItems = items.length;
+		for(i = 0; i < numItems; i++)
 		{
-			def = defs[i];
+			def = items[i];
 			def.analyse();
 		}
 
+		// Resolve function type:
+		items = expr.returnBuffer;
+		numItems = items.length;
+
+		// Error: If type is defined without return expression:
+		if(numItems === 0 && expr.type !== 0) {
+			console.error("ReturnError: Function \"" + expr.name + "\" requires at least one return expression");
+			return false;
+		}
+
+		for(i = 0; i < numItems; i++)
+		{
+			item = this.optimizer.do(items[i].expr);
+			item.analyse();
+
+			if(expr.type === 0) {
+				expr.type = item.var.type;
+			}
+			else if(expr.type !== item.var.type) 
+			{
+				console.error("ReturnError: Function \"" + expr.name + 
+					"\" different return expressions dont have matching return types: is " + 
+					expr.strType() + " but expected " + item.var.strType());
+				return false;
+			}
+		}
+
 		expr.resolved = true;
+
+		return true;
 	},
 
 	resolveFuncCall: function(expr) 
@@ -802,9 +838,7 @@ Lexer.Basic = dopple.Class.extend
 			}
 		}	
 
-		this.resolveFunc(funcExpr);
-
-		return true;
+		return this.resolveFunc(funcExpr);
 	},
 
 	validateToken: function()
@@ -882,6 +916,7 @@ Lexer.Basic = dopple.Class.extend
 dopple.Scope = function(parent)
 {
 	this.parent = parent || null;
+	this.funcExpr = null;
 
 	this.vars = {};
 	this.defBuffer = [];

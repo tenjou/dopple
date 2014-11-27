@@ -168,7 +168,7 @@ AST.Var = AST.Basic.extend
 ({
 	init: function(name, parentList, type)  
 	{
-		this.value = name || "unknown";
+		if(name) { this.value = name; }
 		this.parentList = parentList || null;
 		this.type = type || 0;
 	},
@@ -243,7 +243,7 @@ AST.Var = AST.Basic.extend
 
 	var: null,
 	expr: null,
-	value: ""
+	value: "unknown"
 });
 
 /* Expression Binary */
@@ -313,8 +313,7 @@ AST.Function = AST.Basic.extend
 		this.params = params;
 		this.numParams = (params) ? params.length : 0;
 		this.parentList = parentList || null;
-
-		this.returnVar = new AST.Var("");
+		this.returnBuffer = [];
 	},
 
 	//
@@ -323,7 +322,7 @@ AST.Function = AST.Basic.extend
 
 	name: "",
 	rootName: null,
-	returnVar: null,
+	returnBuffer: null,
 	numCalls: 0
 });
 

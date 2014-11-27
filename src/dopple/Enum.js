@@ -9,8 +9,8 @@ dopple.TokenEnum = {
 	NAME: 5,
 	STRING: 6,
 	VAR: 7,
-	RETURN: 8,
-	FUNCTION: 9,
+	FUNCTION: 8,
+	RETURN: 9,
 	COMMENT: 10
 };
 
