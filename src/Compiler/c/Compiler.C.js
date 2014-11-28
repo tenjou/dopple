@@ -207,6 +207,35 @@ Compiler.C = Compiler.Basic.extend
 				else if(exprType === this.exprEnum.STRING) {
 					this.output += this.varMap[varExpr.type] + varExpr.value + " = \"" + expr.createHex() + "\"\"" + expr.value + "\";\n";
 				}
+				else if(exprType === this.exprEnum.FUNCTION) 
+				{
+					this.output += this.varMap[expr.type] + "(*" + varExpr.value + ")(";
+					var params = expr.params;
+					var numParams = params.length;
+					if(numParams > 0)
+					{
+						var param, type;
+						for(var i = 0; i < numParams; i++) 
+						{
+							param = params[i];
+							type = param.type;
+							if(type === this.varEnum.NUMBER || type === this.varEnum.STRING || type === this.varEnum.BOOL) {
+								this.output += this.varMap[param.type] + param.value;
+							}
+							else {
+								console.error("UNRESOLVED_ARGUMENT:", 
+									"Function \"" + expr.name + "\" has an unresolved argument \"" + param.value + "\"");
+								return false;
+							}
+
+							if(i < numParams - 1) {
+								this.output += ", ";
+							}							
+						}
+					}
+
+					this.output += ") = &" + expr.name + ";\n";
+				}
 				else 
 				{
 					if(this.scope === this.global && varExpr.expr.exprType === this.exprEnum.BINARY) {
@@ -223,6 +252,8 @@ Compiler.C = Compiler.Basic.extend
 		else {
 			this.output += this.makeVarName(varExpr) + " = " + varExpr.defaultValue() + ";\n";
 		}
+
+		return true;
 	},
 
 	defineExpr: function(expr)
@@ -247,7 +278,7 @@ Compiler.C = Compiler.Basic.extend
 
 	defineFunc: function(func)
 	{
-		if(func.numCalls === 0) {
+		if(func.numUses === 0) {
 			console.warn("DEAD_CODE_ELEMINATION: Function \"" + func.name + "\" was discarded");
 			return true;
 		}

@@ -181,37 +181,35 @@ Lexer.Basic = dopple.Class.extend
 
 	parseName: function()
 	{
+		// If there is no such variable, it should be a function:
 		var expr = this.scope.vars[this.currName];
 		if(!expr) {
-			dopple.error(dopple.Error.REFERENCE_ERROR, this.currName);
-			return null;
+			expr = this.getFunc(this.currName);
+			expr.numUses++;
 		}
 
-		var parentList = null;
-		var scope = expr.scope;
-		
-		this.nextToken();
-		if(this.token.str === ".") 
-		{
-			parentList = [ expr ];
+		//var chain = null;
+		// // Check if is accessing to objects:
+		// this.nextToken();
+		// if(this.token.str === ".") 
+		// {
+		// 	chain = [];
 
-			this.nextToken();
-			do
-			{
-				if(this.token.type !== this.tokenEnum.NAME) {
-					this.handleTokenError();
-				}
+		// 	this.nextToken();
+		// 	do
+		// 	{
+		// 		if(this.token.type !== this.tokenEnum.NAME) {
+		// 			this.handleTokenError();
+		// 		}
 
-				this.currName = this.token.str;
-				expr = scope.vars[this.currName];
-				if(!expr) {
-					dopple.error(dopple.Error.REFERENCE_ERROR, this.currName);
-					return null;
-				}
+		// 		parentList.push(this.currName);
+		// 		this.currName = this.token.str;
 
-				this.nextToken();		
-			} while(this.token.str === ".");
-		}
+		// 		this.nextToken();		
+		// 	} while(this.token.str === ".");
+
+		// 	expr.chain = parentList;
+		// }
 
 		return expr;
 	},
@@ -241,6 +239,90 @@ Lexer.Basic = dopple.Class.extend
 		return expr;
 	},	
 
+	parseVar: function()
+	{
+		var initial = false;
+		if(this.token.type === this.tokenEnum.VAR)
+		{
+			this.nextToken();	
+			if(this.token.type !== this.tokenEnum.NAME) {
+				this.handleTokenError();
+			}
+
+			initial = true;
+		}
+
+		var varName = this.token.str;
+		this.currName = varName;
+		this.nextToken();
+
+		if(this.token.str === "(") 
+		{
+			if(!this.parseFuncCall()) {
+				return false;
+			}
+		}
+		else if(this.token.str === ".") 
+		{
+			// Invalid if initialized as: var <objName>.<memberName>
+			if(initial) {
+				dopple.throw(dopple.Error.UNEXPECTED_TOKEN, this.token.str);
+			}
+
+			this.parseParentList();
+
+			if(this.token.str === "=") {
+				this._defineObjVar();
+			}
+			else if(this.token.str === "(") 
+			{
+				if(!this.parseFuncCall()) {
+					return false;
+				}
+			}
+			else {
+				throw "Lexer::parseVar: Unhandled case!";
+			}
+
+			this.parentList = null;
+		}
+		else
+		{	
+			this.parseVarPost();
+
+			if(this.token.str === "=")
+			{
+				this.nextToken();
+
+				var expr = this.parseExpression();
+				if(!expr) { return false; }
+
+				if(!this._defineVar(varName, expr, initial)) {
+					return false;
+				}	
+			}
+			else 
+			{
+				if(!initial && this.token.type === this.tokenEnum.NAME) {
+					this.handleTokenError();
+				}
+				else if(initial && this.token.type === this.tokenEnum.SYMBOL) {
+					this.handleUnexpectedToken();
+				}
+
+				if(!this._defineVar(varName, null, initial)) {
+					return false;
+				}
+			}
+		}
+
+		this.currName = "";
+
+		return true;
+	},	
+
+	parseVarPost: function() {},
+
 	_defineVar: function(name, expr, initial)
 	{
 		// Ignore if it's not a definition and without a body.
@@ -253,36 +335,32 @@ Lexer.Basic = dopple.Class.extend
 		var scopeVarExpr = this.scope.vars[name];
 		var definition = false;
 
-		// Expression is function:
-		if(expr && expr.exprType === this.exprEnum.FUNCTION)
+		//
+		if(scopeVarExpr === void(0)) 
 		{
-			if(scopeVarExpr) {
-				dopple.error(dopple.Error.UNSUPPORTED_FEATURE, "Redefining function pointer");
+			// No such variable defined.
+			if(!initial) {
+				dopple.error(dopple.Error.REFERENCE_ERROR, this.currName);
 				return false;
 			}
-		}
-		//
-		else
-		{
-			if(scopeVarExpr === void(0)) 
-			{
-				// No such variable defined.
-				if(!initial) {
-					dopple.error(dopple.Error.REFERENCE_ERROR, this.currName);
-					return false;
-				}
 
-				definition = true;
-				scopeVarExpr = varExpr;
+			definition = true;
+			scopeVarExpr = varExpr;
+
+			// If function pointer:
+			if(expr.exprType === this.exprEnum.FUNCTION) {
+				this.scope.vars[name] = expr;
+			}	
+			else {
 				this.scope.vars[name] = varExpr;
 				this.scope.defBuffer.push(varExpr);
-			}
-			else {
-				this.scope.varBuffer.push(varExpr);
-			}
-
-			varExpr.var = scopeVarExpr;
+			}		
 		}
+		else {
+			this.scope.varBuffer.push(varExpr);
+		}
+
+		varExpr.var = scopeVarExpr;
 
 		if(expr)
 		{
@@ -592,7 +670,7 @@ Lexer.Basic = dopple.Class.extend
 
 		var funcCall = new AST.FunctionCall(funcExpr, args);
 		this.scope.varBuffer.push(funcCall);
-		funcExpr.numCalls++;
+		funcExpr.numUses++;
 		return funcCall;
 	},
 

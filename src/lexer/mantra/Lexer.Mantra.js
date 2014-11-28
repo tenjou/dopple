@@ -6,99 +6,18 @@ Lexer.Mantra = Lexer.Basic.extend
 		this.tokenizer.customKeyword["func"] = this.tokenEnum.FUNCTION;
 	},
 
-	parseVar: function()
+	parseVarPost: function()
 	{
-		var initial = false;
-		if(this.token.type === this.tokenEnum.VAR)
+		// Check if variable has a defined type:
+		if(this.token.str === ":") 
 		{
-			this.nextToken();	
-			if(this.token.type !== this.tokenEnum.NAME) {
-				this.handleTokenError();
-			}
-
-			initial = true;
-		}
-
-		var varName = this.token.str;
-		this.currName = varName;
-		this.nextToken();
-
-		if(this.token.str === "(") 
-		{
-			if(!this.parseFuncCall()) {
-				return false;
+			if(!this.readType()) { 
+				return false; 
 			}
 		}
-		else if(this.token.str === ".") 
-		{
-			// Invalid if initialized as: var <objName>.<memberName>
-			if(initial) {
-				dopple.throw(dopple.Error.UNEXPECTED_TOKEN, this.token.str);
-			}
-
-			this.parseParentList();
-
-			if(this.token.str === "=") {
-				this._defineObjVar();
-			}
-			else if(this.token.str === "(") 
-			{
-				if(!this.parseFuncCall()) {
-					return false;
-				}
-			}
-			else {
-				throw "Lexer::parseVar: Unhandled case!";
-			}
-
-			this.parentList = null;
+		else {
+			this.process.varType = this.varEnum.VOID;
 		}
-		else
-		{	
-			// Check if variable has a defined type:
-			if(this.token.str === ":") 
-			{
-				if(!this.readType()) { 
-					return false; 
-				}
-			}
-			else {
-				this.process.varType = this.varEnum.VOID;
-			}
-
-			if(this.token.str === "=")
-			{
-				this.nextToken();
-
-				var expr = this.parseExpression();
-				if(!expr) { return false; }
-
-				if(expr.exprType !== this.exprEnum.CLASS &&
-				   expr.exprType !== this.exprEnum.FUNCTION) 
-				{
-					if(!this._defineVar(varName, expr, initial)) {
-						return false;
-					}	
-				}
-			}
-			else 
-			{
-				if(!initial && this.token.type === this.tokenEnum.NAME) {
-					this.handleTokenError();
-				}
-				else if(initial && this.token.type === this.tokenEnum.SYMBOL) {
-					this.handleUnexpectedToken();
-				}
-
-				if(!this._defineVar(varName, null, initial)) {
-					return false;
-				}
-			}
-		}
-
-		this.currName = "";
-
-		return true;
 	},
 
 	parseFuncParams: function()

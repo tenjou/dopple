@@ -40,6 +40,7 @@ AST.Basic = dopple.Class.extend
 	exprType: 0,
 	empty: false,
 	resolved: false,
+	numUses: 0,
 
 	exprEnum: dopple.ExprEnum,
 	varEnum: dopple.VarEnum
@@ -95,7 +96,7 @@ AST.String = AST.Basic.extend
 	castTo: function(param)
 	{
 		if(this.type === param.type) {
-			return "\"" + this.length + "\"\"" + this.value + "\"";
+			return "\"" + this.createHex() + "\"\"" + this.value + "\"";
 		}
 		else 
 		{
@@ -236,8 +237,12 @@ AST.Var = AST.Basic.extend
 	{	
 		if(!this.expr) { return true; }
 		
-		if(this.expr.exprType === this.exprEnum.BINARY) {
+		var type = this.expr.exprType;
+		if(type === this.exprEnum.BINARY) {
 			this.type = this.expr.analyse();
+		}
+		else if(type === this.exprEnum.FUNCTION) {
+			this.type = this.varEnum.FUNCTION_PTR;
 		}
 		else
 		{
@@ -341,8 +346,7 @@ AST.Function = AST.Basic.extend
 
 	name: "",
 	rootName: null,
-	returnBuffer: null,
-	numCalls: 0
+	returnBuffer: null
 });
 
 /* Expression Function Call */

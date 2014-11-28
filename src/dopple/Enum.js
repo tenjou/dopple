@@ -24,10 +24,11 @@ dopple.ExprEnum = {
 	BINARY: 6,
 	FUNCTION: 7,
 	FUNCTION_CALL: 8,
-	RETURN: 9,
-	PROTOTYPE: 10,
-	CLASS: 11,
-	FORMAT: 12
+	FUNCTION_PTR: 9,
+	RETURN: 10,
+	PROTOTYPE: 11,
+	CLASS: 12,
+	FORMAT: 13
 };
 
 dopple.VarEnum = {
@@ -36,7 +37,8 @@ dopple.VarEnum = {
 	STRING: 2,
 	BOOL: 3,
 	FUNCTION: 4,
-	CLASS: 5,
+	FUNCTION_PTR: 5,
+	CLASS: 6,
 	NAME: 10,
 	FORMAT: 11
 };
