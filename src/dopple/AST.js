@@ -233,13 +233,20 @@ AST.Var = AST.Basic.extend
 		}
 	},
 
-	analyse: function()
+	analyse: function(resolver)
 	{	
 		if(!this.expr) { return true; }
 		
 		var type = this.expr.exprType;
 		if(type === this.exprEnum.BINARY) {
-			this.type = this.expr.analyse();
+			this.type = this.expr.analyse(resolver);
+		}
+		else if(type === this.exprEnum.FUNCTION_CALL) 
+		{
+			if(!resolver.resolveFuncCall(this.expr)) {
+				return false;
+			}
+			this.type = this.expr.func.type;
 		}
 		else if(type === this.exprEnum.FUNCTION) {
 			this.type = this.varEnum.FUNCTION_PTR;
@@ -267,7 +274,9 @@ AST.Var = AST.Basic.extend
 
 	var: null,
 	expr: null,
-	value: "unknown"
+	value: "unknown",
+	
+	isDef: false
 });
 
 /* Expression Binary */

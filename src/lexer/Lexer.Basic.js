@@ -306,7 +306,7 @@ Lexer.Basic = dopple.Class.extend
 				if(!initial && this.token.type === this.tokenEnum.NAME) {
 					this.handleTokenError();
 				}
-				else if(initial && this.token.type === this.tokenEnum.SYMBOL) {
+				else if(initial && this.token.str !== ";") {
 					this.handleUnexpectedToken();
 				}
 
@@ -332,10 +332,8 @@ Lexer.Basic = dopple.Class.extend
 		}
 
 		var varExpr = new AST.Var(name, this.parentList, this.process.varType);
+		
 		var scopeVarExpr = this.scope.vars[name];
-		var definition = false;
-
-		//
 		if(scopeVarExpr === void(0)) 
 		{
 			// No such variable defined.
@@ -344,39 +342,26 @@ Lexer.Basic = dopple.Class.extend
 				return false;
 			}
 
-			definition = true;
+			varExpr.isDef = true;
 			scopeVarExpr = varExpr;
 
 			// If function pointer:
-			if(expr.exprType === this.exprEnum.FUNCTION) {
+			if(expr && expr.exprType === this.exprEnum.FUNCTION) {
 				this.scope.vars[name] = expr;
+				this.scope.exprs.push(varExpr);
 			}	
-			else {
+			else 
+			{
 				this.scope.vars[name] = varExpr;
-				this.scope.defBuffer.push(varExpr);
+				if(expr) { this.scope.exprs.push(varExpr); }
 			}		
-		}
-		else {
-			this.scope.varBuffer.push(varExpr);
 		}
 
 		varExpr.var = scopeVarExpr;
-
-		if(expr)
-		{
-			varExpr.expr = expr;
-
-			if(definition && this.scope === this.global)
-			{
-				var exprType = varExpr.expr.exprType;
-				if(exprType === this.exprEnum.BINARY || exprType === this.exprEnum.VAR) {
-					this.scope.varBuffer.push(varExpr);
-				}
-			}
-
-			if(this.token.str !== ";") {
-				this._skipNextToken = true;
-			}	
+		varExpr.expr = expr;
+		
+		if(this.token.str !== ";") {
+			this._skipNextToken = true;
 		}	
 
 		return true;		
@@ -669,7 +654,7 @@ Lexer.Basic = dopple.Class.extend
 		}
 
 		var funcCall = new AST.FunctionCall(funcExpr, args);
-		this.scope.varBuffer.push(funcCall);
+		this.scope.exprs.push(funcCall);
 		funcExpr.numUses++;
 		return funcCall;
 	},
@@ -677,24 +662,21 @@ Lexer.Basic = dopple.Class.extend
 	parseReturn: function()
 	{
 		if(!this.scope.funcExpr) {
-			console.error("Error: Illegal return in the global scope");
+			console.error("Illegal return in the global scope");
 			return false;
 		}
 
 		var varExpr = null;
 
 		this.nextToken();
-		if(this.token.type > 2 && this.token.type < 9)
-		{
+		if(this.token.type > 2 && this.token.type < 9) {
 			varExpr = new AST.Var("");
 			varExpr.expr = this.parseExpression();
-			varExpr.expr = this.optimizer.do(varExpr.expr);
 			varExpr.var = varExpr.expr;
-			varExpr.analyse();
 		}
 
 		var returnExpr = new AST.Return(varExpr);
-		this.scope.varBuffer.push(returnExpr);
+		this.scope.exprs.push(returnExpr);
 		this.scope.funcExpr.returnBuffer.push(returnExpr);
 
 		return true;
@@ -763,7 +745,7 @@ Lexer.Basic = dopple.Class.extend
 			funcExpr.rootName = name;
 
 			this.scope.vars[this.makeFuncName(name)] = funcExpr;
-			this.global.defBuffer.push(funcExpr);			
+			this.global.funcs.push(funcExpr);			
 		}		
 
 		return funcExpr;
@@ -791,92 +773,68 @@ Lexer.Basic = dopple.Class.extend
 
 	resolve: function(scope)
 	{
-		// Resolve definitions:
 		var expr, type, i;
-		var exprBuffer = this.scope.defBuffer;
-		var numExpr = exprBuffer.length;
+		var exprs = scope.exprs;
+		var numExpr = exprs.length;
 		for(i = 0; i < numExpr; i++)
 		{
-			expr = exprBuffer[i];
+			expr = exprs[i];
 			type = expr.exprType;
 			if(type === this.exprEnum.VAR) 
 			{
-				expr = this.resolveVar(expr);
-				if(!expr) { return false; }
-				exprBuffer[i] = expr;
+				expr.expr = this.optimizer.do(expr.expr);
+				if(!expr.analyse(this)) {
+					return false;
+				}
 			}
-		}
-
-		// Resolve the rest of expresisons:
-		exprBuffer = this.scope.varBuffer;
-		numExpr = exprBuffer.length;
-		for(i = 0; i < numExpr; i++)
-		{
-			expr = exprBuffer[i];
-			type = expr.exprType;
-			if(type === this.exprEnum.FUNCTION_CALL) 
+			else if(type === this.exprEnum.FUNCTION_CALL) 
 			{
 				if(!this.resolveFuncCall(expr)) {
 					return false;
 				}
-			}			
+			}
+			else if(type === this.exprEnum.RETURN) 
+			{
+				expr.expr.expr = this.optimizer.do(expr.expr.expr);
+				if(!expr.expr.analyse(this)) {
+					return false;
+				}				
+			}
 		}
 
 		return true;
 	},
 
-	resolveVar: function(expr)
-	{
-		expr = this.optimizer.do(expr);
-		expr.analyse();
-
-		if(expr.exprType === this.exprEnum.BINARY) {
-			this.resolveVar(expr.lhs);
-			this.resolveVar(expr.rhs);
-		}
-
-		return expr;
-	},
-
 	resolveFunc: function(expr) 
 	{
-		if(expr.resolved) { return; }
+		if(expr.resolved) { return true; }
 
-		var i, def, item;
-		var items = expr.scope.defBuffer;
-		var numItems = items.length;
-		for(i = 0; i < numItems; i++)
-		{
-			def = items[i];
-			def.analyse();
-		}
+		if(!this.resolve(expr.scope)) { return false; }
 
 		// Resolve function type:
-		items = expr.returnBuffer;
-		numItems = items.length;
+		var retExpr;
+		var retExprs = expr.returnBuffer;
+		var numRetExprs = retExprs.length;
 
 		// Error: If type is defined without return expression:
-		if(numItems === 0 && expr.type !== 0) {
-			console.error("ReturnError: Function \"" + expr.name + "\" requires at least one return expression");
+		if(numRetExprs === 0 && expr.type !== 0) {
+			console.error("ReturnError: Function \'" + expr.name + "\' requires at least one return expression");
 			return false;
 		}
 
-		for(i = 0; i < numItems; i++)
+		for(var i = 0; i < numRetExprs; i++)
 		{
-			item = items[i];
-			if(!item.expr) { continue; }
-
-			item = this.optimizer.do(item.expr);
-			item.analyse();
+			retExpr = retExprs[i].expr;
+			if(!retExpr) { continue; }
 
 			if(expr.type === 0) {
-				expr.type = item.var.type;
+				expr.type = retExpr.type;
 			}
-			else if(expr.type !== item.var.type) 
+			else if(expr.type !== retExpr.type) 
 			{
-				console.error("ReturnError: Function \"" + expr.name + 
-					"\" different return expressions dont have matching return types: is " + 
-					expr.strType() + " but expected " + item.var.strType());
+				console.error("ReturnError: Function \'" + expr.name + 
+					"\' different return expressions dont have matching return types: is " + 
+					expr.strType() + " but expected " + retExpr.strType());
 				return false;
 			}
 		}
@@ -1016,8 +974,7 @@ dopple.Scope = function(parent)
 {
 	this.parent = parent || null;
 	this.funcExpr = null;
-
 	this.vars = {};
-	this.defBuffer = [];
-	this.varBuffer = [];
+	this.funcs = [];
+	this.exprs = [];
 };

@@ -20,7 +20,7 @@ Compiler.Basic = dopple.Class.extend
 		
 		if(this.lexer.read(source)) {
 			this.global = this.lexer.global;
-			this.make();
+			this.emit();
 		}
 
 		return this.output;	

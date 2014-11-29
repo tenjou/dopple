@@ -30,6 +30,30 @@ Compiler.C = Compiler.Basic.extend
 		extern.func("confirm", [ this.varEnum.STRING ]);
 	},
 
+	emit: function()
+	{
+		this.output = "";
+
+		var output = this.emitScope(this.global);
+		if(output) {
+			output += "\n";
+		}		
+
+		this.emitFuncs(this.global.funcs);
+
+		this.scopeOutput = "int main(int argc, char *argv[]) \n{\n";
+		this.scopeOutput += output;
+		this.scopeOutput += "\treturn 0;\n}\n";
+
+		this.libraryOutput = "#include \"dopple.h\"\n\n";
+		this.output += this.libraryOutput;
+		if(this.defOutput) {
+			this.output += this.defOutput + "\n";
+		}
+		this.output += this.funcOutput;
+		this.output += this.scopeOutput;
+	},
+
 	make: function()
 	{
 		this.output = "#include \"dopple.h\"\n\n";
@@ -86,204 +110,156 @@ Compiler.C = Compiler.Basic.extend
 		return this.output;
 	},
 
-	define: function(scope)
+	emitScope: function(scope)
 	{
 		this.scope = scope;
+		this.incTabs();
 
-		var i;
-		var expr, exprType;
+		var output = "";
+		var expr, type;
+		var exprs = scope.exprs;
+		var numExprs = exprs.length;
 
-		var defs = scope.defBuffer;
-		var numDefs = defs.length;
-		if(numDefs)
+		for(var i = 0; i < numExprs; i++)
 		{
-			var prevExprType = defs[0].exprType;
-			for(i = 0; i < numDefs; i++) 
-			{
-				expr = defs[i];
-				exprType = expr.exprType;
+			expr = exprs[i];
+			type = expr.exprType;
 
-				// Make newlines between diffrent expr types.
-				if(exprType !== prevExprType) {
-					this.output += "\n";
-				}
-
-				if(exprType === this.exprEnum.VAR) {
-					this.defineVar(expr);
-				}
-				else if(exprType === this.exprEnum.FUNCTION) 
-				{
-					if(!this.defineFunc(expr)) return false;
-					exprType = 0;
-				}
-				else if(exprType === this.exprEnum.FUNCTION_CALL) {
-					this.defineFuncCall(expr);
-				}
-				else if(exprType === this.exprEnum.OBJECT) {
-					this.defineObject(expr);
-					exprType = 0;
-				}
-				else if(exprType === this.exprEnum.RETURN) {
-					this.defineReturn(expr);
-				}
-				else {
-					console.log("unhandled");
-				}
-
-				prevExprType = exprType;
+			if(type === this.exprEnum.VAR) {
+				output += this.emitVar(expr);
+			}
+			else if(type === this.exprEnum.FUNCTION_CALL) {
+				output += this.emitFuncCall(expr);
+			}			
+			else if(type === this.exprEnum.RETURN) {
+				output += this.emitReturn(expr);
 			}
 		}
 
-		this.outputScope = "";
-
-		if(scope !== this.global)
-		{
-			var vars = scope.varBuffer;
-			var numVars = vars.length;
-			if(numVars)
-			{
-				for(i = 0; i < numVars; i++) 
-				{
-					expr = vars[i];
-					exprType = expr.exprType;
-
-					if(exprType === this.exprEnum.VAR) 
-					{
-						if(expr.parentList) { continue; }
-						this.makeVar(expr);
-					}
-					else if(exprType === this.exprEnum.RETURN) {
-						this.defineReturn(expr);
-					}				
-				}
-			}
-		}
-
-		this.output += this.outputScope;
-
-		return true;
+		this.decTabs();
+		return output;
 	},
 
-
-	defineVar: function(varExpr)
+	emitVar: function(varExpr)
 	{
+		var output = "";
+		var expr = varExpr.expr;
+		var exprType = expr.exprType;
+
 		if(varExpr.type === this.varEnum.VOID) {
-			console.warn("UNRESOLVED_VARIABLE: Variable \"" + this.makeVarName(varExpr) + "\" was discarded because of void type");
-			return;
+			console.warn("Unused variable '" + this.makeVarName(varExpr) + "'");
+			return output;
 		}
 
-		this.output += this.tabs;
+		if(!expr) {
+			console.error("Unresolved variable '" + this.makeVarName(varExpr) + "'");
+			return null;
+		}
 
-		var expr = varExpr.expr;
-		if(expr) 
+		if(varExpr.parentList)
 		{
-			var exprType = expr.exprType;
+			if(exprType === this.exprEnum.VAR) {
+				output += this.makeVarName(expr) + expr.value + ";\n";
+			}
+			else if(exprType === this.exprEnum.STRING) {
+				output += this.makeVarName(varExpr) + " = \"" + expr.createHex() + "\"\"" + expr.value + "\";\n";
+			}
+			else {
+				output += this.makeVarName(varExpr) + " = ";
+				defineExpr(expr);
+				output += ";\n";
+			}
+		}
+		else 
+		{
+			var defDecl = this.varMap[varExpr.type] + varExpr.value;
 
-			if(varExpr.parentList)
+			if(exprType === this.exprEnum.BINARY || exprType === this.exprEnum.VAR) 
 			{
-				if(exprType === this.exprEnum.VAR) {
-					this.output += this.makeVarName(expr) + expr.value + ";\n";
-				}
-				else if(exprType === this.exprEnum.STRING) {
-					this.output += this.makeVarName(varExpr) + " = \"" + expr.createHex() + "\"\"" + expr.value + "\";\n";
+				if(varExpr.isDef && this.scope === this.global) {
+					this.defOutput += defDecl + ";\n";
+					output += varExpr.value + " = " + this.emitExpr(expr) + ";\n";
 				}
 				else {
-					this.output += this.makeVarName(varExpr) + " = ";
-					this.defineExpr(expr);
-					this.output += ";\n";
+					output += defDecl + " = " + this.emitExpr(expr) + ";\n";
+				}
+			}
+			else if(exprType === this.exprEnum.STRING) 
+			{		
+				if(varExpr.isDef && this.scope === this.global) {	
+					this.defOutput += defDecl + " = \"" + expr.createHex() + "\"\"" + expr.value + "\";\n";
+				}
+				else {
+					output += defDecl + " = \"" + expr.createHex() + "\"\"" + expr.value + "\";\n";
 				}
 			}
 			else 
 			{
-				if(exprType === this.exprEnum.VAR) 
-				{
-					if(this.scope === this.global) {
-						this.output += this.varMap[varExpr.type] + varExpr.value + ";\n";
-					}
-					else {
-						this.output += this.varMap[varExpr.type] + varExpr.value + " = " + expr.value + ";\n";
-					}
+				if(varExpr.isDef) {
+					this.defOutput += defDecl + " = " + this.emitExpr(expr) + ";\n";
 				}
-				else if(exprType === this.exprEnum.STRING) {
-					this.output += this.varMap[varExpr.type] + varExpr.value + " = \"" + expr.createHex() + "\"\"" + expr.value + "\";\n";
+				else {
+					output += varExpr.value + " = " + this.emitExpr(expr) + ";\n";
 				}
-				else if(exprType === this.exprEnum.FUNCTION) 
-				{
-					this.output += this.varMap[expr.type] + "(*" + varExpr.value + ")(";
-					var params = expr.params;
-					var numParams = params.length;
-					if(numParams > 0)
-					{
-						var param, type;
-						for(var i = 0; i < numParams; i++) 
-						{
-							param = params[i];
-							type = param.type;
-							if(type === this.varEnum.NUMBER || type === this.varEnum.STRING || type === this.varEnum.BOOL) {
-								this.output += this.varMap[param.type] + param.value;
-							}
-							else {
-								console.error("UNRESOLVED_ARGUMENT:", 
-									"Function \"" + expr.name + "\" has an unresolved argument \"" + param.value + "\"");
-								return false;
-							}
-
-							if(i < numParams - 1) {
-								this.output += ", ";
-							}							
-						}
-					}
-
-					this.output += ") = &" + expr.name + ";\n";
-				}
-				else 
-				{
-					if(this.scope === this.global && varExpr.expr.exprType === this.exprEnum.BINARY) {
-						this.output += this.varMap[varExpr.type] + varExpr.value + ";\n";
-					}
-					else {				
-						this.output += this.varMap[varExpr.type] + varExpr.value + " = ";
-						this.defineExpr(expr);
-						this.output += ";\n";
-					}
-				}
-			}			
-		}
-		else {
-			this.output += this.makeVarName(varExpr) + " = " + varExpr.defaultValue() + ";\n";
+			}
 		}
 
-		return true;
+		if(output) {
+			output = this.tabs + output;
+		}
+
+		return output;
 	},
 
-	defineExpr: function(expr)
+	emitExpr: function(expr)
 	{
+		var output = "";
 		var exprType = expr.exprType;
 
 		if(exprType === this.exprEnum.NUMBER || 
 		   exprType === this.exprEnum.VAR || 
 		   exprType === this.exprEnum.BOOL) 
 		{
-			this.output += expr.value;
+			output += expr.value;
 		}
 		else if(exprType === this.exprEnum.STRING) {
-			this.output += "\"" + expr.createHex() + "\"\"" + expr.value + "\"";
+			output = "\"" + expr.createHex() + "\"\"" + expr.value + "\"";
 		}
 		else if(exprType === this.exprEnum.BINARY) {
-			this.defineExpr(expr.lhs);
-			this.output += " " + expr.op + " ";
-			this.defineExpr(expr.rhs);
+			output = this.emitExpr(expr.lhs);
+			output += " " + expr.op + " ";
+			output += this.emitExpr(expr.rhs);
 		}
+
+		return output;
 	},
 
-	defineFunc: function(func)
+	emitFuncs: function(funcs) 
+	{
+		this.funcOutput = "";
+
+		var output = null;
+		var funcs = this.global.funcs;
+		var numFuncs = funcs.length;
+		for(var i = 0; i < numFuncs; i++) 
+		{
+			output = this.emitFunc(funcs[i]);
+			if(!output) {
+				return null;
+			}
+
+			this.funcOutput += output + "\n";
+		}	
+
+		return this.funcOutput;	
+	},	
+
+	emitFunc: function(func)
 	{
 		if(func.numUses === 0) {
-			console.warn("DEAD_CODE_ELEMINATION: Function \"" + func.name + "\" was discarded");
-			return true;
+			console.warn("Unused function \'" + func.name + "\'");
+			return null;
 		}
-
-		var output = "";
 
 		var params = func.params;
 		var numParams = 0;
@@ -292,11 +268,8 @@ Compiler.C = Compiler.Basic.extend
 		}
 
 		var funcName = this.makeFuncName(func);
+		var output = this.varMap[func.type] + funcName + "(";
 
-		// Write head:
-		output += this.varMap[func.type] + funcName + "(";
-
-		// Write parameters:
 		if(numParams) 
 		{
 			var varDef, type;
@@ -320,17 +293,66 @@ Compiler.C = Compiler.Basic.extend
 		}
 
 		output += ") \n{\n";
-		this.output += output;
-		
-		// Write body:
-		this.incTabs();
-		if(!this.define(func.scope)) { return false; }
-		this.decTabs();
 
-		this.output += "}\n";
+		var bodyOutput = this.emitScope(func.scope);
+		if(!bodyOutput) {
+			return null;
+		}
+		output += bodyOutput + "}\n";
 
-		return true;
+		return output;
 	},
+
+	emitReturn: function(returnExpr) 
+	{
+		var output = this.tabs;
+
+		if(returnExpr.expr) {
+			output += "return ";
+			output += this.emitExpr(returnExpr.expr.expr);
+			output += ";\n";
+		}
+		else {
+			output += "return;\n";
+		}
+
+		return output;
+	},	
+
+	emitFuncCall: function(funcCall) 
+	{
+		var i;
+		var params = funcCall.func.params;
+		var args = funcCall.args;
+		var numParams = params.length;
+		var numArgs = args.length;
+
+		var output = this.tabs + this.makeFuncName(funcCall.func) + "(";
+
+		// Write arguments:
+		for(i = 0; i < numArgs; i++)
+		{
+			output += args[i].castTo(params[i]);
+
+			if(i < numParams - 1) {
+				output += ", ";
+			}
+		}
+
+		// Write missing parameters:
+		for(; i < numParams; i++) 
+		{
+			output += params[i].var.defaultValue();
+
+			if(i < numParams - 1) {
+				output += ", ";
+			}			
+		}
+
+		output += ");\n";
+
+		return output;
+	},	
 
 	defineObject: function(obj)
 	{
@@ -353,20 +375,6 @@ Compiler.C = Compiler.Basic.extend
 		this.decTabs();
 
 		this.output += "} " + obj.name + ";\n";
-	},
-
-	defineReturn: function(returnExpr) 
-	{
-		this.output += this.tabs;
-
-		if(returnExpr.expr) {
-			this.output += "return ";
-			this.defineExpr(returnExpr.expr.expr);
-			this.output += ";\n";
-		}
-		else {
-			this.output += "return;\n";
-		}
 	},
 
 	makeVar: function(varExpr)
@@ -550,39 +558,6 @@ Compiler.C = Compiler.Basic.extend
 		}		
 	},
 
-	makeFuncCall: function(funcCall) 
-	{
-		var i;
-		var params = funcCall.func.params;
-		var args = funcCall.args;
-		var numParams = params.length;
-		var numArgs = args.length;
-
-		this.outputScope += this.tabs + this.makeFuncName(funcCall.func) + "(";
-
-		// Write arguments:
-		for(i = 0; i < numArgs; i++)
-		{
-			this.outputScope += args[i].castTo(params[i]);
-
-			if(i < numParams - 1) {
-				this.outputScope += ", ";
-			}
-		}
-
-		// Write missing parameters:
-		for(; i < numParams; i++) 
-		{
-			this.outputScope += params[i].var.defaultValue();
-
-			if(i < numParams - 1) {
-				this.outputScope += ", ";
-			}			
-		}
-
-		this.outputScope += ");\n";
-	},	
-
 	makeVarName: function(varExpr)
 	{
 		var parentList = varExpr.parentList;
@@ -668,5 +643,10 @@ Compiler.C = Compiler.Basic.extend
 	},
 
 	//
-	varMap: {}
+	varMap: {},
+
+	libraryOutput: "",
+	funcOutput: "",
+	defOutput: "",
+	scopeOutput: ""
 });
