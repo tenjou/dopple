@@ -1,6 +1,7 @@
 "use strict";
 
 dopple.Error = {
+	UNKNOWN: 0,
 	REFERENCE_ERROR: 1,
 	UNEXPECTED_TOKEN: 2,
 	UNEXPECTED_TOKEN_ILLEGAL: 3,
@@ -19,9 +20,27 @@ dopple.error = function(type, arg)
 	var errorEnum = this.Error;
 	if(type === errorEnum.REFERENCE_ERROR) {
 		console.error("ReferenceError: " + arg + " is not defined");
-	} 
+	}
+	else if(type === this.Error.UNEXPECTED_NUMBER) {
+		console.error("SyntaxError: Unexpected number");
+	}		
+	else if(type === this.Error.UNEXPECTED_TOKEN) {
+		console.error("SyntaxError: Unexpected token " + arg);
+	}	
+	else if(type === this.Error.UNEXPECTED_TOKEN_ILLEGAL) {
+		console.error("SyntaxError: Unexpected token ILLEGAL");
+	}		 
+	else if(type === this.Error.UNEXPECTED_ID) {
+		console.error("SyntaxError: Unexpected identifier");
+	}		
+	else if(type === this.Error.UNEXPECTED_EOI) {
+		console.error("SyntaxError: Unexpected end of input");
+	}
 	else if(type === errorEnum.TOO_MANY_ARGUMENTS) {
 		console.error("Too many arguments passed to the \"" + arg + "\" function");
+	}		
+	else {
+		console.error("Error: Unknown error");
 	}	
 };
 
@@ -30,17 +49,8 @@ dopple.throw = function(type, arg)
 	if(type === this.Error.REFERENCE_ERROR) {
 		throw "ReferenceError: " + arg + " is not defined";
 	}
-	else if(type === this.Error.UNEXPECTED_TOKEN) {
-		throw "SyntaxError: Unexpected token " + arg;
-	}
 	else if(type === this.Error.UNEXPECTED_TOKEN_ILLEGAL) {
 		throw "SyntaxError: Unexpected token ILLEGAL";
-	}	
-	else if(type === this.Error.UNEXPECTED_EOI) {
-		console.error("SyntaxError: Unexpected end of input");
-	}
-	else if(type === this.Error.UNEXPECTED_NUMBER) {
-		throw "SyntaxError: Unexpected number";
 	}	
 	else if(type === this.Error.UNEXPECTED_ID) {
 		throw "SyntaxError: Unexpected identifier";

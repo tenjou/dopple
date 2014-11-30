@@ -11,7 +11,11 @@ dopple.TokenEnum = {
 	VAR: 7,
 	FUNCTION: 8,
 	RETURN: 9,
-	COMMENT: 10
+	IF: 10,
+	FOR: 11,
+	WHILE: 12,
+	DO: 13,
+	COMMENT: 14,
 };
 
 dopple.ExprEnum = {
@@ -28,7 +32,8 @@ dopple.ExprEnum = {
 	RETURN: 10,
 	PROTOTYPE: 11,
 	CLASS: 12,
-	FORMAT: 13
+	FORMAT: 13,
+	IF: 14
 };
 
 dopple.VarEnum = {

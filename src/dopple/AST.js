@@ -346,6 +346,26 @@ AST.Binary = AST.Basic.extend
 	rhs: null
 });
 
+AST.If = AST.Basic.extend
+({
+	init: function() {
+		this.branches = [];
+	},
+
+	addBranch: function(expr, scope) {
+		this.branches.push(new this.Branch(expr, scope));
+	},
+
+	Branch: function(expr, scope) {
+		this.expr = expr;
+		this.scope = scope;
+	},
+
+	//
+	exprType: dopple.ExprEnum.IF,
+	branches: null
+});
+
 /* Expression Function */
 AST.Function = AST.Basic.extend
 ({
@@ -364,8 +384,7 @@ AST.Function = AST.Basic.extend
 	exprType: dopple.ExprEnum.FUNCTION,
 
 	name: "",
-	rootName: null,
-	returnBuffer: null
+	rootName: null
 });
 
 /* Expression Function Call */

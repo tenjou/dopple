@@ -128,6 +128,9 @@ Compiler.C = Compiler.Basic.extend
 			if(type === this.exprEnum.VAR) {
 				output += this.emitVar(expr);
 			}
+			else if(type === this.exprEnum.IF) {
+				output += this.emitIf(expr);
+			}
 			else if(type === this.exprEnum.FUNCTION_CALL) {
 				output += this.tabs + this.emitFuncCall(expr) + ";\n";
 			}			
@@ -237,16 +240,28 @@ Compiler.C = Compiler.Basic.extend
 		return null;
 	},
 
+	emitIf: function(ifExpr)
+	{
+		var branch = ifExpr.branches[0];
+
+		var output = this.tabs + "if(";
+		output += this.emitExpr(branch.expr);
+		output += ") \n" + this.tabs + "{\n";
+		output += this.emitScope(branch.scope);
+		output += this.tabs + "}\n";
+
+		return output;
+	},
+
 	emitFuncs: function(funcs) 
 	{
 		this.funcOutput = "";
 
 		var output = null;
-		var funcs = this.global.funcs;
-		var numFuncs = funcs.length;
+		var numFuncs = this.funcs.length;
 		for(var i = 0; i < numFuncs; i++) 
 		{
-			output = this.emitFunc(funcs[i]);
+			output = this.emitFunc(this.funcs[i]);
 			if(!output) {
 				return null;
 			}

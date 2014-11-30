@@ -20,6 +20,7 @@ Compiler.Basic = dopple.Class.extend
 		
 		if(this.lexer.read(source)) {
 			this.global = this.lexer.global;
+			this.funcs = this.lexer.funcs;
 			this.emit();
 		}
 
@@ -74,6 +75,7 @@ Compiler.Basic = dopple.Class.extend
 	lexer: null,
 
 	global: null,
+	funcs: null,
 	scope: null,
 	scopeInfo: null,
 
