@@ -136,11 +136,10 @@ Lexer.Basic = dopple.Class.extend
 		else if(this.token.type === this.tokenEnum.NAME) 
 		{	
 			this.currName = this.token.str;
+			this.nextToken();
 
 			// Check if it's a function call:
-			this.peekToken();
-			if(this.peekedToken.str === "(") {
-				this.eatToken();
+			if(this.token.str === "(") {
 				return this.parseFuncCall();
 			}
 
@@ -294,7 +293,10 @@ Lexer.Basic = dopple.Class.extend
 			{
 				this.nextToken();
 
+				this.currExpr = {};
 				var expr = this.parseExpression();
+				this.currExpr = null;
+				
 				if(!expr) { return false; }
 
 				if(!this._defineVar(varName, expr, initial)) {
@@ -654,8 +656,14 @@ Lexer.Basic = dopple.Class.extend
 		}
 
 		var funcCall = new AST.FunctionCall(funcExpr, args);
-		this.scope.exprs.push(funcCall);
 		funcExpr.numUses++;
+
+		if(!this.currExpr) {
+			this.scope.exprs.push(funcCall);
+		}
+
+		this.nextToken();
+
 		return funcCall;
 	},
 
@@ -808,6 +816,7 @@ Lexer.Basic = dopple.Class.extend
 	resolveFunc: function(expr) 
 	{
 		if(expr.resolved) { return true; }
+		expr.resolved = true;
 
 		if(!this.resolve(expr.scope)) { return false; }
 
@@ -838,8 +847,6 @@ Lexer.Basic = dopple.Class.extend
 				return false;
 			}
 		}
-
-		expr.resolved = true;
 
 		return true;
 	},
@@ -883,21 +890,27 @@ Lexer.Basic = dopple.Class.extend
 		}	
 
 		// Analyse all argument expressions:
-		var expr;
+		var argExpr;
 		for(i = 0; i < numArgs; i++)
 		{
-			expr = this.optimizer.do(args[i]);
-			if(!expr.analyse()) { 
+			argExpr = this.optimizer.do(args[i]);
+			if(!argExpr.analyse()) { 
 				return false; 
 			}
-			args[i] = expr;
+			args[i] = argExpr;
 
 			if(params[i].type === 0) {
-				params[i].type = expr.type;
+				params[i].type = argExpr.type;
 			}
 		}	
 
-		return this.resolveFunc(funcExpr);
+		if(!this.resolveFunc(funcExpr)) {
+			return false;
+		}
+
+		expr.type = funcExpr.type;
+
+		return true;
 	},
 
 	validateToken: function()
@@ -961,8 +974,9 @@ Lexer.Basic = dopple.Class.extend
 	genID: 0,
 	currName: "",
 	currVar: null,
+	currExpr: null,
 	parentList: null,
-
+	
 	_skipNextToken: false,
 
 	tokenEnum: dopple.TokenEnum,

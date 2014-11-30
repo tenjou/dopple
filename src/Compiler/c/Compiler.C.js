@@ -129,7 +129,7 @@ Compiler.C = Compiler.Basic.extend
 				output += this.emitVar(expr);
 			}
 			else if(type === this.exprEnum.FUNCTION_CALL) {
-				output += this.emitFuncCall(expr);
+				output += this.tabs + this.emitFuncCall(expr) + ";\n";
 			}			
 			else if(type === this.exprEnum.RETURN) {
 				output += this.emitReturn(expr);
@@ -174,7 +174,7 @@ Compiler.C = Compiler.Basic.extend
 		{
 			var defDecl = this.varMap[varExpr.type] + varExpr.value;
 
-			if(exprType === this.exprEnum.BINARY || exprType === this.exprEnum.VAR) 
+			if(exprType === this.exprEnum.BINARY || exprType === this.exprEnum.VAR || exprType === this.exprEnum.FUNCTION_CALL) 
 			{
 				if(varExpr.isDef && this.scope === this.global) {
 					this.defOutput += defDecl + ";\n";
@@ -184,19 +184,16 @@ Compiler.C = Compiler.Basic.extend
 					output += defDecl + " = " + this.emitExpr(expr) + ";\n";
 				}
 			}
-			else if(exprType === this.exprEnum.STRING) 
-			{		
-				if(varExpr.isDef && this.scope === this.global) {	
-					this.defOutput += defDecl + " = \"" + expr.createHex() + "\"\"" + expr.value + "\";\n";
-				}
-				else {
-					output += defDecl + " = \"" + expr.createHex() + "\"\"" + expr.value + "\";\n";
-				}
-			}
 			else 
 			{
-				if(varExpr.isDef) {
-					this.defOutput += defDecl + " = " + this.emitExpr(expr) + ";\n";
+				if(varExpr.isDef) 
+				{
+					if(this.scope === this.global) {
+						this.defOutput += defDecl + " = " + this.emitExpr(expr) + ";\n";
+					}
+					else {
+						output += defDecl + " = " + this.emitExpr(expr) + ";\n";
+					}
 				}
 				else {
 					output += varExpr.value + " = " + this.emitExpr(expr) + ";\n";
@@ -213,25 +210,31 @@ Compiler.C = Compiler.Basic.extend
 
 	emitExpr: function(expr)
 	{
-		var output = "";
 		var exprType = expr.exprType;
 
 		if(exprType === this.exprEnum.NUMBER || 
 		   exprType === this.exprEnum.VAR || 
 		   exprType === this.exprEnum.BOOL) 
 		{
-			output += expr.value;
+			return expr.value;
 		}
 		else if(exprType === this.exprEnum.STRING) {
-			output = "\"" + expr.createHex() + "\"\"" + expr.value + "\"";
+			return "\"" + expr.createHex() + "\"\"" + expr.value + "\"";
+		}
+		else if(exprType === this.exprEnum.FUNCTION_CALL) {
+			return this.emitFuncCall(expr);
 		}
 		else if(exprType === this.exprEnum.BINARY) {
-			output = this.emitExpr(expr.lhs);
+			var output = this.emitExpr(expr.lhs);
 			output += " " + expr.op + " ";
 			output += this.emitExpr(expr.rhs);
+			return output;
+		}
+		else {
+			console.error("Unhandled expression was caught");
 		}
 
-		return output;
+		return null;
 	},
 
 	emitFuncs: function(funcs) 
@@ -327,7 +330,7 @@ Compiler.C = Compiler.Basic.extend
 		var numParams = params.length;
 		var numArgs = args.length;
 
-		var output = this.tabs + this.makeFuncName(funcCall.func) + "(";
+		var output = this.makeFuncName(funcCall.func) + "(";
 
 		// Write arguments:
 		for(i = 0; i < numArgs; i++)
@@ -349,7 +352,7 @@ Compiler.C = Compiler.Basic.extend
 			}			
 		}
 
-		output += ");\n";
+		output += ")";
 
 		return output;
 	},	

@@ -275,7 +275,7 @@ AST.Var = AST.Basic.extend
 	var: null,
 	expr: null,
 	value: "unknown",
-	
+
 	isDef: false
 });
 
@@ -288,21 +288,31 @@ AST.Binary = AST.Basic.extend
 		this.rhs = rhs;		
 	},
 
-	analyse: function()
+	analyse: function(resolver)
 	{
 		var lhsType, rhsType;
 
 		if(this.lhs.exprType === this.exprEnum.BINARY) {
-			lhsType = this.lhs.analyse();
+			lhsType = this.lhs.analyse(resolver);
 		}
-		else {
+		else 
+		{
+			if(this.lhs.exprType === this.exprEnum.FUNCTION_CALL) {
+				resolver.resolveFuncCall(this.lhs);
+			}
+
 			lhsType = this.lhs.type;
 		}
 
 		if(this.rhs.exprType === this.exprEnum.BINARY) {
-			rhsType = this.rhs.analyse();
+			rhsType = this.rhs.analyse(resolver);
 		}
-		else {
+		else 
+		{
+			if(this.rhs.exprType === this.exprEnum.FUNCTION_CALL) {
+				resolver.resolveFuncCall(this.rhs);
+			}
+
 			rhsType = this.rhs.type;
 		}
 
