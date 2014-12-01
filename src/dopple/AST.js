@@ -35,11 +35,42 @@ AST.Basic = dopple.Class.extend
 		return "";
 	},
 
+	Flag: {
+		RESOLVED: 1,
+		RESOLVING: 2
+	},
+
+	setFlag: function(value, flag) 
+	{
+		if(value) {
+			this.flag |= flag;
+		}
+		else {
+			this.flag &= ~flag;
+		}
+	},
+
+	set resolved(value) {
+		this.setFlag(value, this.Flag.RESOLVED);
+	},
+
+	get resolved() { 
+		return (this.flag & this.Flag.RESOLVED);
+	},
+
+	set resolving(value) {
+		this.setFlag(value, this.Flag.RESOLVING);
+	},
+
+	get resolving() { 
+		return (this.flag & this.Flag.RESOLVING);
+	},
+
 	//
 	type: 0,
 	exprType: 0,
 	empty: false,
-	resolved: false,
+	flag: 0,
 	numUses: 0,
 
 	exprEnum: dopple.ExprEnum,

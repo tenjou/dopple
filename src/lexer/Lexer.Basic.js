@@ -909,23 +909,46 @@ Lexer.Basic = dopple.Class.extend
 
 	resolveFunc: function(expr) 
 	{
-		if(expr.resolved) { return true; }
-		expr.resolved = true;
-
-		if(!this.resolve(expr.scope)) { return false; }
-
-		// Resolve function type:
-		var retExpr;
+		var retExpr, i;
 		var retExprs = expr.scope.returns;
 		var numRetExprs = retExprs.length;
 
-		// Error: If type is defined without return expression:
-		if(numRetExprs === 0 && expr.type !== 0) {
-			console.error("ReturnError: Function \'" + expr.name + "\' requires at least one return expression");
-			return false;
+		if(expr.resolving) 
+		{
+			// Try first to guess function type if type is unknown:
+			for(i = 0; i < numRetExprs; i++)
+			{			
+				retExpr = retExprs[i].expr;
+				if(!retExpr) { continue; }
+
+				// retExpr.expr = this.optimizer.do(retExpr.expr);
+				// retExpr.analyse(this);	
+
+				if(expr.type === 0) {
+					expr.type = retExpr.type;
+					break;
+				}				
+			}
+
+			return true;
 		}
 
-		for(var i = 0; i < numRetExprs; i++)
+		if(expr.resolved) { return true; }
+		expr.resolving = true;
+
+		if(expr.type === 0 && !numRetExprs) 
+		{
+			// Error: If type is defined without return expression:
+			if(numRetExprs === 0) {
+				console.error("ReturnError: Function \'" + expr.name + "\' requires at least one return expression");
+				return false;
+			}			
+		}
+
+		if(!this.resolve(expr.scope)) { return false; }
+
+		// Re-check function type:
+		for(i = 0; i < numRetExprs; i++)
 		{
 			retExpr = retExprs[i].expr;
 			if(!retExpr) { continue; }
@@ -941,6 +964,8 @@ Lexer.Basic = dopple.Class.extend
 				return false;
 			}
 		}
+
+		expr.resolved = true;
 
 		return true;
 	},
