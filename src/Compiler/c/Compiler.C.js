@@ -34,16 +34,18 @@ Compiler.C = Compiler.Basic.extend
 	{
 		this.output = "";
 
-		var output = this.emitScope(this.global);
-		if(output) {
-			output += "\n";
-		}		
+		var varExpr = new AST.Var("");
+		varExpr.expr = new AST.Number(0);
+		var returnExpr = new AST.Return(varExpr);
+		this.global.exprs.push(returnExpr);
+		this.global.returns.push(returnExpr);
 
+		var output = this.emitScope(this.global);
 		this.emitFuncs(this.global.funcs);
 
 		this.scopeOutput = "int main(int argc, char *argv[]) \n{\n";
 		this.scopeOutput += output;
-		this.scopeOutput += "\treturn 0;\n}\n";
+		this.scopeOutput += "}";
 
 		this.libraryOutput = "#include \"dopple.h\"\n\n";
 		this.output += this.libraryOutput;
@@ -54,61 +56,61 @@ Compiler.C = Compiler.Basic.extend
 		this.output += this.scopeOutput;
 	},
 
-	make: function()
-	{
-		this.output = "#include \"dopple.h\"\n\n";
+	// make: function()
+	// {
+	// 	this.output = "#include \"dopple.h\"\n\n";
 
-		if(!this.define(this.global)) { 
-			this.output = "";
-			return false; 
-		}
+	// 	if(!this.define(this.global)) { 
+	// 		this.output = "";
+	// 		return false; 
+	// 	}
 
-		// Main start.
-		this.output += "\nint main(int argc, char *argv[]) \n{\n";
-		this.incTabs();
+	// 	// Main start.
+	// 	this.output += "\nint main(int argc, char *argv[]) \n{\n";
+	// 	this.incTabs();
 
-		// Expressions.
-		var i;
-		var varBuffer = this.lexer.global.varBuffer;
-		var numExpr = varBuffer.length;
-		if(numExpr)
-		{
-			var expr, exprType;
+	// 	// Expressions.
+	// 	var i;
+	// 	var varBuffer = this.lexer.global.varBuffer;
+	// 	var numExpr = varBuffer.length;
+	// 	if(numExpr)
+	// 	{
+	// 		var expr, exprType;
 
-			this.scopeInfo = new dopple.ScopeInfo();
+	// 		this.scopeInfo = new dopple.ScopeInfo();
 
-			for(i = 0; i < numExpr; i++)
-			{
-				expr = varBuffer[i];
-				exprType = expr.exprType;
+	// 		for(i = 0; i < numExpr; i++)
+	// 		{
+	// 			expr = varBuffer[i];
+	// 			exprType = expr.exprType;
 
-				if(exprType === this.exprEnum.VAR) {
-					this.makeVar(expr);
-				}
-				else if(exprType === this.exprEnum.FUNCTION) {
-					this.output += this.tabs + this.makeFunction(expr);
-				}
-				else if(exprType === this.exprEnum.FUNCTION_CALL) {
-					this.makeFuncCall(expr);
-				}				
-			}
+	// 			if(exprType === this.exprEnum.VAR) {
+	// 				this.makeVar(expr);
+	// 			}
+	// 			else if(exprType === this.exprEnum.FUNCTION) {
+	// 				this.output += this.tabs + this.makeFunction(expr);
+	// 			}
+	// 			else if(exprType === this.exprEnum.FUNCTION_CALL) {
+	// 				this.makeFuncCall(expr);
+	// 			}				
+	// 		}
 
-			if(this.scopeInfo.tmp_double) {
-				this.output += this.tabs + "static double " + this.scopeInfo.emitTmpDouble() + ";\n";
-			}
-			if(this.scopeInfo.tmp_i32) {
-				this.output += this.tabs + "static NUMBER " + this.scopeInfo.emitTmpI32() + ";\n\n";
-			}			
+	// 		if(this.scopeInfo.tmp_double) {
+	// 			this.output += this.tabs + "static double " + this.scopeInfo.emitTmpDouble() + ";\n";
+	// 		}
+	// 		if(this.scopeInfo.tmp_i32) {
+	// 			this.output += this.tabs + "static NUMBER " + this.scopeInfo.emitTmpI32() + ";\n\n";
+	// 		}			
 			
-			this.output += this.outputScope + "\n";
-		}
+	// 		this.output += this.outputScope + "\n";
+	// 	}
 
-		// Main end.
-		this.output += this.tabs + "return 0;\n";
-		this.output += "}\n";
+	// 	// Main end.
+	// 	this.output += this.tabs + "returnzz 0;\n";
+	// 	this.output += "}\n";
 
-		return this.output;
-	},
+	// 	return this.output;
+	// },
 
 	emitScope: function(scope)
 	{

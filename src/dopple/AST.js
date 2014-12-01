@@ -55,7 +55,7 @@ AST.Basic = dopple.Class.extend
 	},
 
 	get resolved() { 
-		return (this.flag & this.Flag.RESOLVED);
+		return (this.flag & this.Flag.RESOLVED) === this.Flag.RESOLVED;
 	},
 
 	set resolving(value) {
@@ -63,7 +63,7 @@ AST.Basic = dopple.Class.extend
 	},
 
 	get resolving() { 
-		return (this.flag & this.Flag.RESOLVING);
+		return (this.flag & this.Flag.RESOLVING) === this.Flag.RESOLVING;
 	},
 
 	//
@@ -267,6 +267,7 @@ AST.Var = AST.Basic.extend
 	analyse: function(resolver)
 	{	
 		if(!this.expr) { return true; }
+		if(this.resolved) { return true; }
 		
 		var type = this.expr.exprType;
 		if(type === this.exprEnum.BINARY) {
@@ -293,6 +294,8 @@ AST.Var = AST.Basic.extend
 			
 			this.type = this.expr.type;
 		}
+
+		this.resolved = true;
 
 		return true;
 	},	
@@ -334,9 +337,11 @@ AST.Binary = AST.Basic.extend
 		{
 			if(this.lhs.exprType === this.exprEnum.FUNCTION_CALL) {
 				resolver.resolveFuncCall(this.lhs);
+				lhsType = this.lhs.func.type;
 			}
-
-			lhsType = this.lhs.type;
+			else {
+				lhsType = this.lhs.type;
+			}
 		}
 
 		if(this.rhs.exprType === this.exprEnum.BINARY) {
@@ -346,9 +351,11 @@ AST.Binary = AST.Basic.extend
 		{
 			if(this.rhs.exprType === this.exprEnum.FUNCTION_CALL) {
 				resolver.resolveFuncCall(this.rhs);
+				rhsType = this.rhs.func.type;
 			}
-
-			rhsType = this.rhs.type;
+			else {
+				rhsType = this.rhs.type;
+			}
 		}
 
 		if(lhsType === rhsType) 

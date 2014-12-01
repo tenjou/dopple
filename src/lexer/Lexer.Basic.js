@@ -909,11 +909,13 @@ Lexer.Basic = dopple.Class.extend
 
 	resolveFunc: function(expr) 
 	{
+		if(expr.resolved) { return true; }
+
 		var retExpr, i;
 		var retExprs = expr.scope.returns;
 		var numRetExprs = retExprs.length;
 
-		if(expr.resolving) 
+		if(expr.type === 0 && expr.resolving) 
 		{
 			// Try first to guess function type if type is unknown:
 			for(i = 0; i < numRetExprs; i++)
@@ -921,8 +923,8 @@ Lexer.Basic = dopple.Class.extend
 				retExpr = retExprs[i].expr;
 				if(!retExpr) { continue; }
 
-				// retExpr.expr = this.optimizer.do(retExpr.expr);
-				// retExpr.analyse(this);	
+				//retExpr.expr = this.optimizer.do(retExpr.expr);
+				retExpr.analyse(this);	
 
 				if(expr.type === 0) {
 					expr.type = retExpr.type;
@@ -933,7 +935,6 @@ Lexer.Basic = dopple.Class.extend
 			return true;
 		}
 
-		if(expr.resolved) { return true; }
 		expr.resolving = true;
 
 		if(expr.type === 0 && !numRetExprs) 
@@ -966,12 +967,16 @@ Lexer.Basic = dopple.Class.extend
 		}
 
 		expr.resolved = true;
+		expr.resolving = false;
 
 		return true;
 	},
 
 	resolveFuncCall: function(expr) 
 	{
+		if(expr.resolved || expr.resolving) { return true; }
+		expr.resolving = true;
+
 		var funcExpr = expr.func;
 		if(funcExpr.empty) {
 			dopple.error(dopple.Error.REFERENCE_ERROR, funcExpr.name);
@@ -1027,7 +1032,8 @@ Lexer.Basic = dopple.Class.extend
 			return false;
 		}
 
-		expr.type = funcExpr.type;
+		expr.resolved = true;
+		expr.resolving = false;
 
 		return true;
 	},
