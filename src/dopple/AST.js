@@ -288,6 +288,10 @@ AST.Binary = AST.Basic.extend
 		this.rhs = rhs;		
 	},
 
+	castTo: function(param) {
+		return this.lhs.castTo(param) + " " + this.op + " " + this.rhs.castTo(param);
+	},
+
 	analyse: function(resolver)
 	{
 		var lhsType, rhsType;
@@ -376,7 +380,6 @@ AST.Function = AST.Basic.extend
 		this.params = params;
 		this.numParams = (params) ? params.length : 0;
 		this.parentList = parentList || null;
-		this.returnBuffer = [];
 	},
 
 	//

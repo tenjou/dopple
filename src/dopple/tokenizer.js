@@ -128,7 +128,17 @@ dopple.Tokenizer = dopple.Class.extend
 		if(isBinOp(this.currChar)) 
 		{
 			this.token.str = this.currChar;
-			if(this.currChar === "-") 
+			if(this.currChar === "=")
+			{
+				this.nextChar();			
+				while(isBinOp(this.currChar)) {
+					this.token.str += this.currChar;
+					this.nextChar();
+				}	
+
+				this.cursor--;
+			}
+			else if(this.currChar === "-") 
 			{
 				this.nextChar();
 				if(isDigit(this.currChar))

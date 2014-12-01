@@ -62,11 +62,33 @@ Lexer.Basic = dopple.Class.extend
 
 	parseBody: function()
 	{
+		var type;
+
 		do
 		{
-			if(!this.parsePrimary()) {
-				return false;
+			type = this.token.type;
+			if(type === this.tokenEnum.NAME || 
+			   type === this.tokenEnum.VAR) 
+			{
+				if(!this.parseVar()) {
+					return false;
+				}
 			}
+			else if(type === this.tokenEnum.IF) 
+			{
+				if(!this.parseIf()) {
+					return false;
+				}
+			}
+			else if(type === this.tokenEnum.FUNCTION) 
+			{
+				if(!this.parseFunc()) {
+					return false;
+				}
+			}
+			else if(type === this.tokenEnum.RETURN) {
+				this.parseReturn();
+			}			
 
 			this.currName = "";
 			this.nextToken();
@@ -894,7 +916,7 @@ Lexer.Basic = dopple.Class.extend
 
 		// Resolve function type:
 		var retExpr;
-		var retExprs = this.scope.returns;
+		var retExprs = expr.scope.returns;
 		var numRetExprs = retExprs.length;
 
 		// Error: If type is defined without return expression:
@@ -1036,12 +1058,18 @@ Lexer.Basic = dopple.Class.extend
 
 	precedence: {
 		"=": 2,
-		"<": 100,
-		">": 100,
-		"+": 200,
-		"-": 200,
-		"*": 400,
-		"/": 400
+		"<": 1000,
+		">": 1000,
+		"==": 1000,
+		"===": 1000,
+		"!=": 1000,
+		"!==": 1000,
+		"<=": 1000,
+		">=": 1000,
+		"+": 2000,
+		"-": 2000,
+		"*": 4000,
+		"/": 4000
 	},
 
 	genID: 0,

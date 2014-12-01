@@ -29,7 +29,7 @@ function isAlphaNum(c)
 
 function isBinOp(c) 
 {
-	return (c === "=" || c === "<" || c === ">" || 
+	return (c === "=" || c === "!" || c === "<" || c === ">" || 
 			c === "+" || c === "-" || c === "*" || c === "/");
 };
 
