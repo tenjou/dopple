@@ -142,6 +142,7 @@ Compiler.C = Compiler.Basic.extend
 		}
 
 		this.decTabs();
+
 		return output;
 	},
 
@@ -182,7 +183,7 @@ Compiler.C = Compiler.Basic.extend
 			if(exprType === this.exprEnum.BINARY || exprType === this.exprEnum.VAR || exprType === this.exprEnum.FUNCTION_CALL) 
 			{
 				if(varExpr.isDef && this.scope === this.global) {
-					this.defOutput += defDecl + ";\n";
+					this.scope.defOutput += defDecl + ";\n";
 					output += varExpr.value + " = " + this.emitExpr(expr) + ";\n";
 				}
 				else {
@@ -194,7 +195,7 @@ Compiler.C = Compiler.Basic.extend
 				if(varExpr.isDef) 
 				{
 					if(this.scope === this.global) {
-						this.defOutput += defDecl + " = " + this.emitExpr(expr) + ";\n";
+						this.scope.defOutput += defDecl + " = " + this.emitExpr(expr) + ";\n";
 					}
 					else {
 						output += defDecl + " = " + this.emitExpr(expr) + ";\n";
