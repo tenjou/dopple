@@ -350,8 +350,11 @@ Lexer.Basic = dopple.Class.extend
 	_defineVar: function(name, expr, initial)
 	{
 		// Ignore if it's not a definition and without a body.
-		if(!expr && !initial) {
-			this.getExprFromVar(this.scope, name);
+		if(!expr && !initial) 
+		{
+			if(!this.getExprFromVar(this.scope, name)) {
+				return false;
+			}
 			return true;
 		}
 
@@ -775,19 +778,24 @@ Lexer.Basic = dopple.Class.extend
 			}
 
 			var objExpr = this.getExprFromVar(this.scope, this.currName);
+			if(!objExpr) { return false; }
+
 			this.parentList.push(objExpr);
 			this.currName = this.token.str;
 
 			this.nextToken();
 		}
-		while(this.token.str === ".");		
+		while(this.token.str === ".");	
+
+		return true;	
 	},
 
 	getExprFromVar: function(scope, name) 
 	{
 		var expr = scope.vars[name];
 		if(!expr) {
-			dopple.throw(dopple.Error.REFERENCE_ERROR, name);
+			dopple.error(dopple.Error.REFERENCE_ERROR, name);
+			return null;
 		}
 
 		return expr;
@@ -990,23 +998,20 @@ Lexer.Basic = dopple.Class.extend
 		var numParams = params.length;
 
 		// If function call has too many arguments, check first if any of argument is FORMAT:
+		var format;
 		if(numArgs > numParams) 
 		{
-			var error = true; 
+			format = false; 
 
-			for(i = 0; i < numArgs; i++) 
+			for(i = 0; i < numParams; i++) 
 			{
-				if(i >= numParams && args[i].type !== this.varEnum.FORMAT) { break; } 
-				if(args[i].type === this.varEnum.FORMAT) 
-				{
-					if(params[i].type !== this.varEnum.FORMAT) { break; }
-
-					error = false;
+				if(params[i].type === this.varEnum.FORMAT) {
+					format = true;
 					break;
 				}
 			}
 
-			if(error) {
+			if(!format) {
 				console.error("TOO_MANY_ARGS: Function call \"" + funcExpr.name + "\" has " 
 					+ numArgs + " args, expecting maximum of " + numParams + " args");
 				return false;				
@@ -1023,10 +1028,10 @@ Lexer.Basic = dopple.Class.extend
 			}
 			args[i] = argExpr;
 
-			if(params[i].type === 0) {
+			if(i < numParams && params[i].type === 0) {
 				params[i].type = argExpr.type;
 			}
-		}	
+		}
 
 		if(!this.resolveFunc(funcExpr)) {
 			return false;
@@ -1136,5 +1141,6 @@ dopple.Scope.prototype =
 	},
 
 	//
+	defOutput: "",
 	isVirtual: false
 };

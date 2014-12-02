@@ -49,8 +49,8 @@ Compiler.C = Compiler.Basic.extend
 
 		this.libraryOutput = "#include \"dopple.h\"\n\n";
 		this.output += this.libraryOutput;
-		if(this.defOutput) {
-			this.output += this.defOutput + "\n";
+		if(this.scope.defOutput) {
+			this.output += this.scope.defOutput + "\n";
 		}
 		this.output += this.funcOutput;
 		this.output += this.scopeOutput;
@@ -341,7 +341,7 @@ Compiler.C = Compiler.Basic.extend
 
 	emitFuncCall: function(funcCall) 
 	{
-		var i;
+		var i, param;
 		var params = funcCall.func.params;
 		var args = funcCall.args;
 		var numParams = params.length;
@@ -352,7 +352,15 @@ Compiler.C = Compiler.Basic.extend
 		// Write arguments:
 		for(i = 0; i < numArgs; i++)
 		{
-			output += args[i].castTo(params[i]);
+			param = params[i];
+			if(param.type === this.varEnum.FORMAT) {
+				output += this.emitFormat(args, i);
+				output += ")";
+				return output;
+			}
+			else {
+				output += args[i].castTo();
+			}
 
 			if(i < numParams - 1) {
 				output += ", ";
@@ -620,7 +628,7 @@ Compiler.C = Compiler.Basic.extend
 		return name;		
 	},	
 
-	makeFormat: function(args)
+	emitFormat: function(args)
 	{
 		var output = "\"";
 		var argOutput = "";
@@ -653,13 +661,14 @@ Compiler.C = Compiler.Basic.extend
 				}
 			}
 			else {
-				throw "Compiler.makeFormat: Unhandled case.";
+				console.error("Compiler.emitFormat: Unhandled case.");
+				return null;
 			}
 		}
 
 		output = output.substr(0, output.length - 1) + "\\n\"";
 		argOutput = argOutput.substr(0, argOutput.length - 2);
-		this.outputScope += output + ", " + argOutput;
+		return output + ", " + argOutput;
 	},
 
 	//
@@ -667,6 +676,5 @@ Compiler.C = Compiler.Basic.extend
 
 	libraryOutput: "",
 	funcOutput: "",
-	defOutput: "",
 	scopeOutput: ""
 });
