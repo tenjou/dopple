@@ -66,7 +66,7 @@ Lexer.Basic = dopple.Class.extend
 			return true;
 		}
 
-		var type;
+		var type, expr;
 		do
 		{
 			type = this.token.type;
@@ -92,10 +92,17 @@ Lexer.Basic = dopple.Class.extend
 			else if(type === this.tokenEnum.RETURN) {
 				this.parseReturn();
 			}	
+			else if(type === this.tokenEnum.BINOP) 
+			{
+				expr = this.parseBinOp();
+				if(!expr) { return false; }
+
+				this.scope.exprs.push(expr);
+			}
 			else if(type == this.tokenEnum.EOF) 
 			{
 				if(isGlobal) { return true; }
-				this.validateToken();
+				this.tokenSymbolError();
 				return false;				
 			}		
 
@@ -164,6 +171,9 @@ Lexer.Basic = dopple.Class.extend
 			if(this.token.str === "(") {
 				return this.parseFuncCall();
 			}
+			else if(this.token.type === this.tokenEnum.BINOP) {
+				return this.parseBinOp();
+			}
 
 			return this.parseName();
 		}
@@ -195,7 +205,7 @@ Lexer.Basic = dopple.Class.extend
 			return this.parseObject();
 		}
 			
-		this.handleTokenError();
+		this.tokenError();
 	},
 
 	parseNumber: function() 
@@ -277,10 +287,9 @@ Lexer.Basic = dopple.Class.extend
 		var initial = false;
 		if(this.token.type === this.tokenEnum.VAR)
 		{
-			console.log(this.token);
 			this.nextToken();	
 			if(this.token.type !== this.tokenEnum.NAME) {
-				this.handleTokenError();
+				this.tokenError();
 			}
 
 			initial = true;
@@ -345,7 +354,7 @@ Lexer.Basic = dopple.Class.extend
 			else 
 			{
 				if(!initial && this.token.type === this.tokenEnum.NAME) {
-					this.handleTokenError();
+					this.tokenError();
 				}
 				else if(initial && this.token.str !== ";") {
 					this.handleUnexpectedToken();
@@ -382,7 +391,7 @@ Lexer.Basic = dopple.Class.extend
 		{
 			// No such variable defined.
 			if(!initial) {
-				dopple.error(dopple.Error.REFERENCE_ERROR, this.currName);
+				dopple.error(this, dopple.Error.REFERENCE_ERROR, this.currName);
 				return false;
 			}
 
@@ -467,25 +476,25 @@ Lexer.Basic = dopple.Class.extend
 	{
 		this.nextToken();
 		if(this.token.str !== "(") {
-			this.validateToken();
+			this.tokenSymbolError();
 			return false;
 		}
 
 		this.nextToken();
 		var expr = this.parseExpression();
 		if(!expr) {
-			this.validateToken();
+			this.tokenSymbolError();
 			return false;
 		}
 
 		if(this.token.str !== ")") {
-			this.validateToken();
+			this.tokenSymbolError();
 			return false;
 		}
 
 		this.nextToken();
 		if(this.token.str !== "{") {
-			this.validateToken();
+			this.tokenSymbolError();
 			return false;
 		}
 
@@ -503,7 +512,7 @@ Lexer.Basic = dopple.Class.extend
 		this.scope = this.scope.parent;
 
 		if(this.token.str !== "}") {
-			this.validateToken();
+			this.tokenSymbolError();
 			return false;
 		}		
 
@@ -556,7 +565,7 @@ Lexer.Basic = dopple.Class.extend
 
 				this.nextToken();
 				if(this.token.str !== ":") {
-					this.handleTokenError();
+					this.tokenError();
 				}
 
 				this.nextToken();
@@ -572,17 +581,17 @@ Lexer.Basic = dopple.Class.extend
 						this.nextToken();
 						continue;
 					}
-					this.handleTokenError();
+					this.tokenError();
 				}
 
 				if(this.token.str !== "}")
 				{
 					if(this.token.str !== ",") 
 					{
-						this.validateToken();
+						this.tokenSymbolError();
 						this.nextToken();
 						if(this.token.str !== "}") {
-							this.handleTokenError();
+							this.tokenError();
 						}
 					}
 					else {
@@ -786,15 +795,47 @@ Lexer.Basic = dopple.Class.extend
 
 	parseBinOp: function() 
 	{
-		var op = this.convertBinOp();
+		var lhs, rhs, expr;
+		var nameIsLHS = true;
+
+		var op = this.token.str.charAt(0);
 		if(!op) {
 			console.error("Could not convert an unknown binop.");
 			return null;
 		}
-		var lhs = this.getVar(this.scope, this.currName);
-		var rhs = new AST.Number(1);
 
-		return new AST.Binary(op, lhs, rhs);	
+		this.nextToken();
+		if(!this.currName) 
+		{
+			if(this.token.type !== this.tokenEnum.NAME) {
+				this.tokenError();
+				return null;
+			}
+
+			this.currName = this.token.str;
+			nameIsLHS = false;
+		}
+
+		// i.e: x++
+		if(nameIsLHS) {
+			lhs = this.getVar(this.scope, this.currName);
+			rhs = new AST.Number(1);	
+			expr = new AST.Binary(op, lhs, rhs);	
+		}
+		// i.e: ++x
+		else 
+		{
+			var varExpr = this.getVar(this.scope, this.currName);
+			if(!varExpr) { return null; }
+
+			rhs = varExpr;
+			lhs = new AST.Number(1);
+			expr = new AST.Var(this.currName);
+			expr.var = varExpr;			
+			expr.expr = new AST.Binary(op, lhs, rhs);
+		}
+
+		return expr;
 	},
 
 	parseParentList: function()
@@ -805,7 +846,7 @@ Lexer.Basic = dopple.Class.extend
 		{
 			this.nextToken();
 			if(this.token.type !== this.tokenEnum.NAME) {
-				this.handleTokenError();
+				this.tokenError();
 			}
 
 			var objExpr = this.getVar(this.scope, this.currName);
@@ -825,7 +866,7 @@ Lexer.Basic = dopple.Class.extend
 	{
 		var expr = scope.vars[name];
 		if(!expr) {
-			dopple.error(dopple.Error.REFERENCE_ERROR, name);
+			dopple.error(this, dopple.Error.REFERENCE_ERROR, name);
 			return null;
 		}
 
@@ -1015,7 +1056,7 @@ Lexer.Basic = dopple.Class.extend
 
 		var funcExpr = expr.func;
 		if(funcExpr.empty) {
-			dopple.error(dopple.Error.REFERENCE_ERROR, funcExpr.name);
+			dopple.error(this, dopple.Error.REFERENCE_ERROR, funcExpr.name);
 			return false;
 		}
 
@@ -1071,47 +1112,45 @@ Lexer.Basic = dopple.Class.extend
 		return true;
 	},
 
-	convertBinOp: function()
-	{
-		if(this.token.str === "++") {
-			return "+";
-		}
-		else if(this.token.str === "--") {
-			return "-";
-		}
-
-		return null;
-	},
-
-	validateToken: function()
+	tokenSymbolError: function()
 	{
 		if(this.token.type === this.tokenEnum.EOF) {
-			dopple.error(dopple.Error.UNEXPECTED_EOI);
+			dopple.error(this, dopple.Error.UNEXPECTED_EOI);
 		}
 		else if(this.token.type === this.tokenEnum.NUMBER) {
-			dopple.error(dopple.Error.UNEXPECTED_NUMBER);
+			dopple.error(this, dopple.Error.UNEXPECTED_NUMBER);
 		}
-		else if(this.token.str === "@") {
-			dopple.error(dopple.Error.UNEXPECTED_TOKEN_ILLEGAL);
+		else if(this.isTokenIllegal()) {
+			dopple.error(this, dopple.Error.UNEXPECTED_TOKEN_ILLEGAL);
 		}
 		else if(this.token.type !== this.tokenEnum.SYMBOL) {
-			dopple.error(dopple.Error.UNEXPECTED_ID);
+			dopple.error(this, dopple.Error.UNEXPECTED_ID);
 		}	
 	},
 
-	handleTokenError: function() {
-		this.validateToken();
-		dopple.error(dopple.Error.UNEXPECTED_TOKEN, this.token.str);		
+	tokenError: function() {
+		this.tokenSymbolError();
+		dopple.error(this, dopple.Error.UNEXPECTED_TOKEN, this.token.str);		
 	},
 
 	handleUnexpectedToken: function() 
 	{
 		if(isIllegal(this.token.str)) {
-			dopple.throw(dopple.Error.UNEXPECTED_TOKEN_ILLEGAL);
+			dopple.error(this, dopple.Error.UNEXPECTED_TOKEN_ILLEGAL);
 		}
 		else {
-			dopple.throw(dopple.Error.UNEXPECTED_TOKEN, this.token.str);
+			dopple.error(this, dopple.Error.UNEXPECTED_TOKEN, this.token.str);
 		}
+	},
+
+	isTokenIllegal: function()
+	{
+		var str = this.token.str;
+		if(str === "@" || str === "#") {
+			return true;
+		}
+
+		return false;
 	},
 
 	//
@@ -1122,6 +1161,8 @@ Lexer.Basic = dopple.Class.extend
 
 	optimizer: null,
 	extern: null,
+
+	error: null,
 
 	global: null, 
 	scope: null,

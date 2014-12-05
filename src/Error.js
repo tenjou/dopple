@@ -15,7 +15,7 @@ dopple.Error = {
 	UNSUPPORTED_FEATURE: 1002
 };
 
-dopple.error = function(type, arg)
+dopple.error = function(owner, type, arg)
 {
 	var errorEnum = this.Error;
 	if(type === errorEnum.REFERENCE_ERROR) {
@@ -41,7 +41,9 @@ dopple.error = function(type, arg)
 	}		
 	else {
 		console.error("Error: Unknown error");
-	}	
+	}
+
+	owner.error = type;	
 };
 
 dopple.throw = function(type, arg)
