@@ -152,9 +152,23 @@ dopple.Tokenizer = dopple.Class.extend
 					this.cursor--;
 					return this.token;
 				}
-
-				this.cursor--;
+				else if(this.currChar === "-") {
+					this.token.str += "-";				
+				}
+				else {
+					this.cursor--;
+				}
 			}	
+			else if(this.currChar === "+") 
+			{
+				this.nextChar();
+				if(this.currChar === "+") {
+					this.token.str += "+";
+				}
+				else {
+					this.cursor--;
+				}
+			}
 			else if(this.currChar === "/") 
 			{
 				this.nextChar();

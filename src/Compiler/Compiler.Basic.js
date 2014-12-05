@@ -79,6 +79,8 @@ Compiler.Basic = dopple.Class.extend
 	scope: null,
 	scopeInfo: null,
 
+	error: null,
+
 	tabs: "",
 	output: "",
 	outputBuffer: "",

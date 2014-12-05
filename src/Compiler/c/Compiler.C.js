@@ -41,7 +41,7 @@ Compiler.C = Compiler.Basic.extend
 		this.global.returns.push(returnExpr);
 
 		var output = this.emitScope(this.global);
-		this.emitFuncs(this.global.funcs);
+		this.emitFuncs(this.lexer.funcs);
 
 		this.scopeOutput = "int main(int argc, char *argv[]) \n{\n";
 		this.scopeOutput += output;
@@ -49,8 +49,8 @@ Compiler.C = Compiler.Basic.extend
 
 		this.libraryOutput = "#include \"dopple.h\"\n\n";
 		this.output += this.libraryOutput;
-		if(this.scope.defOutput) {
-			this.output += this.scope.defOutput + "\n";
+		if(this.global.defOutput) {
+			this.output += this.global.defOutput + "\n";
 		}
 		this.output += this.funcOutput;
 		this.output += this.scopeOutput;
@@ -135,7 +135,10 @@ Compiler.C = Compiler.Basic.extend
 			}
 			else if(type === this.exprEnum.FUNCTION_CALL) {
 				output += this.tabs + this.emitFuncCall(expr) + ";\n";
-			}			
+			}	
+			else if(type === this.exprEnum.BINOP) {
+				output += this.tabs + this.emitBinOp(expr);
+			}		
 			else if(type === this.exprEnum.RETURN) {
 				output += this.emitReturn(expr);
 			}
@@ -152,7 +155,7 @@ Compiler.C = Compiler.Basic.extend
 		var expr = varExpr.expr;
 		var exprType = expr.exprType;
 
-		if(varExpr.type === this.varEnum.VOID) {
+		if(varExpr.var.type === this.varEnum.VOID) {
 			console.warn("Unused variable '" + this.makeVarName(varExpr) + "'");
 			return output;
 		}
@@ -178,7 +181,14 @@ Compiler.C = Compiler.Basic.extend
 		}
 		else 
 		{
-			var defDecl = this.varMap[varExpr.type] + varExpr.value;
+			var defDecl;
+
+			if(varExpr.isDef) {
+				defDecl = this.varMap[varExpr.type] + varExpr.value;
+			}
+			else {
+				defDecl = varExpr.value;
+			}
 
 			if(exprType === this.exprEnum.BINARY || exprType === this.exprEnum.VAR || exprType === this.exprEnum.FUNCTION_CALL) 
 			{
@@ -314,14 +324,14 @@ Compiler.C = Compiler.Basic.extend
 		}
 
 		output += ") \n{\n";
-
-		var bodyOutput = this.emitScope(func.scope);
-		if(!bodyOutput) {
-			return null;
-		}
-		output += bodyOutput + "}\n";
+		output += this.emitScope(func.scope) + "}\n";
 
 		return output;
+	},
+
+	emitBinOp: function(expr)
+	{
+		return "\n";
 	},
 
 	emitReturn: function(returnExpr) 
@@ -360,7 +370,7 @@ Compiler.C = Compiler.Basic.extend
 				return output;
 			}
 			else {
-				output += args[i].castTo();
+				output += args[i].castTo(param);
 			}
 
 			if(i < numParams - 1) {

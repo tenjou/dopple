@@ -313,6 +313,18 @@ AST.Var = AST.Basic.extend
 	isDef: false
 });
 
+AST.BinOp = AST.Basic.extend
+({
+	init: function(value) {
+		this.value = value;
+	},
+
+	//
+	exprType: dopple.ExprEnum.BINOP,
+	value: "",
+	var: null
+});
+
 /* Expression Binary */
 AST.Binary = AST.Basic.extend
 ({
@@ -421,7 +433,6 @@ AST.Function = AST.Basic.extend
 	},
 
 	//
-	type: dopple.VarEnum.FUNCTION,
 	exprType: dopple.ExprEnum.FUNCTION,
 
 	name: "",
