@@ -43,7 +43,7 @@ dopple.Optimizer.prototype =
 				return expr;
 			}			
 		}
-
+		
 		return this._resolve(expr, expr.lhs, expr.rhs);
 	},
 

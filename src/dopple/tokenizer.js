@@ -137,6 +137,7 @@ dopple.Tokenizer = dopple.Class.extend
 				}	
 
 				this.cursor--;
+				this.token.type = this.tokenEnum.BINOP;
 			}
 			else if(this.currChar === "-") 
 			{
@@ -153,10 +154,12 @@ dopple.Tokenizer = dopple.Class.extend
 					return this.token;
 				}
 				else if(this.currChar === "-") {
-					this.token.str += "-";				
+					this.token.str += "-";	
+					this.token.type = this.tokenEnum.UNARY;			
 				}
 				else {
 					this.cursor--;
+					this.token.type = this.tokenEnum.BINOP;
 				}
 			}	
 			else if(this.currChar === "+") 
@@ -164,9 +167,11 @@ dopple.Tokenizer = dopple.Class.extend
 				this.nextChar();
 				if(this.currChar === "+") {
 					this.token.str += "+";
+					this.token.type = this.tokenEnum.UNARY;
 				}
 				else {
 					this.cursor--;
+					this.token.type = this.tokenEnum.BINOP;
 				}
 			}
 			else if(this.currChar === "/") 
@@ -184,9 +189,9 @@ dopple.Tokenizer = dopple.Class.extend
 				}
 				
 				this.cursor--;
+				this.token.type = this.tokenEnum.BINOP;
 			}					
 
-			this.token.type = this.tokenEnum.BINOP;
 			return this.token;
 		}		
 

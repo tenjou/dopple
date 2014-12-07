@@ -92,9 +92,9 @@ Lexer.Basic = dopple.Class.extend
 			else if(type === this.tokenEnum.RETURN) {
 				this.parseReturn();
 			}	
-			else if(type === this.tokenEnum.BINOP) 
+			else if(type === this.tokenEnum.UNARY) 
 			{
-				expr = this.parseBinOp();
+				expr = this.parseUnary();
 				if(!expr) { return false; }
 
 				this.scope.exprs.push(expr);
@@ -171,8 +171,8 @@ Lexer.Basic = dopple.Class.extend
 			if(this.token.str === "(") {
 				return this.parseFuncCall();
 			}
-			else if(this.token.type === this.tokenEnum.BINOP) {
-				return this.parseBinOp();
+			else if(this.token.type === this.tokenEnum.UNARY) {
+				return this.parseUnary();
 			}
 
 			return this.parseName();
@@ -186,8 +186,8 @@ Lexer.Basic = dopple.Class.extend
 		else if(type === this.tokenEnum.IF) {
 			return this.parseIf();
 		}
-		else if(type === this.tokenEnum.BINOP) {
-			return this.parseBinOp();
+		else if(type === this.tokenEnum.UNARY) {
+			return this.parseUnary();
 		}
 		else if(type === this.tokenEnum.BOOL) {
 			return this.parseBool();
@@ -336,6 +336,7 @@ Lexer.Basic = dopple.Class.extend
 			var expr = null;
 			if(this.token.str === "=")
 			{
+				this.currName = "";
 				this.nextToken();
 
 				this.currExpr = {};
@@ -344,12 +345,13 @@ Lexer.Basic = dopple.Class.extend
 
 				if(!expr) { return false; }
 			}
-			else if(this.token.type === this.tokenEnum.BINOP) 
+			else if(this.token.type === this.tokenEnum.UNARY) 
 			{
-				expr = this.parseBinOp();
-				if(!expr) {
-					return false;
-				}
+				expr = this.parseUnary();
+				if(!expr) { return false; }
+
+				this.scope.exprs.push(expr);
+				return true;
 			}
 			else 
 			{
@@ -793,16 +795,10 @@ Lexer.Basic = dopple.Class.extend
 		return true;
 	},
 
-	parseBinOp: function() 
+	parseUnary: function() 
 	{
-		var lhs, rhs, expr;
-		var nameIsLHS = true;
-
-		var op = this.token.str.charAt(0);
-		if(!op) {
-			console.error("Could not convert an unknown binop.");
-			return null;
-		}
+		var expr = new AST.Unary();
+		expr.op = this.token.str;
 
 		this.nextToken();
 		if(!this.currName) 
@@ -813,27 +809,12 @@ Lexer.Basic = dopple.Class.extend
 			}
 
 			this.currName = this.token.str;
-			nameIsLHS = false;
-		}
+			this.nextToken();
+			expr.pre = true;
+		}		
 
-		// i.e: x++
-		if(nameIsLHS) {
-			lhs = this.getVar(this.scope, this.currName);
-			rhs = new AST.Number(1);	
-			expr = new AST.Binary(op, lhs, rhs);	
-		}
-		// i.e: ++x
-		else 
-		{
-			var varExpr = this.getVar(this.scope, this.currName);
-			if(!varExpr) { return null; }
-
-			rhs = varExpr;
-			lhs = new AST.Number(1);
-			expr = new AST.Var(this.currName);
-			expr.var = varExpr;			
-			expr.expr = new AST.Binary(op, lhs, rhs);
-		}
+		expr.varExpr = this.getVar(this.scope, this.currName);
+		if(!expr.varExpr) { return null; }
 
 		return expr;
 	},

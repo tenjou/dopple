@@ -313,18 +313,6 @@ AST.Var = AST.Basic.extend
 	isDef: false
 });
 
-AST.BinOp = AST.Basic.extend
-({
-	init: function(value) {
-		this.value = value;
-	},
-
-	//
-	exprType: dopple.ExprEnum.BINOP,
-	value: "",
-	var: null
-});
-
 /* Expression Binary */
 AST.Binary = AST.Basic.extend
 ({
@@ -400,6 +388,33 @@ AST.Binary = AST.Basic.extend
 	rhs: null
 });
 
+/* Expression Unary Operator */
+AST.Unary = AST.Basic.extend
+({
+	castTo: function(param)
+	{
+		if(this.type === param.type) 
+		{
+			if(this.pre) {
+				return this.op + this.varExpr.value;
+			}
+			return this.varExpr.value + this.op;
+		}
+		else {
+			dopple.throw(dopple.Error.INVALID_TYPE_CONVERSION, this);		
+		}
+	},
+
+	//
+	type: dopple.VarEnum.NUMBER,
+	exprType: dopple.ExprEnum.UNARY,
+
+	varExpr: null,
+	op: "",
+	pre: false
+});
+
+/* Expression If */
 AST.If = AST.Basic.extend
 ({
 	init: function() {

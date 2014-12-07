@@ -136,8 +136,8 @@ Compiler.C = Compiler.Basic.extend
 			else if(type === this.exprEnum.FUNCTION_CALL) {
 				output += this.tabs + this.emitFuncCall(expr) + ";\n";
 			}	
-			else if(type === this.exprEnum.BINOP) {
-				output += this.tabs + this.emitBinOp(expr);
+			else if(type === this.exprEnum.UNARY) {
+				output += this.tabs + this.emitExpr(expr) + ";\n";
 			}		
 			else if(type === this.exprEnum.RETURN) {
 				output += this.emitReturn(expr);
@@ -245,6 +245,15 @@ Compiler.C = Compiler.Basic.extend
 			output += " " + expr.op + " ";
 			output += this.emitExpr(expr.rhs);
 			return output;
+		}
+		else if(exprType === this.exprEnum.UNARY) 
+		{
+			if(expr.pre) {
+				return expr.op + expr.varExpr.value;
+			}
+			else {
+				return expr.varExpr.value + expr.op;
+			}
 		}
 		else {
 			console.error("Unhandled expression was caught");
@@ -641,45 +650,115 @@ Compiler.C = Compiler.Basic.extend
 
 	emitFormat: function(args)
 	{
-		var output = "\"";
-		var argOutput = "";
+		this.tmpOutput1 = "";
+		this.tmpOutput2 = "";
 
-		var arg, exprType, varType;
+		var exprType, varType, arg;
 		var numArgs = args.length;
-		for(var i = 0; i < numArgs; i++)
+		for(var i = 0; i < numArgs; i++) 
 		{
 			arg = args[i];
 			exprType = arg.exprType;
+			if(exprType === this.exprEnum.BINARY) 
+			{
+				if(arg.type === this.varEnum.STRING) {
+					this.tmpOutput1 += "%s ";
+				}
+				else {
+					this.tmpOutput1 += "%.17g ";
+				}	
 
-			if(exprType === this.exprEnum.NUMBER) {
-				output += "%.17g ";
-				argOutput += arg.value + ", ";
+				this.emitBinaryArg(arg);
+			}			
+			else if(exprType === this.exprEnum.NUMBER) {
+				this.tmpOutput1 += "%.17g ";
+				this.tmpOutput2 += arg.value + ", ";
 			}
 			else if(exprType === this.exprEnum.STRING) {
-				output += "%s ";
-				argOutput += "\"" + arg.value + "\"" + ", ";
+				this.tmpOutput1 += "%s ";
+				this.tmpOutput2 += "\"" + arg.value + "\"" + ", ";
 			}
 			else if(exprType === this.exprEnum.VAR) 
 			{
 				varType = arg.type;
 				if(varType === this.varEnum.STRING) {
-					output += "%s ";
-					argOutput += arg.value + " + NUMBER_SIZE, ";
+					this.tmpOutput1 += "%s ";
+					this.tmpOutput2 += arg.value + " + NUMBER_SIZE, ";
 				}
 				else {
-					output += "%.17g ";
-					argOutput += arg.value + ", ";
+					this.tmpOutput1 += "%.17g ";
+					this.tmpOutput2 += arg.value + ", ";
 				}
 			}
+			else if(exprType === this.exprEnum.UNARY) 
+			{
+				this.tmpOutput1 += "%.17g ";
+				if(arg.pre) {
+					this.tmpOutput2 += arg.op + arg.varExpr.value + ", ";
+				}
+				else {
+					this.tmpOutput2 += arg.varExpr.value + arg.op + ", ";
+				}
+			}			
 			else {
-				console.error("Compiler.emitFormat: Unhandled case.");
-				return null;
+				console.error("Compiler.emitFormat: An unhandled case.");
+				return false;
 			}
 		}
 
-		output = output.substr(0, output.length - 1) + "\\n\"";
-		argOutput = argOutput.substr(0, argOutput.length - 2);
-		return output + ", " + argOutput;
+		this.tmpOutput1 = this.tmpOutput1.substr(0, this.tmpOutput1.length - 1) + "\\n\"";
+		this.tmpOutput2 = this.tmpOutput2.substr(0, this.tmpOutput2.length - 2);
+		return this.tmpOutput1 + ", " + this.tmpOutput2;
+	},
+
+	emitBinaryArg: function(arg)
+	{
+		var exprType = arg.exprType;
+		if(exprType === this.exprEnum.BINARY) 
+		{
+			if(!this.emitBinaryArg(arg.lhs)) {
+				return false;
+			}
+
+			this.tmpOutput2 += arg.op + " ";
+			
+			if(!this.emitBinaryArg(arg.rhs)) {
+				return false;
+			}
+
+			this.tmpOutput2 += ","
+		}		
+		else if(exprType === this.exprEnum.NUMBER) {
+			this.tmpOutput2 += arg.value + " ";
+		}
+		else if(exprType === this.exprEnum.STRING) {
+			this.tmpOutput2 += "\"" + arg.value + "\"" + " ";
+		}
+		else if(exprType === this.exprEnum.VAR) 
+		{
+			var varType = arg.type;
+			if(varType === this.varEnum.STRING) {
+				this.tmpOutput2 += arg.value + " + NUMBER_SIZE ";
+			}
+			else {
+				this.tmpOutput2 += arg.value + " ";
+			}			
+		}
+		else if(exprType === this.exprEnum.UNARY) 
+		{
+			if(arg.pre) {
+				this.tmpOutput2 += arg.op + arg.varExpr.value + " ";
+			}
+			else {
+				this.tmpOutput2 += arg.varExpr.value + arg.op + " ";
+			}
+		}
+		else {
+			console.error("Compiler.emitFormat: An unhandled case.");
+			return false;
+		}			
+
+		return true;
 	},
 
 	//
@@ -687,5 +766,8 @@ Compiler.C = Compiler.Basic.extend
 
 	libraryOutput: "",
 	funcOutput: "",
-	scopeOutput: ""
+	scopeOutput: "",
+
+	tmpOutput1: "",
+	tmpOutput2: ""
 });
