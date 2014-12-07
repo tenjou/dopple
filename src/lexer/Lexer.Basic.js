@@ -817,7 +817,7 @@ Lexer.Basic = dopple.Class.extend
 		if(!expr.varExpr) { return null; }
 
 		this.currName = "";
-		
+
 		return expr;
 	},
 
@@ -847,10 +847,22 @@ Lexer.Basic = dopple.Class.extend
 
 	getVar: function(scope, name) 
 	{
-		var expr = scope.vars[name];
-		if(!expr) {
-			dopple.error(this, dopple.Error.REFERENCE_ERROR, name);
-			return null;
+		var expr;
+		var scope = this.scope;
+		for(;;)
+		{
+			expr = scope.vars[name];
+			if(expr) { break; } // Success
+
+			if(!expr) 
+			{
+				if(scope === this.global) {
+					dopple.error(this, dopple.Error.REFERENCE_ERROR, name);
+					return null;					
+				}
+
+				scope = scope.parent;
+			}
 		}
 
 		return expr;
