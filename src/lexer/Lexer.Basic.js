@@ -816,6 +816,8 @@ Lexer.Basic = dopple.Class.extend
 		expr.varExpr = this.getVar(this.scope, this.currName);
 		if(!expr.varExpr) { return null; }
 
+		this.currName = "";
+		
 		return expr;
 	},
 
