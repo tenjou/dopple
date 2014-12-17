@@ -30,7 +30,8 @@ function isAlphaNum(c)
 function isBinOp(c) 
 {
 	return (c === "=" || c === "!" || c === "<" || c === ">" || 
-			c === "+" || c === "-" || c === "*" || c === "/");
+			c === "+" || c === "-" || c === "*" || c === "/" ||
+			c === "&" || c === "~" || c === "|");
 };
 
 function ToHex(num) {

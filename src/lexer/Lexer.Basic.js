@@ -227,7 +227,7 @@ Lexer.Basic = dopple.Class.extend
 		// If there is no such variable, it should be a function:
 		var expr = this.scope.vars[this.currName];
 		if(!expr) {
-			expr = this.getFunc(this.currName);
+			expr = this.getVar(this.currName);
 			expr.numUses++;
 		}
 
@@ -333,9 +333,13 @@ Lexer.Basic = dopple.Class.extend
 		{	
 			this.parseVarPost();
 
+			var op = "";
+
 			var expr = null;
-			if(this.token.str === "=")
+			if(this.token.type === this.tokenEnum.ASSIGN || 
+			   this.token.type === this.tokenEnum.BINOP_ASSIGN)
 			{
+				var op = this.token.str;
 				this.currName = "";
 				this.nextToken();
 
@@ -363,7 +367,7 @@ Lexer.Basic = dopple.Class.extend
 				}
 			}
 
-			if(!this._defineVar(varName, expr, initial)) {
+			if(!this._defineVar(varName, expr, op, initial)) {
 				return false;
 			}			
 		}
@@ -375,12 +379,12 @@ Lexer.Basic = dopple.Class.extend
 
 	parseVarPost: function() {},
 
-	_defineVar: function(name, expr, initial)
+	_defineVar: function(name, expr, op, initial)
 	{
 		// Ignore if it's not a definition and without a body.
 		if(!expr && !initial) 
 		{
-			if(!this.getVar(this.scope, name)) {
+			if(!this.getVar(name)) {
 				return false;
 			}
 			return true;
@@ -410,6 +414,7 @@ Lexer.Basic = dopple.Class.extend
 		}
 
 		varExpr.var = scopeVarExpr;
+		varExpr.op = op;
 		
 		if(expr) {
 			varExpr.expr = expr;
@@ -813,7 +818,7 @@ Lexer.Basic = dopple.Class.extend
 			expr.pre = true;
 		}		
 
-		expr.varExpr = this.getVar(this.scope, this.currName);
+		expr.varExpr = this.getVar(this.currName);
 		if(!expr.varExpr) { return null; }
 
 		this.currName = "";
@@ -832,7 +837,7 @@ Lexer.Basic = dopple.Class.extend
 				this.tokenError();
 			}
 
-			var objExpr = this.getVar(this.scope, this.currName);
+			var objExpr = this.getVar(this.currName);
 			if(!objExpr) { return false; }
 
 			this.parentList.push(objExpr);
@@ -845,7 +850,7 @@ Lexer.Basic = dopple.Class.extend
 		return true;	
 	},
 
-	getVar: function(scope, name) 
+	getVar: function(name) 
 	{
 		var expr;
 		var scope = this.scope;

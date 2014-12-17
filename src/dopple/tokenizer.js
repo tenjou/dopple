@@ -128,6 +128,20 @@ dopple.Tokenizer = dopple.Class.extend
 		if(isBinOp(this.currChar)) 
 		{
 			this.token.str = this.currChar;
+
+			if(this.currChar !== "=") 
+			{
+				this.nextChar();
+				if(this.currChar === "=") {
+					this.token.str += "=";
+					this.token.type = this.tokenEnum.BINOP_ASSIGN;
+					return this.token;					
+				}
+				else {
+					this.cursor--;
+				}
+			}
+
 			if(this.currChar === "=")
 			{
 				this.nextChar();			
@@ -137,7 +151,7 @@ dopple.Tokenizer = dopple.Class.extend
 				}	
 
 				this.cursor--;
-				this.token.type = this.tokenEnum.BINOP;
+				this.token.type = this.tokenEnum.ASSIGN;
 			}
 			else if(this.currChar === "-") 
 			{

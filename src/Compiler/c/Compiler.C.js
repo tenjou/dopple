@@ -165,16 +165,18 @@ Compiler.C = Compiler.Basic.extend
 			return null;
 		}
 
+		var strOp = " " + varExpr.op + " ";
+
 		if(varExpr.parentList)
 		{
 			if(exprType === this.exprEnum.VAR) {
 				output += this.makeVarName(expr) + expr.value + ";\n";
 			}
 			else if(exprType === this.exprEnum.STRING) {
-				output += this.makeVarName(varExpr) + " = \"" + expr.createHex() + "\"\"" + expr.value + "\";\n";
+				output += this.makeVarName(varExpr) + strOp + "\"" + expr.createHex() + "\"\"" + expr.value + "\";\n";
 			}
 			else {
-				output += this.makeVarName(varExpr) + " = ";
+				output += this.makeVarName(varExpr) + strOp;
 				defineExpr(expr);
 				output += ";\n";
 			}
@@ -194,10 +196,10 @@ Compiler.C = Compiler.Basic.extend
 			{
 				if(varExpr.isDef && this.scope === this.global) {
 					this.scope.defOutput += defDecl + ";\n";
-					output += varExpr.value + " = " + this.emitExpr(expr) + ";\n";
+					output += varExpr.value + strOp + this.emitExpr(expr) + ";\n";
 				}
 				else {
-					output += defDecl + " = " + this.emitExpr(expr) + ";\n";
+					output += defDecl + strOp + this.emitExpr(expr) + ";\n";
 				}
 			}
 			else 
@@ -205,14 +207,14 @@ Compiler.C = Compiler.Basic.extend
 				if(varExpr.isDef) 
 				{
 					if(this.scope === this.global) {
-						this.scope.defOutput += defDecl + " = " + this.emitExpr(expr) + ";\n";
+						this.scope.defOutput += defDecl + strOp + this.emitExpr(expr) + ";\n";
 					}
 					else {
-						output += defDecl + " = " + this.emitExpr(expr) + ";\n";
+						output += defDecl + strOp + this.emitExpr(expr) + ";\n";
 					}
 				}
 				else {
-					output += varExpr.value + " = " + this.emitExpr(expr) + ";\n";
+					output += varExpr.value + strOp + this.emitExpr(expr) + ";\n";
 				}
 			}
 		}

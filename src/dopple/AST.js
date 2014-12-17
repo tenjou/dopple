@@ -307,6 +307,7 @@ AST.Var = AST.Basic.extend
 	parentList: null,
 
 	var: null,
+	op: "",
 	expr: null,
 	value: "unknown",
 

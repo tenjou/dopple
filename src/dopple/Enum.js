@@ -17,6 +17,8 @@ dopple.TokenEnum = {
 	WHILE: 13,
 	DO: 14,
 	COMMENT: 15,
+	ASSIGN: 16,
+	BINOP_ASSIGN: 17,
 };
 
 dopple.ExprEnum = {
