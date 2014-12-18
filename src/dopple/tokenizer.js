@@ -138,7 +138,7 @@ dopple.Tokenizer = dopple.Class.extend
 					return this.token;					
 				}
 				else {
-					this.cursor--;
+					this.prevChar();
 				}
 			}
 
@@ -204,7 +204,10 @@ dopple.Tokenizer = dopple.Class.extend
 				
 				this.cursor--;
 				this.token.type = this.tokenEnum.BINOP;
-			}					
+			}	
+			else {
+				this.token.type = this.tokenEnum.BINOP;
+			}				
 
 			return this.token;
 		}		
@@ -253,7 +256,7 @@ dopple.Tokenizer = dopple.Class.extend
 		this.cursor = this.peekCursor;
 	},
 
-	nextChar: function(inc) 
+	nextChar: function() 
 	{
 		if(this.cursor >= this.bufferLength) {
 			this.currChar = "\0";
@@ -263,6 +266,11 @@ dopple.Tokenizer = dopple.Class.extend
 		}
 
 		this.cursor++;
+	},
+
+	prevChar: function() {
+		this.cursor--;
+		this.currChar = this.buffer.charAt(this.cursor - 1);
 	},
 
 	readUntil: function(symbol)
