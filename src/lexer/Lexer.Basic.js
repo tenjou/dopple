@@ -73,9 +73,10 @@ Lexer.Basic = dopple.Class.extend
 			if(type === this.tokenEnum.NAME || 
 			   type === this.tokenEnum.VAR) 
 			{
-				if(!this.parseVar()) {
-					return false;
-				}
+				expr = this.parseVar();
+				if(!expr) { return null; }
+	
+				this.scope.exprs.push(expr);
 			}
 			else if(type === this.tokenEnum.IF) 
 			{
@@ -83,6 +84,12 @@ Lexer.Basic = dopple.Class.extend
 					return false;
 				}
 			}
+			else if(type === this.tokenEnum.FOR) 
+			{
+				if(!this.parseFor()) {
+					return false;
+				}
+			}			
 			else if(type === this.tokenEnum.FUNCTION) 
 			{
 				if(!this.parseFunc()) {
@@ -176,9 +183,6 @@ Lexer.Basic = dopple.Class.extend
 			}
 
 			return this.parseName();
-		}
-		else if(type === this.tokenEnum.VAR) {
-			return this.parseVar();
 		}
 		else if(type === this.tokenEnum.STRING) {
 			return this.parseString();
@@ -301,8 +305,9 @@ Lexer.Basic = dopple.Class.extend
 
 		if(this.token.str === "(") 
 		{
-			if(!this.parseFuncCall()) {
-				return false;
+			expr = this.parseFuncCall();
+			if(!expr) { 
+				return null; 
 			}
 		}
 		else if(this.token.str === ".") 
@@ -319,12 +324,11 @@ Lexer.Basic = dopple.Class.extend
 			}
 			else if(this.token.str === "(") 
 			{
-				if(!this.parseFuncCall()) {
-					return false;
-				}
+				expr = this.parseFuncCall();
+				if(!expr) { return null; }
 			}
 			else {
-				throw "Lexer::parseVar: Unhandled case!";
+				throw "(Lexer.parseVar) Unhandled case!";
 			}
 
 			this.parentList = null;
@@ -347,15 +351,15 @@ Lexer.Basic = dopple.Class.extend
 				expr = this.parseExpression();
 				this.currExpr = null;
 
-				if(!expr) { return false; }
+				if(!expr) { return null; }
 			}
 			else if(this.token.type === this.tokenEnum.UNARY) 
 			{
 				expr = this.parseUnary();
-				if(!expr) { return false; }
+				if(!expr) { return expr; }
 
 				this.scope.exprs.push(expr);
-				return true;
+				return null;
 			}
 			else 
 			{
@@ -367,14 +371,12 @@ Lexer.Basic = dopple.Class.extend
 				}
 			}
 
-			if(!this._defineVar(varName, expr, op, initial)) {
-				return false;
-			}			
+			expr = this._defineVar(varName, expr, op, initial);		
 		}
 
 		this.currName = "";
 
-		return true;
+		return expr;
 	},	
 
 	parseVarPost: function() {},
@@ -385,9 +387,9 @@ Lexer.Basic = dopple.Class.extend
 		if(!expr && !initial) 
 		{
 			if(!this.getVar(name)) {
-				return false;
+				return null;
 			}
-			return true;
+			return expr;
 		}
 
 		var varExpr = new AST.Var(name, this.parentList, this.process.varType);
@@ -398,7 +400,7 @@ Lexer.Basic = dopple.Class.extend
 			// No such variable defined.
 			if(!initial) {
 				dopple.error(this, dopple.Error.REFERENCE_ERROR, this.currName);
-				return false;
+				return null;
 			}
 
 			varExpr.isDef = true;
@@ -418,14 +420,13 @@ Lexer.Basic = dopple.Class.extend
 		
 		if(expr) {
 			varExpr.expr = expr;
-			this.scope.exprs.push(varExpr);
 		}
 		
 		if(this.token.str !== ";") {
 			this._skipNextToken = true;
 		}	
 
-		return true;		
+		return varExpr;		
 	},
 
 	_defineObjVar: function()
@@ -768,10 +769,6 @@ Lexer.Basic = dopple.Class.extend
 		var funcCall = new AST.FunctionCall(funcExpr, args);
 		funcExpr.numUses++;
 
-		if(!this.currExpr) {
-			this.scope.exprs.push(funcCall);
-		}
-
 		this.nextToken();
 
 		return funcCall;
@@ -824,6 +821,67 @@ Lexer.Basic = dopple.Class.extend
 		this.currName = "";
 
 		return expr;
+	},
+
+	parseFor: function()
+	{
+		var forExpr = new AST.For();
+
+		this.nextToken();
+		if(this.token.str !== "(") {
+			this.tokenSymbolError();
+			return null;
+		}
+
+		var expr;
+
+		this.nextToken();
+		if(this.token.str !== ";")
+		{
+			expr = this.parseVar();
+			if(!expr) { return null; }
+
+			if(this.token.str !== ";") {
+				this.tokenSymbolError();
+				return null;				
+			}
+
+			forExpr.initExpr = expr;
+		}
+		
+		this.nextToken();
+		if(this.token.str !== ";")
+		{
+			var expr = this.parseExpression();
+			if(!expr) { return null; }
+
+			if(this.token.str !== ";") {
+				this.tokenSymbolError();
+				return null;				
+			}
+		}
+
+		this.nextToken();
+		if(this.token.str !== ")") {
+			this.tokenSymbolError();
+			return null;				
+		}
+
+		this.nextToken();
+		if(this.token.str !== "{") {
+			this.tokenSymbolError();
+			return null;				
+		}		
+
+		this.nextToken();
+		if(this.token.str !== "}") {
+			this.tokenSymbolError();
+			return null;				
+		}		
+
+		this.scope.exprs.push(forExpr);
+
+		return forExpr;
 	},
 
 	parseParentList: function()
@@ -944,14 +1002,19 @@ Lexer.Basic = dopple.Class.extend
 
 			if(type === this.exprEnum.VAR) 
 			{
-				expr.expr = this.optimizer.do(expr.expr);
-				if(!expr.analyse(this)) {
+				if(!this.resolveVar(expr)) {
 					return false;
-				}
+				}				
 			}
 			else if(type === this.exprEnum.IF) 
 			{
 				if(!this.resolveIf(expr)) {
+					return false;
+				}
+			}
+			else if(type === this.exprEnum.FOR)
+			{
+				if(!this.resolveFor(expr)) {
 					return false;
 				}
 			}
@@ -973,6 +1036,16 @@ Lexer.Basic = dopple.Class.extend
 		return true;
 	},
 
+	resolveVar: function(expr)
+	{
+		expr.expr = this.optimizer.do(expr.expr);
+		if(!expr.analyse(this)) {
+			return false;
+		}
+
+		return true;
+	},
+
 	resolveIf: function(expr)
 	{
 		var branches = expr.branches;
@@ -982,6 +1055,15 @@ Lexer.Basic = dopple.Class.extend
 			if(!this.resolve(branches[i].scope)) {
 				return false;
 			}
+		}
+
+		return true;
+	},
+
+	resolveFor: function(expr)
+	{
+		if(expr.initExpr) {
+			if(!this.resolveVar(expr.initExpr)) { return false; }
 		}
 
 		return true;

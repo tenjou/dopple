@@ -498,6 +498,13 @@ AST.Name = AST.Basic.extend
 	exprType: dopple.ExprEnum.NAME
 });
 
+/* Expression For */
+AST.For = AST.Basic.extend
+({
+	//
+	exprType: dopple.ExprEnum.FOR
+});
+
 /* Expression Format */
 AST.Format = AST.Basic.extend
 ({

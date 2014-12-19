@@ -133,6 +133,9 @@ Compiler.C = Compiler.Basic.extend
 			else if(type === this.exprEnum.IF) {
 				output += this.emitIf(expr);
 			}
+			else if(type === this.exprEnum.FOR) {
+				output += this.emitFor(expr);
+			}
 			else if(type === this.exprEnum.FUNCTION_CALL) {
 				output += this.tabs + this.emitFuncCall(expr) + ";\n";
 			}	
@@ -156,7 +159,7 @@ Compiler.C = Compiler.Basic.extend
 		var exprType = expr.exprType;
 
 		if(varExpr.var.type === this.varEnum.VOID) {
-			console.warn("Unused variable '" + this.makeVarName(varExpr) + "'");
+			console.warn("Unresolved variable '" + this.makeVarName(varExpr) + "'");
 			return output;
 		}
 
@@ -272,6 +275,21 @@ Compiler.C = Compiler.Basic.extend
 		output += this.emitExpr(branch.expr);
 		output += ") \n" + this.tabs + "{\n";
 		output += this.emitScope(branch.scope);
+		output += this.tabs + "}\n";
+
+		return output;
+	},
+
+	emitFor: function(forExpr)
+	{
+		var output = this.tabs + "for("; 
+		
+		if(forExpr.initExpr) {
+			output += this.emitVar(forExpr.initExpr);
+		}
+
+		output += ";;) \n";
+		output += this.tabs + "{\n";
 		output += this.tabs + "}\n";
 
 		return output;

@@ -73,6 +73,9 @@ dopple.Tokenizer = dopple.Class.extend
 			else if(this.token.str === "if") {
 				this.token.type = this.tokenEnum.IF;
 			}
+			else if(this.token.str === "for") {
+				this.token.type = this.tokenEnum.FOR;
+			}
 			else if(this.token.str === "return") {
 				this.token.type = this.tokenEnum.RETURN;
 			}

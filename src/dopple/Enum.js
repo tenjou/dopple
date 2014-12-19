@@ -37,7 +37,8 @@ dopple.ExprEnum = {
 	PROTOTYPE: 12,
 	CLASS: 13,
 	FORMAT: 14,
-	IF: 15
+	IF: 15,
+	FOR: 16
 };
 
 dopple.VarEnum = {
