@@ -31,7 +31,7 @@ Lexer.Basic = dopple.Class.extend
 	nextToken: function() 
 	{
 		if(!this._skipNextToken) {
-			this.token = this.tokenizer.nextToken();
+			this.token = this.tokenizer.nextToken(null);
 		}
 		else {
 			this._skipNextToken = false;
@@ -181,10 +181,11 @@ Lexer.Basic = dopple.Class.extend
 
 	parsePrimary: function()
 	{
+		var expr;
 		var type = this.token.type;
 
 		if(type === this.tokenEnum.NUMBER) {
-			return this.parseNumber();
+			expr = this.parseNumber();
 		}
 		else if(type === this.tokenEnum.NAME) 
 		{	
@@ -193,40 +194,47 @@ Lexer.Basic = dopple.Class.extend
 
 			// Check if it's a function call:
 			if(this.token.str === "(") {
-				return this.parseFuncCall();
+				expr = this.parseFuncCall();
 			}
 			else if(this.token.type === this.tokenEnum.UNARY) {
-				return this.parseUnary();
+				expr = this.parseUnary();
 			}
-
-			return this.parseName();
+			else {
+				expr = this.parseName();
+			}
 		}
 		else if(type === this.tokenEnum.STRING) {
-			return this.parseString();
+			expr = this.parseString();
 		}		
 		else if(type === this.tokenEnum.IF) {
-			return this.parseIf();
+			expr = this.parseIf();
 		}
 		else if(type === this.tokenEnum.UNARY) {
-			return this.parseUnary();
+			expr = this.parseUnary();
 		}
 		else if(type === this.tokenEnum.BOOL) {
-			return this.parseBool();
+			expr = this.parseBool();
 		}
 		else if(type === this.tokenEnum.RETURN) {
-			return this.parseReturn();
+			expr = this.parseReturn();
 		}
 		else if(type === this.tokenEnum.FUNCTION) {
-			return this.parseFunc();
+			expr = this.parseFunc();
 		}
 		else if(this.token.str === "(") {
-			return this.parseExprParentheses();
+			expr = this.parseExprParentheses();
 		}
 		else if(this.token.str === "{") {
-			return this.parseObject();
+			expr = this.parseObject();
 		}
-			
-		this.tokenError();
+		else {
+			this.tokenError();
+			return null;
+		}	
+
+		this.currName = "";	
+
+		return expr;
 	},
 
 	parseNumber: function() 
@@ -510,50 +518,73 @@ Lexer.Basic = dopple.Class.extend
 
 	parseIf: function()
 	{
-		this.nextToken();
-		if(this.token.str !== "(") {
-			this.tokenSymbolError();
-			return false;
-		}
+		var ifExpr = new AST.If();
+		var expr, type;
 
-		this.nextToken();
-		var expr = this.parseExpression();
-		if(!expr) {
-			this.tokenSymbolError();
-			return false;
-		}
-
-		if(this.token.str !== ")") {
-			this.tokenSymbolError();
-			return false;
-		}
-
-		this.nextToken();
-		if(this.token.str !== "{") {
-			this.tokenSymbolError();
-			return false;
-		}
-
-		var virtualScope = this.scope.createVirtual();
-		this.scope = virtualScope;
-
-		this.nextToken();
-		if(this.token.str !== "}") 
+		for(;;)
 		{
-			if(!this.parseBody(false)) {
+			if(this.token.type === this.tokenEnum.IF ||
+			   this.token.type === this.tokenEnum.ELSE_IF)
+			{
+				type = this.token.str;
+
+				this.nextToken();
+				if(this.token.str !== "(") {
+					this.tokenSymbolError();
+					return false;
+				}
+
+				this.nextToken();
+				expr = this.parseExpression();
+				if(!expr) {
+					this.tokenSymbolError();
+					return false;
+				}
+
+				if(this.token.str !== ")") {
+					this.tokenSymbolError();
+					return false;
+				}
+			}
+			else {
+				type = this.token.str;
+				expr = null;	
+			}			
+
+			this.nextToken();
+			if(this.token.str !== "{") {
+				this.tokenSymbolError();
 				return false;
 			}
+
+			var virtualScope = this.scope.createVirtual();
+			this.scope = virtualScope;
+
+			this.nextToken();
+			if(this.token.str !== "}") 
+			{
+				if(!this.parseBody(false)) {
+					return false;
+				}
+			}
+
+			this.scope = this.scope.parent;
+
+			if(this.token.str !== "}") {
+				this.tokenSymbolError();
+				return false;
+			}
+
+			ifExpr.addBranch(type, expr, virtualScope);
+
+			this.nextToken();
+			if(this.token.type !== this.tokenEnum.ELSE_IF && 
+			   this.token.type !== this.tokenEnum.ELSE) 
+			{
+				break;
+			}
 		}
-
-		this.scope = this.scope.parent;
-
-		if(this.token.str !== "}") {
-			this.tokenSymbolError();
-			return false;
-		}		
-
-		var ifExpr = new AST.If();
-		ifExpr.addBranch(expr, virtualScope);
+		
 		this.scope.exprs.push(ifExpr);
 
 		return true;
@@ -740,35 +771,56 @@ Lexer.Basic = dopple.Class.extend
 		}
 
 		var expr;
+		var forceInitial = false;
 
 		// Init Expression:
 		this.nextToken();
 		if(this.token.str !== ";")
 		{
-			expr = this.parseVar();
-			if(!expr) { return null; }
+			for(;;)
+			{
+				expr = this.parseVar(forceInitial);
+				if(!expr) { return null; }
+
+				forExpr.initExpr.push(expr);
+
+				if(this.token.str !== ",") { break; }	
+				
+				this._skipNextToken = false;
+				this.nextToken();
+				forceInitial = true;		
+			}
 
 			if(this.token.str !== ";") {
 				this.tokenSymbolError();
 				return null;				
 			}
-
-			forExpr.initExpr = expr;
 		}
 		
 		// Compare Expression:
 		this.nextToken();
 		if(this.token.str !== ";")
 		{
-			var expr = this.parseExpression();
-			if(!expr) { return null; }
+			for(;;)
+			{
+				expr = this.parseExpression();
+				if(!expr) { return null; }
+
+				forExpr.cmpExpr.push(expr);
+
+				if(this.token.str !== ",") { break; }	
+				
+				this._skipNextToken = false;
+				this.nextToken();
+				forceInitial = true;		
+			}
 
 			if(this.token.str !== ";") {
 				this.tokenSymbolError();
 				return null;				
 			}
 
-			forExpr.cmpExpr = expr;
+			forExpr.cmpExpr.push(expr);
 		}
 
 		// Iter Expression:
@@ -783,7 +835,7 @@ Lexer.Basic = dopple.Class.extend
 				return null;				
 			}
 
-			forExpr.iterExpr = expr;			
+			forExpr.iterExpr.push(expr);			
 		}
 
 		this.nextToken();
@@ -1112,11 +1164,23 @@ Lexer.Basic = dopple.Class.extend
 
 	resolveIf: function(expr)
 	{
+		var branch, branchExpr;
 		var branches = expr.branches;
 		var numBranches = branches.length;
 		for(var i = 0; i < numBranches; i++) 
 		{
-			if(!this.resolve(branches[i].scope)) {
+			branch = branches[i];
+			branchExpr = branch.expr;
+
+			if(branchExpr)
+			{
+				branchExpr = this.optimizer.do(branchExpr);
+				if(!branchExpr.analyse(this)) {
+					return null;
+				}
+			}
+
+			if(!this.resolve(branch.scope)) {
 				return false;
 			}
 		}
@@ -1126,23 +1190,40 @@ Lexer.Basic = dopple.Class.extend
 
 	resolveFor: function(forExpr)
 	{
-		if(forExpr.initExpr) {
-			if(!this.resolveVar(forExpr.initExpr)) { return false; }
+		var i, item;
+		var length = forExpr.initExpr.length;
+		if(length) 
+		{
+			for(i = 0; i < length; i++) {
+				if(!this.resolveVar(forExpr.initExpr[i])) { return false; }
+			}
 		}
 
-		if(forExpr.cmpExpr) {
-			forExpr.cmpExpr = this.resolveExpr(forExpr.cmpExpr);
-			if(!forExpr.cmpExpr) {
-				return false;
+		length = forExpr.cmpExpr.length;
+		if(length) 
+		{
+			for(i = 0; i < length; i++)
+			{
+				item = forExpr.cmpExpr[i];
+				item = this.resolveExpr(item);
+				if(!item) { return false; }
+
+				forExpr.cmpExpr[i] = item;
 			}
 		}	
 
-		if(forExpr.iterExpr) {
-			forExpr.iterExpr = this.resolveExpr(forExpr.iterExpr);
-			if(!forExpr.iterExpr) {
-				return false;
+		length = forExpr.iterExpr.length;
+		if(length) 
+		{
+			for(i = 0; i < length; i++)
+			{
+				item = forExpr.iterExpr[i];
+				item = this.resolveExpr(item);
+				if(!item) { return false; }
+
+				forExpr.iterExpr[i] = item;
 			}
-		}	
+		}		
 
 		if(!this.resolve(forExpr.scope)) {
 			return false;

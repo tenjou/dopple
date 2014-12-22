@@ -43,11 +43,15 @@ dopple.Tokenizer = dopple.Class.extend
 		this.currChar = "";
 	},
 
-	nextToken: function()
+	nextToken: function(token)
 	{
-		this.token.type = 0;
-		this.token.str = "";
-		this.token.value = 0;
+		if(!token) {
+			token = this.token;
+		}
+		
+		token.type = 0;
+		token.str = "";
+		token.value = 0;
 
 		this.nextChar();
 
@@ -59,86 +63,99 @@ dopple.Tokenizer = dopple.Class.extend
 		// NAME
 		if(isAlpha(this.currChar)) 
 		{
-			this.token.str += this.currChar;
+			token.str += this.currChar;
 			this.nextChar();
 			while(isAlphaNum(this.currChar)) {
-				this.token.str += this.currChar;
+				token.str += this.currChar;
 				this.nextChar();
 			}
 			this.cursor--;
 
-			if(this.token.str === "var") {
-				this.token.type = this.tokenEnum.VAR;
+			var strToken = token.str;
+			if(strToken === "var") {
+				token.type = this.tokenEnum.VAR;
 			}
-			else if(this.token.str === "if") {
-				this.token.type = this.tokenEnum.IF;
+			else if(strToken === "if") {
+				token.type = this.tokenEnum.IF;
 			}
-			else if(this.token.str === "for") {
-				this.token.type = this.tokenEnum.FOR;
+			else if(strToken === "else") 
+			{
+				this.peek();
+				if(this.peekToken.str === "if") {
+					this.eat();
+					token.str = "else if";
+					token.type = this.tokenEnum.ELSE_IF;
+				}
+				else {
+					token.type = this.tokenEnum.ELSE;
+				}
 			}
-			else if(this.token.str === "return") {
-				this.token.type = this.tokenEnum.RETURN;
+			else if(strToken === "for") {
+				token.type = this.tokenEnum.FOR;
 			}
-			else if(this.token.str === "function") {
-				this.token.type = this.tokenEnum.FUNCTION;
+			else if(strToken === "return") {
+				token.type = this.tokenEnum.RETURN;
 			}
-			else if(this.token.str === "true") {
-				this.token.type = this.tokenEnum.BOOL;
-				this.token.value = 1;
+			else if(strToken === "function") {
+				token.type = this.tokenEnum.FUNCTION;
 			}
-			else if(this.token.str === "false") {
-				this.token.type = this.tokenEnum.BOOL;			
+			else if(strToken === "true") {
+				token.type = this.tokenEnum.BOOL;
+				token.value = 1;
 			}
-			else if(this.token.str === "NaN") {
-				this.token.type = this.tokenEnum.NUMBER;
-				this.token.value = NaN;
+			else if(strToken === "false") {
+				token.type = this.tokenEnum.BOOL;			
 			}
-			else if(this.customKeyword[this.token.str]) {
-				this.token.type = this.customKeyword[this.token.str];
+			else if(strToken === "NaN") {
+				token.type = this.tokenEnum.NUMBER;
+				token.value = NaN;
+			}
+			else if(this.customKeyword[strToken]) {
+				token.type = this.customKeyword[strToken];
 			}
 			else {
-				this.token.type = this.tokenEnum.NAME;
+				token.type = this.tokenEnum.NAME;
 			}
 
-			return this.token;
+			return token;
 		}
 
 		// Number
 		if(isDigit(this.currChar)) 
 		{
-			this.token.str += this.currChar;
+			token.str += this.currChar;
 
 			this.nextChar();
 			while(isDigit(this.currChar)) {
-				this.token.str += this.currChar;
+				token.str += this.currChar;
 				this.nextChar();
 			}
 			this.cursor--;
 
 			// Only a symbol:
-			if(this.token.str === ".") {
-				this.token.type = this.tokenEnum.SYMBOL;
-				this.token.value = this.token.str;
-				return this.token;
+			if(token.str === ".") {
+				token.type = this.tokenEnum.SYMBOL;
+				token.value = token.str;
+				return token;
 			}
 
-			this.token.type = this.tokenEnum.NUMBER;
-			this.token.value = parseFloat(this.token.str);
-			return this.token;
+			token.type = this.tokenEnum.NUMBER;
+			token.value = parseFloat(token.str);
+			return token;
 		}
 
 		// BinOp
 		if(isBinOp(this.currChar)) 
 		{
-			this.token.str = this.currChar;
+			token.str = this.currChar;
 
 			if(this.currChar !== "=") 
 			{
 				this.nextChar();
 				if(this.currChar === "=") {
-					this.token.str += "=";
-					this.token.type = this.tokenEnum.BINOP_ASSIGN;
-					return this.token;					
+					token.str += "=";
+					token.type = this.tokenEnum.BINOP_ASSIGN;
+					return token;					
 				}
 				else {
 					this.prevChar();
@@ -149,12 +166,12 @@ dopple.Tokenizer = dopple.Class.extend
 			{
 				this.nextChar();			
 				while(isBinOp(this.currChar)) {
-					this.token.str += this.currChar;
+					token.str += this.currChar;
 					this.nextChar();
 				}	
 
 				this.cursor--;
-				this.token.type = this.tokenEnum.ASSIGN;
+				token.type = this.tokenEnum.ASSIGN;
 			}
 			else if(this.currChar === "-") 
 			{
@@ -162,33 +179,33 @@ dopple.Tokenizer = dopple.Class.extend
 				if(isDigit(this.currChar))
 				{
 					while(isDigit(this.currChar)) {
-						this.token.str += this.currChar;
+						token.str += this.currChar;
 						this.nextChar();
 					}					
-					this.token.value = parseFloat(this.token.str);
-					this.token.type = this.tokenEnum.NUMBER;
+					token.value = parseFloat(token.str);
+					token.type = this.tokenEnum.NUMBER;
 					this.cursor--;
-					return this.token;
+					return token;
 				}
 				else if(this.currChar === "-") {
-					this.token.str += "-";	
-					this.token.type = this.tokenEnum.UNARY;			
+					token.str += "-";	
+					token.type = this.tokenEnum.UNARY;			
 				}
 				else {
 					this.cursor--;
-					this.token.type = this.tokenEnum.BINOP;
+					token.type = this.tokenEnum.BINOP;
 				}
 			}	
 			else if(this.currChar === "+") 
 			{
 				this.nextChar();
 				if(this.currChar === "+") {
-					this.token.str += "+";
-					this.token.type = this.tokenEnum.UNARY;
+					token.str += "+";
+					token.type = this.tokenEnum.UNARY;
 				}
 				else {
 					this.cursor--;
-					this.token.type = this.tokenEnum.BINOP;
+					token.type = this.tokenEnum.BINOP;
 				}
 			}
 			else if(this.currChar === "/") 
@@ -196,23 +213,23 @@ dopple.Tokenizer = dopple.Class.extend
 				this.nextChar();
 				if(this.currChar === "/") {
 					this.skipUntilNewline();
-					this.token.type = this.tokenEnum.COMMENT;
-					return this.token;
+					token.type = this.tokenEnum.COMMENT;
+					return token;
 				}	
 				else if(this.currChar === "*") {
 					this.skipUntil("/");
-					this.token.type = this.tokenEnum.COMMENT;
-					return this.token;
+					token.type = this.tokenEnum.COMMENT;
+					return token;
 				}
 				
 				this.cursor--;
-				this.token.type = this.tokenEnum.BINOP;
+				token.type = this.tokenEnum.BINOP;
 			}	
 			else {
-				this.token.type = this.tokenEnum.BINOP;
+				token.type = this.tokenEnum.BINOP;
 			}				
 
-			return this.token;
+			return token;
 		}		
 
 		// NAME
@@ -227,35 +244,42 @@ dopple.Tokenizer = dopple.Class.extend
 					throw dopple.throw(dopple.Error.UNEXPECTED_EOI);
 				}
 
-				this.token.str += this.currChar;
+				token.str += this.currChar;
 				this.nextChar();
 			}
 
-			this.token.type = this.tokenEnum.STRING;
-			return this.token;
+			token.type = this.tokenEnum.STRING;
+			return token;
 		}
 
 		// EOF
 		if(this.currChar === "\0") {
-			this.token.type = this.tokenEnum.EOF;
-			return this.token;
+			token.type = this.tokenEnum.EOF;
+			return token;
 		}
 
-		this.token.type = this.tokenEnum.SYMBOL;
-		this.token.str = this.currChar;
-		return this.token;
+		token.type = this.tokenEnum.SYMBOL;
+		token.str = this.currChar;
+		return token;
 	},
 
 	peek: function() 
 	{
 		var tmpCursor = this.cursor;
-		var token = this.nextToken();
+
+		this.nextToken(this.peekToken);
+
 		this.peekCursor = this.cursor;
 		this.cursor = tmpCursor;
-		return token;
+
+		return this.peekToken;
 	},
 
-	eat: function() {
+	eat: function() 
+	{
+		this.token.type = this.peekToken.type;
+		this.token.str = this.peekToken.str;
+		this.token.value = this.peekToken.value;
 		this.cursor = this.peekCursor;
 	},
 
@@ -321,5 +345,6 @@ dopple.Tokenizer = dopple.Class.extend
 	customKeyword: null,
 
 	token: new dopple.Token(),
+	peekToken: new dopple.Token(),
 	tokenEnum: dopple.TokenEnum
 });

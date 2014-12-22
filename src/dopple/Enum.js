@@ -19,6 +19,8 @@ dopple.TokenEnum = {
 	COMMENT: 15,
 	ASSIGN: 16,
 	BINOP_ASSIGN: 17,
+	ELSE: 18,
+	ELSE_IF: 19
 };
 
 dopple.ExprEnum = {

@@ -271,13 +271,28 @@ Compiler.C = Compiler.Basic.extend
 
 	emitIf: function(ifExpr)
 	{
-		var branch = ifExpr.branches[0];
+		var output = "";
 
-		var output = this.tabs + "if(";
-		output += this.emitExpr(branch.expr);
-		output += ") \n" + this.tabs + "{\n";
-		output += this.emitScope(branch.scope);
-		output += this.tabs + "}\n";
+		var branch;
+		var branches = ifExpr.branches;
+		var numBranches = branches.length;
+		for(var i = 0; i < numBranches; i++)
+		{
+			branch = branches[i];
+
+			if(branch.type === "if" || branch.type === "else if") {
+				output += this.tabs + branch.type + "(";
+				output += this.emitExpr(branch.expr);
+				output += ")\n";					
+			}
+			else {
+				output += this.tabs + "else\n";
+			}
+
+			output += this.tabs + "{\n";
+			output += this.emitScope(branch.scope);
+			output += this.tabs + "}\n";			
+		}
 
 		return output;
 	},

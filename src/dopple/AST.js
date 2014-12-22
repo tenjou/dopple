@@ -422,11 +422,12 @@ AST.If = AST.Basic.extend
 		this.branches = [];
 	},
 
-	addBranch: function(expr, scope) {
-		this.branches.push(new this.Branch(expr, scope));
+	addBranch: function(type, expr, scope) {
+		this.branches.push(new this.Branch(type, expr, scope));
 	},
 
-	Branch: function(expr, scope) {
+	Branch: function(type, expr, scope) {
+		this.type = type;
 		this.expr = expr;
 		this.scope = scope;
 	},
@@ -501,6 +502,12 @@ AST.Name = AST.Basic.extend
 /* Expression For */
 AST.For = AST.Basic.extend
 ({
+	init: function() {
+		this.initExpr = null;
+		this.cmpExpr = null;
+		this.iterExpr = [];
+	},
+
 	//
 	exprType: dopple.ExprEnum.FOR,
 
