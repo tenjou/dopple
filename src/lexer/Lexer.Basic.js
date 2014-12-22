@@ -70,14 +70,25 @@ Lexer.Basic = dopple.Class.extend
 		do
 		{
 			type = this.token.type;
+
 			if(type === this.tokenEnum.NAME || 
 			   type === this.tokenEnum.VAR) 
 			{
-				expr = this.parseVar();
-				if(!expr) { return null; }
-		
-				if(expr.expr) {
-					this.scope.exprs.push(expr);
+				var forceInitial = false;
+				for(;;)
+				{
+					expr = this.parseVar(forceInitial);
+					if(!expr) { return null; }
+			
+					if(expr.expr) {
+						this.scope.exprs.push(expr);
+					}
+
+					if(this.token.str !== ",") { break; }
+					
+					forceInitial = true;
+					this._skipNextToken = false;
+					this.nextToken();
 				}
 			}
 			else if(type === this.tokenEnum.IF) 
@@ -288,9 +299,9 @@ Lexer.Basic = dopple.Class.extend
 		return expr;
 	},	
 
-	parseVar: function()
+	parseVar: function(forceInitial)
 	{
-		var initial = false;
+		var initial = forceInitial || false;
 		if(this.token.type === this.tokenEnum.VAR)
 		{
 			this.nextToken();	
