@@ -299,8 +299,10 @@ Compiler.C = Compiler.Basic.extend
 		if(forExpr.iterExpr) {
 			output += " " + this.emitExpr(forExpr.iterExpr);
 		}		
+
 		output += ") \n";
 		output += this.tabs + "{\n";
+		output += this.emitScope(forExpr.scope);
 		output += this.tabs + "}\n";
 
 		return output;

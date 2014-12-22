@@ -48,7 +48,11 @@ Lexer.Basic = dopple.Class.extend
 
 	getTokenPrecendence: function()
 	{
-		if(this.token.type !== this.tokenEnum.BINOP) {
+		var type = this.token.type;
+		if(type !== this.tokenEnum.BINOP &&
+		   type !== this.tokenEnum.ASSIGN && 
+		   type !== this.tokenEnum.BINOP_ASSIGN) 
+		{
 			return -1;
 		}
 
@@ -80,9 +84,9 @@ Lexer.Basic = dopple.Class.extend
 					expr = this.parseVar(forceInitial);
 					if(!expr) { return null; }
 			
-					if(expr.expr) {
+					//if(expr.expr) {
 						this.scope.exprs.push(expr);
-					}
+					//}
 
 					if(this.token.str !== ",") { break; }
 
@@ -725,6 +729,93 @@ Lexer.Basic = dopple.Class.extend
 		return funcExpr;
 	},	
 
+	parseFor: function()
+	{
+		var forExpr = new AST.For();
+
+		this.nextToken();
+		if(this.token.str !== "(") {
+			this.tokenSymbolError();
+			return null;
+		}
+
+		var expr;
+
+		// Init Expression:
+		this.nextToken();
+		if(this.token.str !== ";")
+		{
+			expr = this.parseVar();
+			if(!expr) { return null; }
+
+			if(this.token.str !== ";") {
+				this.tokenSymbolError();
+				return null;				
+			}
+
+			forExpr.initExpr = expr;
+		}
+		
+		// Compare Expression:
+		this.nextToken();
+		if(this.token.str !== ";")
+		{
+			var expr = this.parseExpression();
+			if(!expr) { return null; }
+
+			if(this.token.str !== ";") {
+				this.tokenSymbolError();
+				return null;				
+			}
+
+			forExpr.cmpExpr = expr;
+		}
+
+		// Iter Expression:
+		this.nextToken();
+		if(this.token.str !== ")") 
+		{
+			var expr = this.parseExpression();
+			if(!expr) { return null; }
+
+			if(this.token.str !== ")") {
+				this.tokenSymbolError();
+				return null;				
+			}
+
+			forExpr.iterExpr = expr;			
+		}
+
+		this.nextToken();
+		if(this.token.str !== "{") {
+			this.tokenSymbolError();
+			return null;				
+		}		
+
+		var virtualScope = this.scope.createVirtual();
+		this.scope = virtualScope;
+
+		this.nextToken();
+		if(this.token.str !== "}") 
+		{
+			if(!this.parseBody(false)) {
+				return false;
+			}
+		}	
+
+		this.scope = this.scope.parent;
+
+		if(this.token.str !== "}") {
+			this.tokenSymbolError();
+			return null;				
+		}		
+
+		forExpr.scope = virtualScope;
+		this.scope.exprs.push(forExpr);
+
+		return forExpr;
+	},	
+
 	parseFuncParams: function()
 	{
 		var newVar;
@@ -845,80 +936,6 @@ Lexer.Basic = dopple.Class.extend
 		this.currName = "";
 
 		return expr;
-	},
-
-	parseFor: function()
-	{
-		var forExpr = new AST.For();
-
-		this.nextToken();
-		if(this.token.str !== "(") {
-			this.tokenSymbolError();
-			return null;
-		}
-
-		var expr;
-
-		// Init Expression:
-		this.nextToken();
-		if(this.token.str !== ";")
-		{
-			expr = this.parseVar();
-			if(!expr) { return null; }
-
-			if(this.token.str !== ";") {
-				this.tokenSymbolError();
-				return null;				
-			}
-
-			forExpr.initExpr = expr;
-		}
-		
-		// Compare Expression:
-		this.nextToken();
-		if(this.token.str !== ";")
-		{
-			var expr = this.parseExpression();
-			if(!expr) { return null; }
-
-			if(this.token.str !== ";") {
-				this.tokenSymbolError();
-				return null;				
-			}
-
-			forExpr.cmpExpr = expr;
-		}
-
-		// Iter Expression:
-		this.nextToken();
-		if(this.token.str !== ")") 
-		{
-			var expr = this.parseExpression();
-			if(!expr) { return null; }
-
-			if(this.token.str !== ")") {
-				this.tokenSymbolError();
-				return null;				
-			}
-
-			forExpr.iterExpr = expr;			
-		}
-
-		this.nextToken();
-		if(this.token.str !== "{") {
-			this.tokenSymbolError();
-			return null;				
-		}		
-
-		this.nextToken();
-		if(this.token.str !== "}") {
-			this.tokenSymbolError();
-			return null;				
-		}		
-
-		this.scope.exprs.push(forExpr);
-
-		return forExpr;
 	},
 
 	parseParentList: function()
@@ -1083,6 +1100,16 @@ Lexer.Basic = dopple.Class.extend
 		return true;
 	},
 
+	resolveExpr: function(expr)
+	{
+		expr = this.optimizer.do(expr);
+		if(!expr.analyse(this)) {
+			return null;
+		}
+
+		return expr;		
+	},
+
 	resolveIf: function(expr)
 	{
 		var branches = expr.branches;
@@ -1097,11 +1124,29 @@ Lexer.Basic = dopple.Class.extend
 		return true;
 	},
 
-	resolveFor: function(expr)
+	resolveFor: function(forExpr)
 	{
-		if(expr.initExpr) {
-			if(!this.resolveVar(expr.initExpr)) { return false; }
+		if(forExpr.initExpr) {
+			if(!this.resolveVar(forExpr.initExpr)) { return false; }
 		}
+
+		if(forExpr.cmpExpr) {
+			forExpr.cmpExpr = this.resolveExpr(forExpr.cmpExpr);
+			if(!forExpr.cmpExpr) {
+				return false;
+			}
+		}	
+
+		if(forExpr.iterExpr) {
+			forExpr.iterExpr = this.resolveExpr(forExpr.iterExpr);
+			if(!forExpr.iterExpr) {
+				return false;
+			}
+		}	
+
+		if(!this.resolve(forExpr.scope)) {
+			return false;
+		}			
 
 		return true;
 	},
@@ -1305,7 +1350,8 @@ Lexer.Basic = dopple.Class.extend
 		"+": 2000,
 		"-": 2000,
 		"*": 4000,
-		"/": 4000
+		"/": 4000,
+		"%": 4000
 	},
 
 	genID: 0,

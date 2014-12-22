@@ -506,7 +506,9 @@ AST.For = AST.Basic.extend
 
 	initExpr: null,
 	cmpExpr: null,
-	iterExpr: null
+	iterExpr: null,
+
+	scope: null
 });
 
 /* Expression Format */
