@@ -502,7 +502,11 @@ AST.Name = AST.Basic.extend
 AST.For = AST.Basic.extend
 ({
 	//
-	exprType: dopple.ExprEnum.FOR
+	exprType: dopple.ExprEnum.FOR,
+
+	initExpr: null,
+	cmpExpr: null,
+	iterExpr: null
 });
 
 /* Expression Format */

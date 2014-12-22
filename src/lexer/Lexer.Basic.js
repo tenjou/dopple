@@ -85,7 +85,7 @@ Lexer.Basic = dopple.Class.extend
 					}
 
 					if(this.token.str !== ",") { break; }
-					
+
 					forceInitial = true;
 					this._skipNextToken = false;
 					this.nextToken();
@@ -859,6 +859,7 @@ Lexer.Basic = dopple.Class.extend
 
 		var expr;
 
+		// Init Expression:
 		this.nextToken();
 		if(this.token.str !== ";")
 		{
@@ -873,6 +874,7 @@ Lexer.Basic = dopple.Class.extend
 			forExpr.initExpr = expr;
 		}
 		
+		// Compare Expression:
 		this.nextToken();
 		if(this.token.str !== ";")
 		{
@@ -883,12 +885,23 @@ Lexer.Basic = dopple.Class.extend
 				this.tokenSymbolError();
 				return null;				
 			}
+
+			forExpr.cmpExpr = expr;
 		}
 
+		// Iter Expression:
 		this.nextToken();
-		if(this.token.str !== ")") {
-			this.tokenSymbolError();
-			return null;				
+		if(this.token.str !== ")") 
+		{
+			var expr = this.parseExpression();
+			if(!expr) { return null; }
+
+			if(this.token.str !== ")") {
+				this.tokenSymbolError();
+				return null;				
+			}
+
+			forExpr.iterExpr = expr;			
 		}
 
 		this.nextToken();

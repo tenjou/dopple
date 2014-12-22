@@ -289,8 +289,17 @@ Compiler.C = Compiler.Basic.extend
 		if(forExpr.initExpr) {
 			output += this.emitVar(forExpr.initExpr);
 		}
+		output += ";";
+		
+		if(forExpr.cmpExpr) {
+			output += " " + this.emitExpr(forExpr.cmpExpr);
+		}
+		output += ";";	
 
-		output += ";;) \n";
+		if(forExpr.iterExpr) {
+			output += " " + this.emitExpr(forExpr.iterExpr);
+		}		
+		output += ") \n";
 		output += this.tabs + "{\n";
 		output += this.tabs + "}\n";
 
