@@ -118,6 +118,7 @@ Compiler.C = Compiler.Basic.extend
 		this.incTabs();
 
 		var output = "";
+		var tmpOutput = "";
 		var expr, type;
 		var exprs = scope.exprs;
 		var numExprs = exprs.length;
@@ -127,8 +128,12 @@ Compiler.C = Compiler.Basic.extend
 			expr = exprs[i];
 			type = expr.exprType;
 
-			if(type === this.exprEnum.VAR) {
-				output += this.emitVar(expr);
+			if(type === this.exprEnum.VAR) 
+			{
+				tmpOutput = this.emitVar(expr);
+				if(tmpOutput) {
+					output += this.tabs + tmpOutput + ";\n";
+				}
 			}
 			else if(type === this.exprEnum.IF) {
 				output += this.emitIf(expr);
@@ -155,19 +160,20 @@ Compiler.C = Compiler.Basic.extend
 	emitVar: function(varExpr)
 	{
 		var output = "";
-		var expr = varExpr.expr;
-		var exprType = expr.exprType;
 
-		if(varExpr.var.type === this.varEnum.VOID) {
+		var varType = varExpr.var.type;
+		if(varType === this.varEnum.VOID) {
 			console.warn("Unresolved variable '" + this.makeVarName(varExpr) + "'");
 			return output;
 		}
 
+		var expr = varExpr.expr;
 		if(!expr) {
 			console.error("Unresolved variable '" + this.makeVarName(varExpr) + "'");
 			return null;
 		}
 
+		var exprType = expr.exprType;
 		var strOp = " " + varExpr.op + " ";
 
 		if(varExpr.parentList)
@@ -176,7 +182,7 @@ Compiler.C = Compiler.Basic.extend
 				output += this.makeVarName(expr) + expr.value + ";\n";
 			}
 			else if(exprType === this.exprEnum.STRING) {
-				output += this.makeVarName(varExpr) + strOp + "\"" + expr.createHex() + "\"\"" + expr.value + "\";\n";
+				output += this.makeVarName(varExpr) + strOp + "\"" + expr.createHex() + "\"\"" + expr.value + "\"";
 			}
 			else {
 				output += this.makeVarName(varExpr) + strOp;
@@ -199,10 +205,10 @@ Compiler.C = Compiler.Basic.extend
 			{
 				if(varExpr.isDef && this.scope === this.global) {
 					this.scope.defOutput += defDecl + ";\n";
-					output += varExpr.value + strOp + this.emitExpr(expr) + ";\n";
+					output += varExpr.value + strOp + this.emitExpr(expr);
 				}
 				else {
-					output += defDecl + strOp + this.emitExpr(expr) + ";\n";
+					output += defDecl + strOp + this.emitExpr(expr);
 				}
 			}
 			else 
@@ -213,17 +219,13 @@ Compiler.C = Compiler.Basic.extend
 						this.scope.defOutput += defDecl + strOp + this.emitExpr(expr) + ";\n";
 					}
 					else {
-						output += defDecl + strOp + this.emitExpr(expr) + ";\n";
+						output += defDecl + strOp + this.emitExpr(expr);
 					}
 				}
 				else {
-					output += varExpr.value + strOp + this.emitExpr(expr) + ";\n";
+					output += varExpr.value + strOp + this.emitExpr(expr);
 				}
 			}
-		}
-
-		if(output) {
-			output = this.tabs + output;
 		}
 
 		return output;

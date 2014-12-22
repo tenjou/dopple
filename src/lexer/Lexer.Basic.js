@@ -75,8 +75,10 @@ Lexer.Basic = dopple.Class.extend
 			{
 				expr = this.parseVar();
 				if(!expr) { return null; }
-	
-				this.scope.exprs.push(expr);
+		
+				if(expr.expr) {
+					this.scope.exprs.push(expr);
+				}
 			}
 			else if(type === this.tokenEnum.IF) 
 			{
@@ -392,11 +394,22 @@ Lexer.Basic = dopple.Class.extend
 			return expr;
 		}
 
-		var varExpr = new AST.Var(name, this.parentList, this.process.varType);
-		
 		var scopeVarExpr = this.scope.vars[name];
-		if(scopeVarExpr === void(0)) 
+
+		var varExpr;
+		if(scopeVarExpr)
 		{
+			if(!scopeVarExpr.expr && scopeVarExpr) {
+				varExpr = scopeVarExpr;
+			}
+			else {
+				varExpr = new AST.Var(name, this.parentList, this.process.varType);
+			}
+		}
+		else
+		{
+			varExpr = new AST.Var(name, this.parentList, this.process.varType);
+
 			// No such variable defined.
 			if(!initial) {
 				dopple.error(this, dopple.Error.REFERENCE_ERROR, this.currName);
