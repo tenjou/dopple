@@ -112,18 +112,62 @@ Compiler.C = Compiler.Basic.extend
 	// 	return this.output;
 	// },
 
-	emitScope: function(scope)
+	emitScope: function(scope, isVirtual)
 	{
 		this.scope = scope;
 		this.incTabs();
 
+		var i;
 		var output = "";
 		var tmpOutput = "";
+
+		if(!isVirtual)
+		{
+			var tabs;
+			if(scope !== this.global) {
+				tabs = this.tabs;
+			}
+			else {
+				tabs = "";
+			}
+
+			// Emit variable groups:
+			var group, item, numItems;
+			for(var key in scope.varGroup)
+			{
+				output += tabs + this.varMap[key];
+
+				group = scope.varGroup[key];
+				numItems = group.length;
+				for(i = 0; i < numItems; i++) 
+				{
+					item = group[i];
+
+					output += item.value;
+					if(i < numItems - 1) {
+						output += ", ";
+					}
+					else {
+						output += ";\n";
+					}
+				}
+			}	
+
+			if(scope === this.global) {
+				this.scope.defOutput = output;
+				output = "";
+			}	
+
+			if(output) {
+				output += "\n";
+			}
+		}	
+
+		// Emit expressions:
 		var expr, type;
 		var exprs = scope.exprs;
 		var numExprs = exprs.length;
-
-		for(var i = 0; i < numExprs; i++)
+		for(i = 0; i < numExprs; i++)
 		{
 			expr = exprs[i];
 			type = expr.exprType;
@@ -160,16 +204,11 @@ Compiler.C = Compiler.Basic.extend
 	emitVar: function(varExpr)
 	{
 		var output = "";
-
 		var varType = varExpr.var.type;
-		if(varType === this.varEnum.VOID) {
-			console.warn("Unresolved variable '" + this.makeVarName(varExpr) + "'");
-			return output;
-		}
 
 		var expr = varExpr.expr;
 		if(!expr) {
-			console.error("Unresolved variable '" + this.makeVarName(varExpr) + "'");
+			console.error("Unresolved variable '" + dopple.makeVarName(varExpr) + "'");
 			return null;
 		}
 
@@ -179,53 +218,19 @@ Compiler.C = Compiler.Basic.extend
 		if(varExpr.parentList)
 		{
 			if(exprType === this.exprEnum.VAR) {
-				output += this.makeVarName(expr) + expr.value + ";\n";
+				output += dopple.makeVarName(expr) + expr.value + ";\n";
 			}
 			else if(exprType === this.exprEnum.STRING) {
-				output += this.makeVarName(varExpr) + strOp + "\"" + expr.createHex() + "\"\"" + expr.value + "\"";
+				output += dopple.makeVarName(varExpr) + strOp + "\"" + expr.createHex() + "\"\"" + expr.value + "\"";
 			}
 			else {
-				output += this.makeVarName(varExpr) + strOp;
+				output += dopple.makeVarName(varExpr) + strOp;
 				defineExpr(expr);
 				output += ";\n";
 			}
 		}
-		else 
-		{
-			var defDecl;
-
-			if(varExpr.isDef) {
-				defDecl = this.varMap[varExpr.type] + varExpr.value;
-			}
-			else {
-				defDecl = varExpr.value;
-			}
-
-			if(exprType === this.exprEnum.BINARY || exprType === this.exprEnum.VAR || exprType === this.exprEnum.FUNCTION_CALL) 
-			{
-				if(varExpr.isDef && this.scope === this.global) {
-					this.scope.defOutput += defDecl + ";\n";
-					output += varExpr.value + strOp + this.emitExpr(expr);
-				}
-				else {
-					output += defDecl + strOp + this.emitExpr(expr);
-				}
-			}
-			else 
-			{
-				if(varExpr.isDef) 
-				{
-					if(this.scope === this.global) {
-						this.scope.defOutput += defDecl + strOp + this.emitExpr(expr) + ";\n";
-					}
-					else {
-						output += defDecl + strOp + this.emitExpr(expr);
-					}
-				}
-				else {
-					output += varExpr.value + strOp + this.emitExpr(expr);
-				}
-			}
+		else {
+			output += varExpr.value + strOp + this.emitExpr(expr);
 		}
 
 		return output;
@@ -290,7 +295,7 @@ Compiler.C = Compiler.Basic.extend
 			}
 
 			output += this.tabs + "{\n";
-			output += this.emitScope(branch.scope);
+			output += this.emitScope(branch.scope, true);
 			output += this.tabs + "}\n";			
 		}
 
@@ -317,7 +322,7 @@ Compiler.C = Compiler.Basic.extend
 
 		output += ") \n";
 		output += this.tabs + "{\n";
-		output += this.emitScope(forExpr.scope);
+		output += this.emitScope(forExpr.scope, true);
 		output += this.tabs + "}\n";
 
 		return output;
@@ -332,11 +337,11 @@ Compiler.C = Compiler.Basic.extend
 		for(var i = 0; i < numFuncs; i++) 
 		{
 			output = this.emitFunc(this.funcs[i]);
-			if(!output) {
-				return null;
-			}
+			if(this.error) { return null; }
 
-			this.funcOutput += output + "\n";
+			if(output) {
+				this.funcOutput += output + "\n";
+			}
 		}	
 
 		return this.funcOutput;	
@@ -355,7 +360,7 @@ Compiler.C = Compiler.Basic.extend
 			numParams = params.length;
 		}
 
-		var funcName = this.makeFuncName(func);
+		var funcName = dopple.makeFuncName(func);
 		var output = this.varMap[func.type] + funcName + "(";
 
 		if(numParams) 
@@ -365,13 +370,17 @@ Compiler.C = Compiler.Basic.extend
 			{
 				varDef = params[i];
 				type = varDef.type;
-				if(type === this.varEnum.NUMBER || type === this.varEnum.STRING || type === this.varEnum.BOOL) {
+				if(type === this.varEnum.NUMBER || 
+				   type === this.varEnum.STRING || 
+				   type === this.varEnum.BOOL) 
+				{
 					output += this.varMap[varDef.type] + varDef.value;
 				}
 				else {
 					console.error("UNRESOLVED_ARGUMENT:", 
 						"Function \"" + funcName + "\" has an unresolved argument \"" + varDef.value + "\"");
-					return false;
+					this.error = true;
+					return null;
 				}
 
 				if(i < numParams - 1) {
@@ -415,7 +424,7 @@ Compiler.C = Compiler.Basic.extend
 		var numParams = params.length;
 		var numArgs = args.length;
 
-		var output = this.makeFuncName(funcCall.func) + "(";
+		var output = dopple.makeFuncName(funcCall.func) + "(";
 
 		// Write arguments:
 		for(i = 0; i < numArgs; i++)
@@ -480,7 +489,7 @@ Compiler.C = Compiler.Basic.extend
 			return "";
 		}
 
-		varExpr.fullName = this.makeVarName(varExpr);
+		varExpr.fullName = dopple.makeVarName(varExpr);
 		this.outputExpr += this.tabs + varExpr.fullName + " = ";
 
 		var expr = varExpr.expr;
@@ -654,48 +663,6 @@ Compiler.C = Compiler.Basic.extend
 		}		
 	},
 
-	makeVarName: function(varExpr)
-	{
-		var parentList = varExpr.parentList;
-		if(!parentList) {
-			return varExpr.value;
-		}
-
-		var numItems = parentList.length;
-		if(numItems <= 0) {
-			return varExpr.value;
-		}
-		
-		var name = "";
-		for(var i = 0; i < numItems; i++) {
-			name += parentList[i].value + ".";
-		}
-		name += varExpr.value;
-
-		return name;
-	},
-
-	makeFuncName: function(funcExpr)
-	{
-		var parentList = funcExpr.parentList;
-		if(!parentList) {
-			return funcExpr.name;
-		}
-
-		var numItems = parentList.length;
-		if(numItems <= 0) {
-			return funcExpr.name;
-		}
-		
-		var name = "";
-		for(var i = 0; i < numItems; i++) {
-			name += parentList[i].name + "$";
-		}
-		name += funcExpr.name;
-
-		return name;		
-	},	
-
 	emitFormat: function(args)
 	{
 		this.tmpOutput1 = "";
@@ -754,7 +721,7 @@ Compiler.C = Compiler.Basic.extend
 			}
 		}
 
-		this.tmpOutput1 = this.tmpOutput1.substr(0, this.tmpOutput1.length - 1) + "\\n\"";
+		this.tmpOutput1 = "\"" + this.tmpOutput1.substr(0, this.tmpOutput1.length - 1) + "\\n\"";
 		this.tmpOutput2 = this.tmpOutput2.substr(0, this.tmpOutput2.length - 2);
 		return this.tmpOutput1 + ", " + this.tmpOutput2;
 	},

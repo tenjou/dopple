@@ -29,6 +29,7 @@ Lexer.Mantra = Lexer.Basic.extend
 		{
 			newVar = new AST.Var(this.token.str);
 			newVar.var = newVar;
+			newVar.isArg = true;
 			vars.push(newVar);
 			this.scope.vars[newVar.value] = newVar;
 			

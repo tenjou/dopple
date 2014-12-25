@@ -311,7 +311,8 @@ AST.Var = AST.Basic.extend
 	expr: null,
 	value: "unknown",
 
-	isDef: false
+	isDef: false,
+	isArg: false
 });
 
 /* Expression Binary */
