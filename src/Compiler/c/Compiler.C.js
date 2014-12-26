@@ -349,7 +349,7 @@ Compiler.C = Compiler.Basic.extend
 
 	emitFunc: function(func)
 	{
-		if(func.numUses === 0) {
+		if(this.stripDeadCode && func.numUses === 0) {
 			console.warn("Unused function \'" + func.name + "\'");
 			return null;
 		}

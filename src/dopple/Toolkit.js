@@ -41,3 +41,28 @@ dopple.makeFuncName = function(funcExpr)
 
 	return name;		
 };
+
+dopple.createVarFromType = function(type)
+{
+	var expr;
+	var varEnum = dopple.VarEnum;
+	if(type === varEnum.NUMBER) {
+		expr = new AST.Number(0);
+	}
+	else if(type === varEnum.NAME) {
+		expr = new AST.Name("");
+	}
+	else if(type === varEnum.STRING) {
+		expr = new AST.String("");
+	}
+	else if(type === varEnum.FORMAT) {
+		expr = new AST.Format();
+	}
+
+	var varExpr = new AST.Var();
+	varExpr.type = type;
+	varExpr.var = expr;	
+	
+	return varExpr;	
+};
+

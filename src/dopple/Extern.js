@@ -25,23 +25,7 @@ dopple.Extern.prototype =
 			for(var i = 0; i < numParams; i++) 
 			{
 				type = params[i];
-				if(type === this.varEnum.NUMBER) {
-					expr = new AST.Number(0);
-				}
-				else if(type === this.varEnum.NAME) {
-					expr = new AST.Name("");
-				}
-				else if(type === this.varEnum.STRING) {
-					expr = new AST.String("");
-				}
-				else if(type === this.varEnum.FORMAT) {
-					expr = new AST.Format();
-				}
-
-				varExpr = new AST.Var();
-				varExpr.type = type;
-				varExpr.var = expr;
-				funcParams.push(varExpr);
+				funcParams.push(dopple.createVarFromType(type));
 			}
 		}
 
@@ -55,12 +39,13 @@ dopple.Extern.prototype =
 		var objExpr = new AST.Class(name, scope);
 		this.scope.vars[name] = objExpr;
 
-		return new dopple.ExternClass(this, objExpr);
-	},
+		return new dopple.ExternClass(this, scope, objExpr);
+	}
 };
 
-dopple.ExternClass = function(extern, objExpr)
+dopple.ExternClass = function(extern, scope, objExpr)
 {
+	this.scope = scope,
 	this.extern = extern;
 	this.objExpr = objExpr;
 };
@@ -73,15 +58,23 @@ dopple.ExternClass.prototype =
 		this.extern.scope = this.extern.global;
 	},
 
-	getter: function() {
-
-	},
-
-	setter: function() {
-
-	},
-
 	obj: function() {
 
-	}
+	},
+
+	mutator: function(name, paramType, returnType) 
+	{
+		var paramExpr = null;
+		if(paramType) {
+			paramExpr = dopple.createVarFromType(paramType);
+		}
+
+		var returnExpr = null;
+		if(returnType) {
+			returnExpr = new AST.Return(dopple.createVarFromType(returnType));
+		}
+
+		var mutator = new AST.Mutator(name, this.scope, paramExpr, returnExpr);
+		this.scope.vars[name] = mutator;
+	}	
 };

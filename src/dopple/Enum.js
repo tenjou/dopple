@@ -20,7 +20,8 @@ dopple.TokenEnum = {
 	ASSIGN: 16,
 	BINOP_ASSIGN: 17,
 	ELSE: 18,
-	ELSE_IF: 19
+	ELSE_IF: 19,
+	NEW: 20
 };
 
 dopple.ExprEnum = {
@@ -40,7 +41,11 @@ dopple.ExprEnum = {
 	CLASS: 13,
 	FORMAT: 14,
 	IF: 15,
-	FOR: 16
+	FOR: 16,
+	ALLOC: 17,
+	MUTATOR: 18,
+	GETTER: 19,
+	SETTER: 20
 };
 
 dopple.VarEnum = {

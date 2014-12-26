@@ -37,7 +37,11 @@ AST.Basic = dopple.Class.extend
 
 	Flag: {
 		RESOLVED: 1,
-		RESOLVING: 2
+		RESOLVING: 2,
+		ASSIGNED_FROM_MS: 4,
+		ASSIGNED_FROM_VS: 8,
+		GETTER: 16,
+		SETTER: 32
 	},
 
 	setFlag: function(value, flag) 
@@ -292,7 +296,7 @@ AST.Var = AST.Basic.extend
 				return false;
 			}
 			
-			this.type = this.expr.type;
+			this.type = this.expr.type;		
 		}
 
 		this.resolved = true;
@@ -438,6 +442,13 @@ AST.If = AST.Basic.extend
 	branches: null
 });
 
+/* Expression Alloc */
+AST.Alloc = AST.Basic.extend
+({
+	//
+	exprType: dopple.ExprEnum.ALLOC
+});
+
 /* Expression Function */
 AST.Function = AST.Basic.extend
 ({
@@ -470,6 +481,47 @@ AST.FunctionCall = AST.Basic.extend
 
 	func: null,
 	args: null
+});
+
+/* Expression Mutator */
+AST.Mutator = AST.Basic.extend
+({
+	init: function(name, scope, paramExpr, returnExpr) 
+	{
+		this.name = name;
+		this.scope = scope;
+
+		if(paramExpr) {
+			this.paramExpr = paramExpr;
+			this.flag |= this.Flag.SETTER;
+		}
+
+		if(returnExpr) {
+			this.returnExpr = returnExpr;
+			this.flag |= this.Flag.GETTER;
+		}
+	},
+
+	//
+	exprType: dopple.ExprEnum.MUTATOR,
+	name: "",
+	scope: null,
+	paramExpr: null,
+	returnExpr: null
+});
+
+/* Expression Getter */
+AST.Getter = AST.Basic.extend
+({
+	//
+	exprEnum: dopple.ExprEnum.GETTER
+});
+
+/* Expression Setter */
+AST.Setter = AST.Basic.extend
+({
+	//
+	exprEnum: dopple.ExprEnum.SETTER
 });
 
 /* Expression Function Call */

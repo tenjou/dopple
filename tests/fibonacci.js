@@ -2,7 +2,7 @@
 
 function fibonacci(n)
 {
-	var next;
+	var next = 0;
 	var first = 0;
 	var second = 1;
 
@@ -33,4 +33,4 @@ function fibonacci_recursive(n)
 
 var result = fibonacci(10);
 var result2 = fibonacci_recursive(10);
-console.log("default:", result, "recursive:", result2);
+console.log("non-recursive:", result, "recursive:", result2);

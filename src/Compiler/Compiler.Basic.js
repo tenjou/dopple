@@ -91,6 +91,8 @@ Compiler.Basic = dopple.Class.extend
 	outputPost: "",
 	outputLength: "",	
 
+	stripDeadCode: false,
+
 	exprEnum: dopple.ExprEnum,
 	varEnum: dopple.VarEnum
 });
