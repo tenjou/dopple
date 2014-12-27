@@ -121,7 +121,7 @@ Compiler.C = Compiler.Basic.extend
 				group = scope.varGroup[key];
 				numItems = group.length;
 
-				if(key === this.varEnum.STRING) 
+				if(parseInt(key) === this.varEnum.STRING) 
 				{
 					for(i = 0; i < numItems; i++) 
 					{
@@ -239,7 +239,8 @@ Compiler.C = Compiler.Basic.extend
 					this.outputPost = this.tabs + name + " = malloc(__dopple_strLength + NUMBER_SIZE);\n";
 				}	
 
-				this.outputPre = this.tabs + "__dopple_strOffset = NUMBER_SIZE;\n";
+				this.outputPre = this.tabs + "// string concat //\n"
+				this.outputPre += this.tabs + "__dopple_strOffset = NUMBER_SIZE;\n";
 				this.outputLength = this.tabs + "__dopple_strLength = ";
 
 				this.emitConcatExpr(name, expr.lhs, false);

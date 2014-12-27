@@ -9,19 +9,11 @@ dopple.TokenEnum = {
 	BOOL: 5,
 	NAME: 6,
 	STRING: 7,
-	VAR: 8,
-	FUNCTION: 9,
-	RETURN: 10,
-	IF: 11,
-	FOR: 12,
-	WHILE: 13,
-	DO: 14,
-	COMMENT: 15,
-	ASSIGN: 16,
-	BINOP_ASSIGN: 17,
-	ELSE: 18,
-	ELSE_IF: 19,
-	NEW: 20
+	KEYWORD: 8,
+	COMMENT: 9,
+	ASSIGN: 10,
+	BINOP_ASSIGN: 11,
+	EOL: 12
 };
 
 dopple.ExprEnum = {

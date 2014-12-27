@@ -58,7 +58,7 @@ dopple.Tokenizer = dopple.Class.extend
 		// Skip spaces
 		while(isSpace(this.currChar)) {
 			this.nextChar();
-		}		
+		}
 
 		// NAME
 		if(isAlpha(this.currChar)) 
@@ -72,35 +72,18 @@ dopple.Tokenizer = dopple.Class.extend
 			this.cursor--;
 
 			var strToken = token.str;
-			if(strToken === "var") {
-				token.type = this.tokenEnum.VAR;
-			}
-			else if(strToken === "new") {
-				token.type = this.tokenEnum.NEW;
-			}
-			else if(strToken === "if") {
-				token.type = this.tokenEnum.IF;
-			}
-			else if(strToken === "else") 
+			if(this.isKeyword(strToken)) 
 			{
-				this.peek();
-				if(this.peekToken.str === "if") {
-					this.eat();
-					token.str = "else if";
-					token.type = this.tokenEnum.ELSE_IF;
-				}
-				else {
-					token.type = this.tokenEnum.ELSE;
-				}
-			}
-			else if(strToken === "for") {
-				token.type = this.tokenEnum.FOR;
-			}
-			else if(strToken === "return") {
-				token.type = this.tokenEnum.RETURN;
-			}
-			else if(strToken === "function") {
-				token.type = this.tokenEnum.FUNCTION;
+				token.type = this.tokenEnum.KEYWORD;
+
+				if(strToken === "else") 
+				{
+					this.peek();
+					if(this.peekToken.str === "if") {
+						this.eat();
+						token.str = "else if";
+					}
+				}				
 			}
 			else if(strToken === "true") {
 				token.type = this.tokenEnum.BOOL;
@@ -301,6 +284,17 @@ dopple.Tokenizer = dopple.Class.extend
 	prevChar: function() {
 		this.cursor--;
 		this.currChar = this.buffer.charAt(this.cursor - 1);
+	},
+
+	isKeyword: function(str)
+	{
+		if(str === "var" || str === "function" || str === "new" || str === "return" ||
+		   str === "if" || str === "else" || str === "for" || str === "while" || str === "do" )
+		{
+			return true;
+		}
+
+		return false;
 	},
 
 	readUntil: function(symbol)
