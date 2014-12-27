@@ -57,5 +57,6 @@ dopple.VarEnum = {
 	FUNCTION_PTR: 5,
 	CLASS: 6,
 	NAME: 10,
-	FORMAT: 11
+	FORMAT: 11,
+	I32: 12
 };

@@ -77,7 +77,6 @@ Compiler.Basic = dopple.Class.extend
 	global: null,
 	funcs: null,
 	scope: null,
-	scopeInfo: null,
 
 	error: null,
 
@@ -96,77 +95,3 @@ Compiler.Basic = dopple.Class.extend
 	exprEnum: dopple.ExprEnum,
 	varEnum: dopple.VarEnum
 });
-
-dopple.ScopeInfo = function() {
-	this.parent = null;
-	this.tmp_i32 = null;
-	this.tmp_double = null;
-	this.tmpID = 0;
-};
-
-dopple.ScopeInfo.prototype = 
-{
-	addTmpI32: function() 
-	{
-		if(!this.tmp_i32) {
-			this.tmp_i32 = [];
-		}
-
-		var tmp = "__temp" + this.tmpID++;
-		this.tmp_i32.push(tmp);
-		return tmp;
-	},
-
-	addTmpDouble: function() 
-	{
-		if(!this.tmp_double) {
-			this.tmp_double = [];
-		}
-
-		var tmp = "__temp" + this.tmpID++;
-		this.tmp_double.push(tmp);
-		return tmp;
-	},	
-
-	emitTmpI32: function() 
-	{
-		if(!this.tmp_i32) {
-			return "";
-		}
-
-		var numTmps = this.tmp_i32.length;
-		if(numTmps > 1)
-		{
-			var output = "";
-			for(var i = 0; i < numTmps - 1; i++) {
-				output += this.tmp_i32[i] + ", ";
-			}
-			output += this.tmp_i32[i];
-
-			return output;
-		}
-
-		return this.tmp_i32[0];
-	},
-
-	emitTmpDouble: function() 
-	{
-		if(!this.tmp_double) {
-			return "";
-		}
-
-		var numTmps = this.tmp_double.length;
-		if(numTmps > 1)
-		{
-			var output = "";
-			for(var i = 0; i < numTmps - 1; i++) {
-				output += this.tmp_double[i] + ", ";
-			}
-			output += this.tmp_double[i];
-
-			return output;
-		}
-
-		return this.tmp_double[0];
-	}	
-};

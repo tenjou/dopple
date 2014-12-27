@@ -9,6 +9,7 @@ Compiler.C = Compiler.Basic.extend
 		this.varMap[this.varEnum.VOID] = "void ";
 		this.varMap[this.varEnum.NUMBER] = "double ";
 		this.varMap[this.varEnum.BOOL] = "int32_t ";
+		this.varMap[this.varEnum.I32] = "int32_t ";
 		this.varMap[this.varEnum.NAME] = "const char *";
 		this.varMap[this.varEnum.STRING] = "char *";
 	},
@@ -56,112 +57,20 @@ Compiler.C = Compiler.Basic.extend
 		this.output += this.scopeOutput;
 	},
 
-	// make: function()
-	// {
-	// 	this.output = "#include \"dopple.h\"\n\n";
-
-	// 	if(!this.define(this.global)) { 
-	// 		this.output = "";
-	// 		return false; 
-	// 	}
-
-	// 	// Main start.
-	// 	this.output += "\nint main(int argc, char *argv[]) \n{\n";
-	// 	this.incTabs();
-
-	// 	// Expressions.
-	// 	var i;
-	// 	var varBuffer = this.lexer.global.varBuffer;
-	// 	var numExpr = varBuffer.length;
-	// 	if(numExpr)
-	// 	{
-	// 		var expr, exprType;
-
-	// 		this.scopeInfo = new dopple.ScopeInfo();
-
-	// 		for(i = 0; i < numExpr; i++)
-	// 		{
-	// 			expr = varBuffer[i];
-	// 			exprType = expr.exprType;
-
-	// 			if(exprType === this.exprEnum.VAR) {
-	// 				this.makeVar(expr);
-	// 			}
-	// 			else if(exprType === this.exprEnum.FUNCTION) {
-	// 				this.output += this.tabs + this.makeFunction(expr);
-	// 			}
-	// 			else if(exprType === this.exprEnum.FUNCTION_CALL) {
-	// 				this.makeFuncCall(expr);
-	// 			}				
-	// 		}
-
-	// 		if(this.scopeInfo.tmp_double) {
-	// 			this.output += this.tabs + "static double " + this.scopeInfo.emitTmpDouble() + ";\n";
-	// 		}
-	// 		if(this.scopeInfo.tmp_i32) {
-	// 			this.output += this.tabs + "static NUMBER " + this.scopeInfo.emitTmpI32() + ";\n\n";
-	// 		}			
-			
-	// 		this.output += this.outputScope + "\n";
-	// 	}
-
-	// 	// Main end.
-	// 	this.output += this.tabs + "returnzz 0;\n";
-	// 	this.output += "}\n";
-
-	// 	return this.output;
-	// },
-
 	emitScope: function(scope, isVirtual)
 	{
+		var prevScope = this.scope;
 		this.scope = scope;
 		this.incTabs();
 
-		var i;
+		var i, item, items, numItems;
 		var output = "";
 		var tmpOutput = "";
+		var tabs = "";
 
-		if(!isVirtual)
-		{
-			var tabs;
-			if(scope !== this.global) {
-				tabs = this.tabs;
-			}
-			else {
-				tabs = "";
-			}
-
-			// Emit variable groups:
-			var group, item, numItems;
-			for(var key in scope.varGroup)
-			{
-				output += tabs + this.varMap[key];
-
-				group = scope.varGroup[key];
-				numItems = group.length;
-				for(i = 0; i < numItems; i++) 
-				{
-					item = group[i];
-
-					output += item.value;
-					if(i < numItems - 1) {
-						output += ", ";
-					}
-					else {
-						output += ";\n";
-					}
-				}
-			}	
-
-			if(scope === this.global) {
-				this.scope.defOutput = output;
-				output = "";
-			}	
-
-			if(output) {
-				output += "\n";
-			}
-		}	
+		if(scope !== this.global) {
+			tabs = this.tabs;
+		}
 
 		// Emit expressions:
 		var expr, type;
@@ -176,7 +85,10 @@ Compiler.C = Compiler.Basic.extend
 			{
 				tmpOutput = this.emitVar(expr);
 				if(tmpOutput) {
+					output += this.outputPre;
+					output += this.outputLength;
 					output += this.tabs + tmpOutput + ";\n";
+					output += this.outputPost;
 				}
 			}
 			else if(type === this.exprEnum.IF) {
@@ -196,7 +108,63 @@ Compiler.C = Compiler.Basic.extend
 			}
 		}
 
+		if(!isVirtual)
+		{
+			var defOutput = "";
+
+			// Emit variable groups:
+			var group;
+			for(var key in scope.varGroup)
+			{
+				defOutput += tabs + this.varMap[key];
+
+				group = scope.varGroup[key];
+				numItems = group.length;
+
+				if(key === this.varEnum.STRING) 
+				{
+					for(i = 0; i < numItems; i++) 
+					{
+						item = group[i];
+						
+						defOutput += item.value;
+						if(i < numItems - 1) {
+							defOutput += ", *";
+						}
+						else {
+							defOutput += ";\n";
+						}
+					}
+				}
+				else
+				{
+					for(i = 0; i < numItems; i++) 
+					{
+						item = group[i];
+						
+						defOutput += item.value;
+						if(i < numItems - 1) {
+							defOutput += ", ";
+						}
+						else {
+							defOutput += ";\n";
+						}
+					}
+				}
+			}	
+
+			if(defOutput) {
+				this.scope.defOutput = defOutput;
+			}
+		}
+
+		if(this.scope.defOutput && this.scope !== this.global) {
+			output = this.scope.defOutput + "\n" + output;
+		}
+		
 		this.decTabs();
+
+		this.scope = prevScope;
 
 		return output;
 	},
@@ -214,29 +182,30 @@ Compiler.C = Compiler.Basic.extend
 
 		var exprType = expr.exprType;
 		var strOp = " " + varExpr.op + " ";
+		varExpr.fullName = dopple.makeVarName(varExpr);
 
 		if(varExpr.parentList)
 		{
 			if(exprType === this.exprEnum.VAR) {
-				output += dopple.makeVarName(expr) + expr.value + ";\n";
+				output += varExpr.fullName + expr.value + ";\n";
 			}
 			else if(exprType === this.exprEnum.STRING) {
-				output += dopple.makeVarName(varExpr) + strOp + "\"" + expr.createHex() + "\"\"" + expr.value + "\"";
+				output += varExpr.fullName + strOp + "\"" + expr.createHex() + "\"\"" + expr.value + "\"";
 			}
 			else {
-				output += dopple.makeVarName(varExpr) + strOp;
+				output += varExpr.fullName + strOp;
 				defineExpr(expr);
 				output += ";\n";
 			}
 		}
 		else {
-			output += varExpr.value + strOp + this.emitExpr(expr);
+			output += varExpr.value + strOp + this.emitExpr(expr, varExpr);
 		}
 
 		return output;
 	},
 
-	emitExpr: function(expr)
+	emitExpr: function(expr, varExpr)
 	{
 		var exprType = expr.exprType;
 
@@ -252,11 +221,42 @@ Compiler.C = Compiler.Basic.extend
 		else if(exprType === this.exprEnum.FUNCTION_CALL) {
 			return this.emitFuncCall(expr);
 		}
-		else if(exprType === this.exprEnum.BINARY) {
-			var output = this.emitExpr(expr.lhs);
-			output += " " + expr.op + " ";
-			output += this.emitExpr(expr.rhs);
-			return output;
+		else if(exprType === this.exprEnum.BINARY) 
+		{
+			var output;
+
+			if(expr.type === this.varEnum.STRING)
+			{
+				var name;
+				if(varExpr) {
+					name = varExpr.fullName;
+					output = "malloc(__dopple_strLength + NUMBER_SIZE)";
+				}
+				else {
+					varExpr = this.scope.addTmpString();
+					name = varExpr.value;
+					output = name;
+					this.outputPost = this.tabs + name + " = malloc(__dopple_strLength + NUMBER_SIZE);\n";
+				}	
+
+				this.outputPre = this.tabs + "__dopple_strOffset = NUMBER_SIZE;\n";
+				this.outputLength = this.tabs + "__dopple_strLength = ";
+
+				this.emitConcatExpr(name, expr.lhs, false);
+				this.emitConcatExpr(name, expr.rhs, true);
+
+				this.outputLength += "5;\n";
+				this.outputPost += this.tabs + "APPEND_LENGTH(" + name + ", __dopple_strLength);\n";		
+
+				return output;
+			}
+			else
+			{
+				output = this.emitExpr(expr.lhs, null);
+				output += " " + expr.op + " ";
+				output += this.emitExpr(expr.rhs, null);
+				return output;
+			}	
 		}
 		else if(exprType === this.exprEnum.UNARY) 
 		{
@@ -277,6 +277,7 @@ Compiler.C = Compiler.Basic.extend
 	emitIf: function(ifExpr)
 	{
 		var output = "";
+		var tmpOutput = "";
 
 		var branch;
 		var branches = ifExpr.branches;
@@ -285,10 +286,16 @@ Compiler.C = Compiler.Basic.extend
 		{
 			branch = branches[i];
 
-			if(branch.type === "if" || branch.type === "else if") {
-				output += this.tabs + branch.type + "(";
-				output += this.emitExpr(branch.expr);
-				output += ")\n";					
+			if(branch.type === "if" || branch.type === "else if") 
+			{
+				tmpOutput += this.tabs + branch.type + "(";
+				tmpOutput += this.emitExpr(branch.expr);
+				tmpOutput += ")\n";	
+
+				output = this.outputPre;
+				output += this.outputLength;
+				output += this.outputPost;
+				output += tmpOutput;								
 			}
 			else {
 				output += this.tabs + "else\n";
@@ -377,7 +384,7 @@ Compiler.C = Compiler.Basic.extend
 					output += this.varMap[varDef.type] + varDef.value;
 				}
 				else {
-					console.error("UNRESOLVED_ARGUMENT:", 
+					console.error("(Unresolved Argument)", 
 						"Function \"" + funcName + "\" has an unresolved argument \"" + varDef.value + "\"");
 					this.error = true;
 					return null;
@@ -395,22 +402,20 @@ Compiler.C = Compiler.Basic.extend
 		return output;
 	},
 
-	emitBinOp: function(expr)
-	{
-		return "\n";
-	},
-
 	emitReturn: function(returnExpr) 
 	{
-		var output = this.tabs;
+		var output;
 
-		if(returnExpr.expr) {
-			output += "return ";
-			output += this.emitExpr(returnExpr.expr.expr);
-			output += ";\n";
+		if(returnExpr.expr)
+		{
+			var tmpOutput = this.tabs + "return " + this.emitExpr(returnExpr.expr.expr, null) + ";\n";
+			output = this.outputPre;
+			output += this.outputLength;
+			output += this.outputPost;
+			output += tmpOutput;
 		}
 		else {
-			output += "return;\n";
+			output = this.tabs + "return;\n";
 		}
 
 		return output;
@@ -519,81 +524,32 @@ Compiler.C = Compiler.Basic.extend
 		this.outputBuffer += this.outputExpr;
 		this.outputBuffer += this.outputPost;
 		this.outputScope += this.outputBuffer;
-	},	
+	},
 
-	_makeVarBinary: function(varExpr, binExpr)
+	emitConcatExpr: function(name, expr, last)
 	{
-		if(varExpr.type === this.varEnum.STRING) 
-		{
-			this.outputPost = "";
-
-			this.outputPre = this.tabs + "__dopple_strOffset = NUMBER_SIZE;\n";
-			this.outputLength = this.tabs + "__dopple_strLength = ";	
-
-			this.genConcatExpr(varExpr.fullName, binExpr.lhs, false);
-			this.genConcatExpr(varExpr.fullName, binExpr.rhs, true);
-
-			this.outputLength += "5;\n";
-			this.outputPost += this.tabs + "APPEND_LENGTH(" + varExpr.fullName + ", __dopple_strLength);\n\n";		
-
-			return "malloc(__dopple_strLength + NUMBER_SIZE)";
-		}
-
-		var lhsValue;
-		if(binExpr.lhs.exprType === this.exprEnum.BINARY) {
-			lhsValue = this._makeVarBinary(varExpr, binExpr.lhs);
-		}
-		else 
-		{
-			if(binExpr.lhs.type === this.varEnum.STRING) {
-				lhsValue = "\"" + binExpr.lhs.str + "\"";
-			}
-			else {
-				lhsValue = binExpr.lhs.value;
-			}
-		}
-
-		var rhsValue;
-		if(binExpr.rhs.exprType === this.exprEnum.BINARY) {
-			rhsValue = this._makeVarBinary(varExpr, binExpr.rhs);
-		}
-		else 
-		{
-			if(binExpr.rhs.type === this.varEnum.NAME) {
-				rhsValue = "\"" + binExpr.rhs.str + "\"";
-			}
-			else {
-				rhsValue = binExpr.rhs.value;
-			}
-		}
-
-		return lhsValue + " " + binExpr.op + " " + rhsValue;
-	},	
-
-	genConcatExpr: function(name, expr, last)
-	{
-		var tmpNum;
+		var tmpVarNum;
 
 		if(expr.exprType === this.exprEnum.BINARY) 
 		{
 			if(expr.type !== this.varEnum.NUMBER) {
-				this.genConcatExpr(name, expr.lhs, false);
-				this.genConcatExpr(name, expr.rhs, last);
+				this.emitConcatExpr(name, expr.lhs, false);
+				this.emitConcatExpr(name, expr.rhs, last);
 			}
 			else 
 			{
-				var tmpTotal = this.scopeInfo.addTmpDouble();
-				tmpNum = this.scopeInfo.addTmpI32();
+				var tmpVarTotal = this.scope.addTmpDouble();
+				tmpVarNum = this.scope.addTmpI32();
 
-				this.outputPre += this.tabs + tmpTotal + " = " + this.emitNumBinaryExpr(expr) + ";\n";
-				this.outputPre += this.tabs + tmpNum + " = snprintf(NULL, 0, \"%.17g\", " + tmpTotal + ");\n";
+				this.outputPre += this.tabs + tmpVarTotal.value + " = " + this.emitNumBinaryExpr(expr) + ";\n";
+				this.outputPre += this.tabs + tmpVarNum.value + " = snprintf(NULL, 0, \"%.16g\", " + tmpVarTotal.value + ");\n";
 				this.outputPost += this.tabs + "snprintf(" + name + 
-					" + __dopple_strOffset, " + tmpNum + " + 1, \"%.17g\", " + tmpTotal + ");\n";
+					" + __dopple_strOffset, " + tmpVarNum.value + " + 1, \"%.16g\", " + tmpVarTotal.value + ");\n";
 				if(!last) {
-					this.outputPost += this.tabs + "__dopple_strOffset += " + tmpNum + ";\n";	
+					this.outputPost += this.tabs + "__dopple_strOffset += " + tmpVarNum.value + ";\n";	
 				}
 
-				this.outputLength += tmpNum + " + ";
+				this.outputLength += tmpVarNum.value + " + ";
 			}
 		}
 		else if(expr.exprType === this.exprEnum.VAR) 
@@ -601,28 +557,29 @@ Compiler.C = Compiler.Basic.extend
 			if(expr.type === this.varEnum.STRING) 
 			{
 				this.outputPost += this.tabs + "memcpy(" + name + " + __dopple_strOffset, " + 
-					expr.name + " + NUMBER_SIZE, (*(NUMBER *)" + expr.name + "));\n";
+					expr.value + " + NUMBER_SIZE, (*(NUMBER *)" + expr.value + "));\n";
 				if(!last) {
-					this.outputPost += this.tabs + "__dopple_strOffset += (*(NUMBER *)" + expr.name + ");\n";
+					this.outputPost += this.tabs + "__dopple_strOffset += (*(NUMBER *)" + expr.value + ");\n";
 				}
 
-				this.outputLength += "(*(NUMBER *)" + expr.name + ") + ";
+				this.outputLength += "(*(NUMBER *)" + expr.value + ") + ";
 			}
 			else if(expr.type === this.varEnum.NUMBER)
 			{
-				tmpNum = this.scopeInfo.addTmpI32();
+				tmpVarNum = this.scope.addTmpI32();
 
-				this.outputPre += this.tabs + tmpNum + " = snprintf(NULL, 0, \"%.17g\", " + expr.value + ");\n";
+				this.outputPre += this.tabs + tmpVarNum.value + " = snprintf(NULL, 0, \"%.16g\", " + expr.value + ");\n";
 				this.outputPost += this.tabs + "snprintf(" + name + 
-					" + __dopple_strOffset, " + tmpNum + " + 1, \"%.17g\", " + expr.name + ");\n"	
+					" + __dopple_strOffset, " + tmpVarNum.value + " + 1, \"%.16g\", " + expr.value + ");\n"	
 				if(!last) {
-					this.outputPost += this.tabs + "__dopple_strOffset += " + tmpNum + ";\n";	
+					this.outputPost += this.tabs + "__dopple_strOffset += " + tmpVarNum.value + ";\n";	
 				}
 
-				this.outputLength += tmpNum + " + ";								
+				this.outputLength += tmpVarNum.value + " + ";								
 			}
 			else {
-				throw "genConcatExpr: Unhandled expression variable type!";
+				console.error("(emitConcatExpr): Unhandled expression type!");
+				return false;
 			}
 		}
 		else if(expr.exprType === this.exprEnum.STRING) 
@@ -642,25 +599,28 @@ Compiler.C = Compiler.Basic.extend
 		}
 		else if(expr.exprType === this.exprEnum.NUMBER)
 		{
-			tmpNum = this.scopeInfo.addTmpI32();
+			tmpVarNum = this.scope.addTmpI32();
 
 			var value = expr.value;
 			if(Math.floor(value) === value) {
 				value += ".0";
 			}
 
-			this.outputPre += this.tabs + tmpNum + " = snprintf(NULL, 0, \"%.17g\", " + value + ");\n";
+			this.outputPre += this.tabs + tmpVarNum.value + " = snprintf(NULL, 0, \"%.17g\", " + value + ");\n";
 			this.outputPost += this.tabs + "snprintf(" + name + 
-				" + __dopple_strOffset, " + tmpNum + " + 1, \"%.17g\", " + value + ");\n";
+				" + __dopple_strOffset, " + tmpVarNum.value + " + 1, \"%.17g\", " + value + ");\n";
 			if(!last) {
-				this.outputPost += this.tabs + "__dopple_strOffset += " + tmpNum + ";\n";	
+				this.outputPost += this.tabs + "__dopple_strOffset += " + tmpVarNum.value + ";\n";	
 			}
 
-			this.outputLength += tmpNum + " + ";
+			this.outputLength += tmpVarNum.value + " + ";
 		}
 		else {
-			throw "genConcatExpr: Unhandled expression type!";
+			console.error("(emitConcatExpr): Unhandled expression type!");
+			return false;
 		}		
+
+		return true;
 	},
 
 	emitFormat: function(args)

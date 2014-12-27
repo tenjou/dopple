@@ -442,6 +442,10 @@ Lexer.Basic = dopple.Class.extend
 		}
 		else
 		{	
+			if(this.token.type === this.tokenEnum.BINOP) {
+				return null;
+			}
+			
 			this.parseVarPost();
 
 			var op = "";
@@ -1523,28 +1527,3 @@ Lexer.Basic = dopple.Class.extend
 	varEnum: dopple.VarEnum,
 	exprEnum: dopple.ExprEnum
 });
-
-dopple.Scope = function(parent)
-{
-	this.parent = parent || null;
-	this.vars = {};
-	this.varGroup = {};
-	this.exprs = [];
-	this.returns = [];
-};
-
-dopple.Scope.prototype = 
-{
-	createVirtual: function() {
-		var scope = new dopple.Scope();
-		scope.parent = this;
-		scope.vars = this.vars;
-		scope.returns = this.returns;
-		scope.isVirtual = true;
-		return scope;
-	},
-
-	//
-	defOutput: "",
-	isVirtual: false
-};
