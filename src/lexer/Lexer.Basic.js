@@ -282,12 +282,7 @@ Lexer.Basic = dopple.Class.extend
 	{
 		// If there is no such variable, it should be a function:
 		var expr = this.getVar(this.currName);
-		if(!expr) {
-			this.refError(this.currName);
-			return null;			
-			// expr = this.getVar(this.currName);
-			// expr.numUses++;
-		}
+		if(!expr) { return null; }
 
 		//var chain = null;
 		// // Check if is accessing to objects:
@@ -1217,10 +1212,10 @@ Lexer.Basic = dopple.Class.extend
 		}	
 	},
 
-	refError: function() 
+	refError: function(name) 
 	{
 		this.isError = true;
-		dopple.error(this, dopple.Error.REFERENCE_ERROR, this.token.str);
+		dopple.error(this, dopple.Error.REFERENCE_ERROR, name);
 	},
 
 	handleUnexpectedToken: function() 
