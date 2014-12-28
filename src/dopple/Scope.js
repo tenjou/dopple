@@ -47,18 +47,39 @@ dopple.Scope.prototype =
 		}
 	},
 
-	addTmp: function(type)
+	addTmp: function(type, reuse)
 	{
-		var varExpr;
+		var varExpr, name, group;
 
-		var block = this.tmps.free[type];
-		if(!block) {
-			block = [];
-			this.tmps.free[type] = block;
-			this.tmps.freeBlock[type] = [];
+		if(reuse)
+		{
+			var block = this.tmps.free[type];
+			if(!block) {
+				block = [];
+				this.tmps.free[type] = block;
+				this.tmps.freeBlock[type] = [];
+			}
+
+			if(block.length === 0)
+			{
+				var name = "__temp" + this.tmps.id++;
+				varExpr = new AST.Var(name, null, type);
+				varExpr.var = varExpr;
+
+				var group = this.varGroup[type];
+				if(!group) {
+					group = [];
+					this.varGroup[type] = group;
+				}
+				group.push(varExpr);
+			}
+			else {
+				varExpr = block.pop();
+			}
+
+			this.tmps.freeBlock[type].push(varExpr);
 		}
-
-		if(block.length === 0)
+		else
 		{
 			var name = "__temp" + this.tmps.id++;
 			varExpr = new AST.Var(name, null, type);
@@ -69,28 +90,22 @@ dopple.Scope.prototype =
 				group = [];
 				this.varGroup[type] = group;
 			}
-			group.push(varExpr);
+			group.push(varExpr);			
 		}
-		else {
-			varExpr = block.pop();
-
-		}
-
-		this.tmps.freeBlock[type].push(varExpr);
 
 		return varExpr;
 	},
 
-	addTmpI32: function() {
-		return this.addTmp(dopple.VarEnum.I32);
+	addTmpI32: function(reuse) {
+		return this.addTmp(dopple.VarEnum.I32, reuse);
 	},
 
-	addTmpDouble: function() {
-		return this.addTmp(dopple.VarEnum.NUMBER);
+	addTmpDouble: function(reuse) {
+		return this.addTmp(dopple.VarEnum.NUMBER, reuse);
 	},	
 
-	addTmpString: function() {
-		return this.addTmp(dopple.VarEnum.STRING);
+	addTmpString: function(reuse) {
+		return this.addTmp(dopple.VarEnum.STRING, reuse);
 	},		
 
 	//

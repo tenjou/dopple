@@ -291,7 +291,7 @@ AST.Var = AST.Basic.extend
 		{
 			if(this.type !== 0 && this.type !== this.expr.type) 
 			{
-				console.error("INVALID_TYPE_CONVERSION: Can't convert a variable " + this.var.name + ":" + 
+				console.error("(INVALID_TYPE_CONVERSION) Can't convert a variable " + this.var.name + ":" + 
 					this.var.strType() + " to " + this.expr.strType());
 				return false;
 			}
@@ -326,10 +326,6 @@ AST.Binary = AST.Basic.extend
 		this.op = op;
 		this.lhs = lhs;
 		this.rhs = rhs;		
-	},
-
-	castTo: function(param) {
-		return this.lhs.castTo(param) + " " + this.op + " " + this.rhs.castTo(param);
 	},
 
 	analyse: function(resolver)

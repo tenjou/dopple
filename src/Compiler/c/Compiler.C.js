@@ -90,22 +90,30 @@ Compiler.C = Compiler.Basic.extend
 					output += this.tabs + tmpOutput + ";\n";
 					output += this.outputPost;
 				}
+
+				tmpOutput = "";
 			}
 			else if(type === this.exprEnum.IF) {
-				output += this.emitIf(expr);
+				tmpOutput += this.emitIf(expr);
 			}
 			else if(type === this.exprEnum.FOR) {
-				output += this.emitFor(expr);
+				tmpOutput += this.emitFor(expr);
 			}
 			else if(type === this.exprEnum.FUNCTION_CALL) {
-				output += this.tabs + this.emitFuncCall(expr) + ";\n";
+				tmpOutput = this.tabs + this.emitFuncCall(expr) + ";\n";
 			}	
 			else if(type === this.exprEnum.UNARY) {
-				output += this.tabs + this.emitExpr(expr) + ";\n";
+				tmpOutput += this.tabs + this.emitExpr(expr) + ";\n";
 			}		
 			else if(type === this.exprEnum.RETURN) {
-				output += this.emitReturn(expr);
+				tmpOutput += this.emitReturn(expr);
 			}
+
+			if(this.genOutput) {
+				this.output += this.genOutput;
+				this.genOutput = "";
+			}
+			this.output += tmpOutput;
 		}
 
 		if(!isVirtual)
@@ -239,13 +247,13 @@ Compiler.C = Compiler.Basic.extend
 					output = "malloc(__dopple_strLength + NUMBER_SIZE)";
 				}
 				else {
-					varExpr = this.scope.addTmpString();
+					varExpr = this.scope.addTmpString(false);
 					name = varExpr.value;
 					output = name;
 					this.outputPost = this.tabs + name + " = malloc(__dopple_strLength + NUMBER_SIZE);\n";
 				}	
 
-				this.outputPre = this.tabs + "// string concat //\n"
+				this.outputPre = this.tabs + "\n"
 				this.outputPre += this.tabs + "__dopple_strOffset = NUMBER_SIZE;\n";
 				this.outputLength = this.tabs + "__dopple_strLength = ";
 
@@ -253,7 +261,7 @@ Compiler.C = Compiler.Basic.extend
 				this.emitConcatExpr(name, expr.rhs, true);
 
 				this.outputLength += "5;\n";
-				this.outputPost += this.tabs + "APPEND_LENGTH(" + name + ", __dopple_strLength);\n";	
+				this.outputPost += this.tabs + "APPEND_LENGTH(" + name + ", __dopple_strLength);\n\n";	
 
 				this.scope.endTmpBlock();	
 
@@ -431,7 +439,7 @@ Compiler.C = Compiler.Basic.extend
 
 	emitFuncCall: function(funcCall) 
 	{
-		var i, param;
+		var i, arg, param;
 		var params = funcCall.func.params;
 		var args = funcCall.args;
 		var numParams = params.length;
@@ -448,8 +456,24 @@ Compiler.C = Compiler.Basic.extend
 				output += ")";
 				return output;
 			}
-			else {
-				output += args[i].castTo(param);
+			else 
+			{
+				arg = args[i];
+				if(arg.exprType === this.exprEnum.BINARY)
+				{
+					//output += ;
+					// output += this.outputPre;
+					// output += this.outputLength;
+					// output += this.outputPost;
+					//output += tmpOutput;	
+					output += this.emitExpr(arg);	
+					// this.outputPre = "";
+					// this.outputLength = "";
+					// this.outputPost = "";			
+				}
+				else {
+					output += arg.castTo(param);
+				}
 			}
 
 			if(i < numParams - 1) {
@@ -546,8 +570,8 @@ Compiler.C = Compiler.Basic.extend
 			}
 			else 
 			{
-				var tmpVarTotal = this.scope.addTmpDouble();
-				tmpVarNum = this.scope.addTmpI32();
+				var tmpVarTotal = this.global.addTmpDouble(true);
+				tmpVarNum = this.global.addTmpI32(true);
 
 				this.outputPre += this.tabs + tmpVarTotal.value + " = " + this.emitNumBinaryExpr(expr) + ";\n";
 				this.outputPre += this.tabs + tmpVarNum.value + " = snprintf(NULL, 0, \"%.16g\", " + tmpVarTotal.value + ");\n";
@@ -574,7 +598,7 @@ Compiler.C = Compiler.Basic.extend
 			}
 			else if(expr.type === this.varEnum.NUMBER)
 			{
-				tmpVarNum = this.scope.addTmpI32();
+				tmpVarNum = this.global.addTmpI32(true);
 
 				this.outputPre += this.tabs + tmpVarNum.value + " = snprintf(NULL, 0, \"%.17g\", " + expr.value + ");\n";
 				this.outputPost += this.tabs + "snprintf(" + name + 
@@ -607,7 +631,7 @@ Compiler.C = Compiler.Basic.extend
 		}
 		else if(expr.exprType === this.exprEnum.NUMBER)
 		{
-			tmpVarNum = this.scope.addTmpI32();
+			tmpVarNum = this.global.addTmpI32(true);
 
 			var value = expr.value;
 			if(Math.floor(value) === value) {
