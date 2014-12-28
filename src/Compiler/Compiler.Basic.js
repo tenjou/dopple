@@ -72,6 +72,7 @@ Compiler.Basic = dopple.Class.extend
 
 
 	//
+	settings: dopple.settings,
 	lexer: null,
 
 	global: null,
@@ -89,8 +90,6 @@ Compiler.Basic = dopple.Class.extend
 	outputPre: "",
 	outputPost: "",
 	outputLength: "",	
-
-	stripDeadCode: false,
 
 	exprEnum: dopple.ExprEnum,
 	varEnum: dopple.VarEnum

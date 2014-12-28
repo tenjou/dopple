@@ -116,17 +116,20 @@ Compiler.C = Compiler.Basic.extend
 			var group;
 			for(var key in scope.varGroup)
 			{
-				defOutput += tabs + this.varMap[key];
-
 				group = scope.varGroup[key];
 				numItems = group.length;
+
+				if(numItems === 1) {
+
+				}
+
+				defOutput += tabs + this.varMap[key];
 
 				if(parseInt(key) === this.varEnum.STRING) 
 				{
 					for(i = 0; i < numItems; i++) 
 					{
 						item = group[i];
-						
 						defOutput += item.value;
 						if(i < numItems - 1) {
 							defOutput += ", *";
@@ -141,7 +144,6 @@ Compiler.C = Compiler.Basic.extend
 					for(i = 0; i < numItems; i++) 
 					{
 						item = group[i];
-						
 						defOutput += item.value;
 						if(i < numItems - 1) {
 							defOutput += ", ";
@@ -171,6 +173,10 @@ Compiler.C = Compiler.Basic.extend
 
 	emitVar: function(varExpr)
 	{
+		if(this.settings.stripDeadCode && varExpr.var.numUses === 0) {
+			return null;
+		}
+
 		var output = "";
 		var varType = varExpr.var.type;
 
@@ -247,7 +253,9 @@ Compiler.C = Compiler.Basic.extend
 				this.emitConcatExpr(name, expr.rhs, true);
 
 				this.outputLength += "5;\n";
-				this.outputPost += this.tabs + "APPEND_LENGTH(" + name + ", __dopple_strLength);\n";		
+				this.outputPost += this.tabs + "APPEND_LENGTH(" + name + ", __dopple_strLength);\n";	
+
+				this.scope.endTmpBlock();	
 
 				return output;
 			}
@@ -357,8 +365,7 @@ Compiler.C = Compiler.Basic.extend
 
 	emitFunc: function(func)
 	{
-		if(this.stripDeadCode && func.numUses === 0) {
-			console.warn("Unused function \'" + func.name + "\'");
+		if(this.settings.stripDeadCode && func.numUses === 0) {
 			return null;
 		}
 
@@ -569,9 +576,9 @@ Compiler.C = Compiler.Basic.extend
 			{
 				tmpVarNum = this.scope.addTmpI32();
 
-				this.outputPre += this.tabs + tmpVarNum.value + " = snprintf(NULL, 0, \"%.16g\", " + expr.value + ");\n";
+				this.outputPre += this.tabs + tmpVarNum.value + " = snprintf(NULL, 0, \"%.17g\", " + expr.value + ");\n";
 				this.outputPost += this.tabs + "snprintf(" + name + 
-					" + __dopple_strOffset, " + tmpVarNum.value + " + 1, \"%.16g\", " + expr.value + ");\n"	
+					" + __dopple_strOffset, " + tmpVarNum.value + " + 1, \"%.17g\", " + expr.value + ");\n"	
 				if(!last) {
 					this.outputPost += this.tabs + "__dopple_strOffset += " + tmpVarNum.value + ";\n";	
 				}
