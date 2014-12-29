@@ -265,7 +265,7 @@ Compiler.C = Compiler.Basic.extend
 					varExpr = this.scope.addTmpString(false);
 					name = varExpr.value;
 					output = name;
-					outputGen.post = this.tabs + name + " = malloc(__dopple_strLength + NUMBER_SIZE);\n";
+					outputGen.post = this.tabs + "STR_MALLOC(" + name + ");\n";
 				//}	
 
 				outputGen.pre = this.tabs + "\n"
@@ -277,7 +277,7 @@ Compiler.C = Compiler.Basic.extend
 				outputGen.pre += this.tabs + "__dopple_strOffset = NUMBER_SIZE;\n";
 
 				outputGen.length += "5;\n";
-				outputGen.post += this.tabs + "APPEND_LENGTH(" + name + ", (__dopple_strLength - 5));\n\n";	
+				outputGen.post += this.tabs + "STR_APPEND_LENGTH(" + name + ", (__dopple_strLength - 5));\n\n";	
 
 				this.genBuffer.push(outputGen);
 				this.global.endTmpBlock();
@@ -329,7 +329,7 @@ Compiler.C = Compiler.Basic.extend
 				outputGen.post += this.tabs + "snprintf(" + name + 
 					" + __dopple_strOffset, " + tmpVarNum.value + " + 1, \"%.16g\", " + tmpVarTotal.value + ");\n";
 				if(!last) {
-					outputGen.post += this.tabs + "__dopple_strOffset += " + tmpVarNum.value + ";\n";	
+					outputGen.post += this.tabs + "STR_INC_NUM_OFFSET(" + tmpVarNum.value + ");\n";	
 				}
 
 				outputGen.length += tmpVarNum.value + " + ";
@@ -393,10 +393,9 @@ Compiler.C = Compiler.Basic.extend
 
 		if(expr.type === this.varEnum.STRING) 
 		{
-			outputGen.post += this.tabs + "memcpy(" + name + " + __dopple_strOffset, " + 
-				expr.value + " + NUMBER_SIZE, (*(NUMBER *)" + expr.value + "));\n";
+			outputGen.post += this.tabs + "STR_APPEND_MEMCPY(" + name + ", " + expr.value + ");\n";
 			if(!last) {
-				outputGen.post += this.tabs + "__dopple_strOffset += (*(NUMBER *)" + expr.value + ");\n";
+				outputGen.post += this.tabs + "STR_INC_STR_OFFSET(" + expr.value + ");\n";
 			}
 
 			outputGen.length += "(*(NUMBER *)" + expr.value + ") + ";
@@ -409,7 +408,7 @@ Compiler.C = Compiler.Basic.extend
 			outputGen.post += this.tabs + "snprintf(" + name + 
 				" + __dopple_strOffset, " + tmpVarNum.value + " + 1, \"%.17g\", " + expr.value + ");\n"	
 			if(!last) {
-				outputGen.post += this.tabs + "__dopple_strOffset += " + tmpVarNum.value + ";\n";	
+				outputGen.post += this.tabs + "STR_INC_NUM_OFFSET(" + tmpVarNum.value + ");\n";	
 			}
 
 			outputGen.length += tmpVarNum.value + " + ";								

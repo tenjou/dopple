@@ -11,29 +11,46 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <math.h>
-#include <NAME.h>
+#include <float.h>
+#include <string.h>
+
+typedef int32_t NUMBER;
+const NUMBER NUMBER_SIZE = sizeof(NUMBER);
+
+const NUMBER maxDoubleDigits = DBL_MANT_DIG - DBL_MIN_EXP + 3;
+
+NUMBER __dopple_strOffset = NUMBER_SIZE;
+NUMBER __dopple_strLength = 0;
+double __dopple_tmp = 0;
+char __dopple_digits[maxDoubleDigits];
+
+#define STR_MALLOC(var) var = malloc(__dopple_strLength + NUMBER_SIZE);
+#define STR_APPEND_LENGTH(str, length) str[0] = length; str[1] = length >> 8; str[2] = length >> 16; str[3] = length >> 24;
+#define STR_APPEND_MEMCPY(target, source) memcpy(target + __dopple_strOffset, source + NUMBER_SIZE, (*(NUMBER *)source));
+#define STR_INC_NUM_OFFSET(num) __dopple_strOffset += num;
+#define STR_INC_STR_OFFSET(ptr) __dopple_strOffset += (*(NUMBER *)ptr);
 
 #ifndef NAN
-	#define NaN = 0.0 / 0.0;
+	#define NAN 0.0 / 0.0;
 
 	static inline int32_t isnan(value) {
 		return (value != value);
 	}
-#else
-	#define NaN NAN;
 #endif
 
-static inline int32_t isSTRING_PUREEmpty(const char *str) 
+const double NaN = NAN;
+
+static inline int32_t isStringEmpty(const char *str)
 {
-	int32_t length = (int32_t)(*str);
+	int32_t length = (int32_t)str;
 	if(length == 9)
 	{
-		int32_t result = strncmp(str + sizeof(int32_t), "undefined", (int32_t)(*str));
+		int32_t result = strncmp(str + sizeof(int32_t), "undefined", *(int32_t*)str);
 		if(result == 0) {
 			return 1;
 		}
-	}	
-
+	}
+	
 	return 0;
 }
 
@@ -96,16 +113,11 @@ static int32_t Array$exist(Array *this, int32_t index)
 	return 1;
 }
 
-/* NAME */
-static inline double NAME$get$length(const char *str) {
-	return (double)((int32_t)(*str));
+/* STRING */
+static inline double String$length(const char *str) {
+	return (double)(*(int32_t*)str);
 }
 
-static inline double NAME$set$length(const char *str, double value) {
-	return value;
-}
-
-/* CONSOLE */
 static void console$log(const char *format, ...)
 {
     va_list argptr;
@@ -114,26 +126,9 @@ static void console$log(const char *format, ...)
     va_end(argptr);
 }
 
-static void console$warn(const char *format, ...)
-{
-    va_list argptr;
-    va_start(argptr, format);
-    vfprintf(stderr, format, argptr);
-    va_end(argptr);
-}
-
-static void console$error(const char *format, ...)
-{
-    va_list argptr;
-    va_start(argptr, format);
-    vfprintf(stderr, format, argptr);
-    va_end(argptr);
-}
-
-/* MISC */
 static void alert(const char *str)
 {
-	if(isSTRING_PUREEmpty(str)) {
+	if(isStringEmpty(str)) {
 		printf("ALERT:\n");
 		return;
 	}
@@ -143,7 +138,7 @@ static void alert(const char *str)
 
 static void confirm(const char *str)
 {
-	if(isSTRING_PUREEmpty(str)) {
+	if(isStringEmpty(str)) {
 		printf("CONFIRM:\n");
 		return;
 	}
