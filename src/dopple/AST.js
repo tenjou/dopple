@@ -41,7 +41,8 @@ AST.Basic = dopple.Class.extend
 		ASSIGNED_FROM_MS: 4,
 		ASSIGNED_FROM_VS: 8,
 		GETTER: 16,
-		SETTER: 32
+		SETTER: 32,
+		EXTERN: 64
 	},
 
 	setFlag: function(value, flag) 
@@ -68,6 +69,14 @@ AST.Basic = dopple.Class.extend
 
 	get resolving() { 
 		return (this.flag & this.Flag.RESOLVING) === this.Flag.RESOLVING;
+	},
+
+	set extern(value) {
+		this.setFlag(value, this.Flag.EXTERN);
+	},
+
+	get extern() { 
+		return (this.flag & this.Flag.EXTERN) === this.Flag.EXTERN;
 	},
 
 	//

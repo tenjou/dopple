@@ -14,6 +14,8 @@ dopple.Resolver.prototype =
 		for(i = 0; i < numExpr; i++)
 		{
 			expr = exprs[i];
+			if(expr.extern) { continue; }
+
 			type = expr.exprType;
 
 			if(type === this.exprEnum.VAR) 
@@ -269,8 +271,11 @@ dopple.Resolver.prototype =
 			}
 		}
 
-		if(!this.resolveFunc(funcExpr)) {
-			return false;
+		if(!funcExpr.extern)
+		{
+			if(!this.resolveFunc(funcExpr)) {
+				return false;
+			}
 		}
 
 		expr.resolved = true;

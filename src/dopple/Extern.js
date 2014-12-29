@@ -30,6 +30,8 @@ dopple.Extern.prototype =
 		}
 
 		var func = new AST.Function(name, this.scope, funcParams);
+		func.extern = true;
+		func.type = returnType;
 		this.scope.vars[name] = func;
 	},
 
@@ -37,6 +39,7 @@ dopple.Extern.prototype =
 	{
 		var scope = new dopple.Scope(this.scope);
 		var objExpr = new AST.Class(name, scope);
+		objExpr.extern = true;
 		this.scope.vars[name] = objExpr;
 
 		return new dopple.ExternClass(this, scope, objExpr);
