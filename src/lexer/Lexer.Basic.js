@@ -252,7 +252,7 @@ Lexer.Basic = dopple.Class.extend
 			expr = this.parseExprParentheses();
 		}
 		else if(this.token.str === "{") {
-			expr = this.parseObject();
+			expr = this.parseObj();
 		}
 		else {
 			this.tokenError();
@@ -284,28 +284,30 @@ Lexer.Basic = dopple.Class.extend
 		var expr = this.getVar(this.currName);
 		if(!expr) { return null; }
 
-		//var chain = null;
-		// // Check if is accessing to objects:
-		// this.nextToken();
-		// if(this.token.str === ".") 
-		// {
-		// 	chain = [];
+		// Check if accessing to object members:
+		if(this.token.str === ".")
+		{
+			var prevExprType = expr.exprType;
 
-		// 	this.nextToken();
-		// 	do
-		// 	{
-		// 		if(this.token.type !== this.tokenEnum.NAME) {
-		// 			this.handleTokenError();
-		// 		}
+			for(;;)
+			{
+				this.nextToken();
+				if(prevExprType !== this.exprEnum.CLASS || this.token.type !== this.tokenEnum.NAME) {
+					this.tokenError();
+					return null;
+				}
 
-		// 		parentList.push(this.currName);
-		// 		this.currName = this.token.str;
+				expr = expr.scope.vars[this.token.str];
+				if(!expr) { 
+					this.tokenError();
+					return null; 
+				}
 
-		// 		this.nextToken();		
-		// 	} while(this.token.str === ".");
-
-		// 	expr.chain = parentList;
-		// }
+				this.peekToken();
+				if(this.peekedToken.str !== ".") { break; }
+				this.eatToken();	
+			}
+		}
 
 		return expr;
 	},
@@ -456,14 +458,21 @@ Lexer.Basic = dopple.Class.extend
 			   this.token.type === this.tokenEnum.BINOP_ASSIGN)
 			{
 				var op = this.token.str;
+				this.tmpName = this.currName;
 				this.currName = "";
 				this.nextToken();
 
-				this.currExpr = {};
+				this.currExpr = true;
 				expr = this.parseExpr();
-				this.currExpr = null;
+				this.currExpr = false;
 
 				if(!expr) { return null; }
+
+				if(expr.exprType === this.exprEnum.FUNCTION || 
+				   expr.exprType === this.exprEnum.CLASS) 
+				{
+					return null;
+				} 
 			}
 			else if(this.token.type === this.tokenEnum.UNARY) 
 			{
@@ -672,57 +681,58 @@ Lexer.Basic = dopple.Class.extend
 		return true;
 	},
 
-	parseObject: function()
+	parseObj: function()
 	{
 		var name = "";
 		if(this.scope === this.global) {
-			name = this.currName;
+			name = this.tmpName;
 		}
 		else {
 			name = "__Sanonym" + this.genID++ + "__";
 		}
 
 		if(this.scope.vars[name]) {
-			dopple.throw(dopple.Error.REDEFINITION, name);
+			dopple.error(dopple.Error.REDEFINITION, name);
+			return null;
 		}
 
-		var parentScope = this.scope;
-		this.scope = new dopple.Scope(this.scope);
+		this.scope = new dopple.Scope(this.global);
 
 		var objExpr = new AST.Class(name, this.scope);
-		parentScope.vars[name] = objExpr;
-		parentScope.defBuffer.push(objExpr);
+		this.global.vars[name] = objExpr;
+		if(!this.global.objs) {
+			this.global.objs = [];
+		}
+		this.global.objs.push(objExpr);
 		this.parentList = [ objExpr ];
 
 		// Constructor:
-		var initFunc = new AST.Function("__init", this.scope, null, this.parentList);
-		this.scope.vars["__init"] = initFunc;
-		parentScope.defBuffer.push(initFunc);
+		var constrFunc = new AST.Function("constructor", this.scope, null, this.parentList);
+		constrFunc.obj = objExpr;
+		this.scope.vars["constructor"] = constrFunc;
+		objExpr.constrFunc = constrFunc;
 
-		var initFuncCall = new AST.FunctionCall(initFunc);
-		parentScope.varBuffer.push(initFuncCall);
+		var constrFuncCall = new AST.FunctionCall(constrFunc);
+		this.global.exprs.push(constrFuncCall);
 
 		// Parse object members:
 		var varName, varExpr, expr;
 		this.nextToken();
 		while(this.token.str !== "}") 
 		{
-			if(this.token.type === this.tokenEnum.NAME ||
-			   this.token.type === this.tokenEnum.NAME) 
+			if(this.token.type === this.tokenEnum.NAME) 
 			{
-				this.currName = this.token.str;
+				this.tmpName = this.token.str;
 
 				this.nextToken();
 				if(this.token.str !== ":") {
 					this.tokenError();
+					return null;
 				}
 
 				this.nextToken();
 				expr = this.parseExpr();
-				expr = this.optimizer.do(expr);
-				if(expr.exprType === this.exprEnum.OBJECT) {
-					dopple.throw(dopple.Error.UNSUPPORTED_FEATURE, "object inside an object")
-				}
+				if(!expr) { return null; }
 
 				if(this.token.str !== "," && this.token.str !== "}") 
 				{
@@ -748,28 +758,28 @@ Lexer.Basic = dopple.Class.extend
 					}					
 				}
 		
-				if(expr.exprType !== this.exprEnum.FUNCTION)
-				{
-					varExpr = new AST.Var(this.currName, this.parentList);
-					varExpr.expr = expr;
-					varExpr.analyse();
+				if(expr.exprType === this.exprEnum.FUNCTION) {
 
-					this.scope.vars[this.currName] = varExpr;
-					this.scope.defBuffer.push(varExpr);
-					this.scope.varBuffer.push(varExpr);
+				}
+				else if(expr.exprType === this.exprEnum.CLASS) {
+
+				}
+				else
+				{
+					varExpr = new AST.Var(this.tmpName, this.parentList);
+					varExpr.expr = expr;
+					varExpr.var = varExpr;
+					this.scope.vars[this.tmpName] = varExpr;
 				}
 			}
 			else if(this.token.type === this.tokenEnum.COMMENT) {
 				this.nextToken();
 				continue;
 			}
-			else {
-				dopple.throw(dopple.Error.UNSUPPORTED_FEATURE, "hashmap");
-			}
 		}
 
 		this.nextToken();
-		this.scope = parentScope;
+		this.scope = this.global;
 		this._skipNextToken = true;
 		this.parentList = null;
 
@@ -806,9 +816,8 @@ Lexer.Basic = dopple.Class.extend
 		this.scope = funcExpr.scope;
 		
 		var vars = this.parseFuncParams();
-		if(!vars) {
-			return null;
-		}	
+		if(!vars) { return null; }
+
 		funcExpr.params = vars;
 
 		this.nextToken();
@@ -1207,6 +1216,12 @@ Lexer.Basic = dopple.Class.extend
 
 	tokenError: function() 
 	{
+		for(;;)
+		{
+			if(this.token.type !== this.tokenEnum.COMMENT) { break; }
+			this.nextToken();
+		}
+
 		if(!this.tokenSymbolError()) {
 			dopple.error(this, dopple.Error.UNEXPECTED_TOKEN, this.token.str);	
 		}	
@@ -1278,8 +1293,9 @@ Lexer.Basic = dopple.Class.extend
 
 	genID: 0,
 	currName: "",
+	tmpName: "",
 	currVar: null,
-	currExpr: null,
+	currExpr: false,
 	parentList: null,
 	
 	_skipNextToken: false,

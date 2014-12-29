@@ -68,11 +68,6 @@ dopple.Resolver.prototype =
 			group.push(item);
 		}
 
-		if(this.numDiscards > 0)
-		{
-			console.log("discard");
-		}
-
 		return true;
 	},
 
@@ -160,6 +155,10 @@ dopple.Resolver.prototype =
 	{
 		if(expr.resolved) { return true; }
 
+		if(expr.obj) {
+			this.resolveObj(expr.obj);
+		}
+
 		var retExpr, i;
 		var retExprs = expr.scope.returns;
 		var numRetExprs = retExprs.length;
@@ -232,42 +231,45 @@ dopple.Resolver.prototype =
 		var i;
 		var args = expr.args;
 		var params = funcExpr.params;
-		var numArgs = args.length;
-		var numParams = params.length;
-
-		// If function call has too many arguments, check first if any of argument is FORMAT:
-		var format;
-		if(numArgs > numParams) 
+		if(params)
 		{
-			format = false; 
+			var numArgs = args.length;
+			var numParams = params.length;
 
-			for(i = 0; i < numParams; i++) 
+			// If function call has too many arguments, check first if any of argument is FORMAT:
+			var format;
+			if(numArgs > numParams) 
 			{
-				if(params[i].type === this.varEnum.FORMAT) {
-					format = true;
-					break;
+				format = false; 
+
+				for(i = 0; i < numParams; i++) 
+				{
+					if(params[i].type === this.varEnum.FORMAT) {
+						format = true;
+						break;
+					}
 				}
-			}
 
-			if(!format) {
-				console.error("TOO_MANY_ARGS: Function call \"" + funcExpr.name + "\" has " 
-					+ numArgs + " args, expecting maximum of " + numParams + " args");
-				return false;				
-			}
-		}	
+				if(!format) {
+					console.error("TOO_MANY_ARGS: Function call \"" + funcExpr.name + "\" has " 
+						+ numArgs + " args, expecting maximum of " + numParams + " args");
+					return false;				
+				}
+			}	
 
-		// Analyse all argument expressions:
-		var argExpr;
-		for(i = 0; i < numArgs; i++)
-		{
-			argExpr = this.optimizer.do(args[i]);
-			if(!argExpr.analyse()) { 
-				return false; 
-			}
-			args[i] = argExpr;
+			// Analyse all argument expressions:
+			var argExpr;
+			for(i = 0; i < numArgs; i++)
+			{
+				argExpr = this.optimizer.do(args[i]);
+				if(!argExpr.analyse()) { 
+					return false; 
+				}
+				args[i] = argExpr;
 
-			if(i < numParams && params[i].type === 0) {
-				params[i].type = argExpr.type;
+				if(i < numParams && params[i].type === 0) {
+					params[i].type = argExpr.type;
+				}
 			}
 		}
 
@@ -280,6 +282,23 @@ dopple.Resolver.prototype =
 
 		expr.resolved = true;
 		expr.resolving = false;
+
+		return true;
+	},
+
+	resolveObj: function(objExpr)
+	{
+		var expr;
+		var vars = objExpr.scope.vars;
+		for(var key in vars) 
+		{
+			expr = vars[key];
+			if(expr.exprType !== this.exprEnum.VAR) { continue; }
+			
+			if(!this.resolveVar(expr)) { 
+				return false;
+			}
+		}
 
 		return true;
 	},

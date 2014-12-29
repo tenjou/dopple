@@ -19,7 +19,7 @@ Compiler.C = Compiler.Basic.extend
 		var extern = this.lexer.extern;
 
 		extern.func("confirm", [ this.varEnum.STRING ]);
-		extern.func("promt", [ this.varEnum.STRING ], this.varEnum.STRING);
+		extern.func("prompt", [ this.varEnum.STRING ], this.varEnum.STRING);
 		
 		var console = extern.obj("console");
 		console.func("log", [ this.varEnum.FORMAT ]);
@@ -74,6 +74,14 @@ Compiler.C = Compiler.Basic.extend
 		if(scope !== this.global) {
 			tabs = this.tabs;
 		}
+		else if(scope.objs)
+		{
+			var objs = scope.objs;
+			var numItems = objs.length;
+			for(i = 0; i < numItems; i++) {
+				this.global.defOutput += this.emitCls(objs[i]);
+			}
+		}
 
 		// Emit expressions:
 		var expr, type;
@@ -84,17 +92,8 @@ Compiler.C = Compiler.Basic.extend
 			expr = exprs[i];
 			type = expr.exprType;
 
-			if(type === this.exprEnum.VAR) 
-			{
+			if(type === this.exprEnum.VAR) {
 				tmpOutput = this.tabs + this.emitVar(expr) + ";\n";
-				// if(tmpOutput) {
-				// 	output += this.outputPre;
-				// 	output += this.outputLength;
-				// 	output += this.tabs + tmpOutput + ";\n";
-				// 	output += this.outputPost;
-				// }
-
-				//tmpOutput = "";
 			}
 			else if(type === this.exprEnum.IF) {
 				tmpOutput = this.emitIf(expr);
@@ -201,7 +200,15 @@ Compiler.C = Compiler.Basic.extend
 		}
 
 		var exprType = expr.exprType;
-		var strOp = " " + varExpr.op + " ";
+
+		var strOp;
+		if(varExpr.op) {
+			strOp = " " + varExpr.op + " ";
+		}
+		else {
+			strOp = " = ";
+		}
+
 		varExpr.fullName = dopple.makeVarName(varExpr);
 
 		if(varExpr.parentList)
@@ -210,11 +217,11 @@ Compiler.C = Compiler.Basic.extend
 				output += varExpr.fullName + expr.value + ";\n";
 			}
 			else if(exprType === this.exprEnum.STRING) {
-				output += varExpr.fullName + strOp + "\"" + expr.createHex() + "\"\"" + expr.value + "\"";
+				output += varExpr.fullName + strOp + "\"" + expr.createHex() + "\"\"" + expr.value + "\";\n";
 			}
 			else {
 				output += varExpr.fullName + strOp;
-				defineExpr(expr);
+				output += this.emitExpr(expr);
 				output += ";\n";
 			}
 		}
@@ -429,14 +436,9 @@ Compiler.C = Compiler.Basic.extend
 
 			if(branch.type === "if" || branch.type === "else if") 
 			{
-				tmpOutput += this.tabs + branch.type + "(";
-				tmpOutput += this.emitExpr(branch.expr);
-				tmpOutput += ")\n";	
-
-				output = this.outputPre;
-				output += this.outputLength;
-				output += this.outputPost;
-				output += tmpOutput;								
+				output += this.tabs + branch.type + "(";
+				output += this.emitExpr(branch.expr);
+				output += ")\n";								
 			}
 			else {
 				output += this.tabs + "else\n";
@@ -537,7 +539,33 @@ Compiler.C = Compiler.Basic.extend
 		}
 
 		output += ") \n{\n";
-		output += this.emitScope(func.scope) + "}\n";
+	
+		// If is constructor - initialize class variables:
+		if(func.obj) {
+			output += this.emitConstrFunc(func.obj);
+		}
+		else {
+			output += this.emitScope(func.scope);
+		}
+
+		output += "}\n";
+
+		return output;
+	},
+
+	emitConstrFunc: function(obj)
+	{
+		var output = "";
+
+		var varExpr;
+		var vars = obj.scope.vars;
+		for(var key in vars) 
+		{
+			varExpr = vars[key];
+			if(varExpr.exprType === this.exprEnum.VAR) {
+				output += this.tabs + this.emitVar(varExpr);
+			}
+		}
 
 		return output;
 	},
@@ -561,8 +589,9 @@ Compiler.C = Compiler.Basic.extend
 		var i, arg, param;
 		var params = funcCall.func.params;
 		var args = funcCall.args;
-		var numParams = params.length;
-		var numArgs = args.length;
+
+		var numParams = params ? params.length : 0;
+		var numArgs = args ? args.length : 0;
 
 		var output = dopple.makeFuncName(funcCall.func) + "(";
 
@@ -578,17 +607,8 @@ Compiler.C = Compiler.Basic.extend
 			else 
 			{
 				arg = args[i];
-				if(arg.exprType === this.exprEnum.BINARY)
-				{
-					//output += ;
-					// output += this.outputPre;
-					// output += this.outputLength;
-					// output += this.outputPost;
-					//output += tmpOutput;	
-					output += this.emitExpr(arg);	
-					// this.outputPre = "";
-					// this.outputLength = "";
-					// this.outputPost = "";			
+				if(arg.exprType === this.exprEnum.BINARY) {
+					output += this.emitExpr(arg);			
 				}
 				else {
 					output += arg.castTo(param);
@@ -615,27 +635,26 @@ Compiler.C = Compiler.Basic.extend
 		return output;
 	},	
 
-	defineObject: function(obj)
+	emitCls: function(clsExpr)
 	{
-		var defBuffer = obj.scope.defBuffer;
-		var numDefs = defBuffer.length;
-
-		this.output += "static struct {\n";
-
-		this.incTabs();
+		var output = "static struct {";
 
 		var varExpr;
-		for(var i = 0; i < numDefs; i++) 
+		var vars = clsExpr.scope.vars;
+		for(var key in vars) 
 		{
-			varExpr = defBuffer[i];
-			if(varExpr.type > 0) {
-				this.output += this.tabs + this.varMap[varExpr.type] + varExpr.name + ";\n";
-			}
+			varExpr = vars[key];
+			if(varExpr.exprType !== this.exprEnum.VAR) { continue; }
+
+			output += "\n" + this.tabs + this.varMap[varExpr.type] + key + ";";
 		}
 
-		this.decTabs();
+		output += "\n} " + clsExpr.name + ";\n\n";
 
-		this.output += "} " + obj.name + ";\n";
+		output += this.emitFunc(clsExpr.constrFunc);
+		if(this.error) { return null; }		
+
+		return output;
 	},
 
 	emitFormat: function(args)
@@ -643,12 +662,13 @@ Compiler.C = Compiler.Basic.extend
 		this.tmpOutput1 = "";
 		this.tmpOutput2 = "";
 
-		var exprType, varType, arg;
+		var exprType, varType, arg, name;
 		var numArgs = args.length;
 		for(var i = 0; i < numArgs; i++) 
 		{
 			arg = args[i];
 			exprType = arg.exprType;
+
 			if(exprType === this.exprEnum.BINARY) 
 			{
 				if(arg.type === this.varEnum.STRING) {
@@ -670,14 +690,16 @@ Compiler.C = Compiler.Basic.extend
 			}
 			else if(exprType === this.exprEnum.VAR) 
 			{
+				name = dopple.makeVarName(arg);
 				varType = arg.type;
+
 				if(varType === this.varEnum.STRING) {
 					this.tmpOutput1 += "%s ";
-					this.tmpOutput2 += arg.value + " + NUMBER_SIZE, ";
+					this.tmpOutput2 += name + " + NUMBER_SIZE, ";
 				}
 				else {
 					this.tmpOutput1 += "%.17g ";
-					this.tmpOutput2 += arg.value + ", ";
+					this.tmpOutput2 += name + ", ";
 				}
 			}
 			else if(exprType === this.exprEnum.UNARY) 

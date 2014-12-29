@@ -38,7 +38,10 @@ dopple.error = function(owner, type, arg)
 	}
 	else if(type === errorEnum.TOO_MANY_ARGUMENTS) {
 		console.error("Too many arguments passed to the \"" + arg + "\" function");
-	}		
+	}
+	else if(type === errorEnum.REDEFINITION) {
+		console.error("Redefined: " + arg);
+	}				
 	else {
 		console.error("Error: Unknown error");
 	}
@@ -46,33 +49,19 @@ dopple.error = function(owner, type, arg)
 	owner.error = type;	
 };
 
-dopple.throw = function(type, arg)
-{
-	if(type === this.Error.REFERENCE_ERROR) {
-		throw "ReferenceError: " + arg + " is not defined";
-	}
-	else if(type === this.Error.UNEXPECTED_TOKEN_ILLEGAL) {
-		throw "SyntaxError: Unexpected token ILLEGAL";
-	}	
-	else if(type === this.Error.UNEXPECTED_ID) {
-		throw "SyntaxError: Unexpected identifier";
-	}		
-	else if(type === this.Error.INVALID_REGEXP) {
-		throw "SyntaxError: Invalid regular expression: missing " + arg;
-	}	
-	else if(type === this.Error.REDEFINITION) {
-		throw "Redefined: " + arg;
-	}		
-	else if(type === this.Error.INVALID_TYPE_CONVERSION) {
-		console.error("Invalid Type Conversion: " + arg);
-	}
-	else if(type === this.Error.TOO_MANY_ARGUMENTS) {
-		throw "Too many arguments passed.";
-	}
-	else if(type === this.Error.UNSUPPORTED_FEATURE) {
-		throw "Unsupported feature used: \"" + arg + "\"";
-	}
-	else {
-		console.error("Unknown Error");
-	}
-};
+// dopple.throw = function(type, arg)
+// {	
+// 	else if(type === this.Error.INVALID_REGEXP) {
+// 		throw "SyntaxError: Invalid regular expression: missing " + arg;
+// 	}	
+
+// 	else if(type === this.Error.INVALID_TYPE_CONVERSION) {
+// 		console.error("Invalid Type Conversion: " + arg);
+// 	}
+// 	else if(type === this.Error.UNSUPPORTED_FEATURE) {
+// 		throw "Unsupported feature used: \"" + arg + "\"";
+// 	}
+// 	else {
+// 		console.error("Unknown Error");
+// 	}
+// };

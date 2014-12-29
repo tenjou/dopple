@@ -14,7 +14,7 @@ dopple.makeVarName = function(varExpr)
 	
 	var name = "";
 	for(var i = 0; i < numItems; i++) {
-		name += parentList[i].value + ".";
+		name += parentList[i].name + ".";
 	}
 	name += varExpr.value;
 

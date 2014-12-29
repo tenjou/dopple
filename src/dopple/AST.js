@@ -294,7 +294,7 @@ AST.Var = AST.Basic.extend
 			this.type = this.expr.func.type;
 		}
 		else if(type === this.exprEnum.FUNCTION) {
-			this.type = this.varEnum.FUNCTION_PTR;
+			this.type = this.varEnum.FUNCTION_PTR;			
 		}
 		else
 		{
@@ -307,6 +307,11 @@ AST.Var = AST.Basic.extend
 			
 			this.type = this.expr.type;		
 		}
+
+		if(this.type === 0) {
+			console.error("(Resolver) An expression with type 'void'");
+			return false;
+		}		
 
 		this.resolved = true;
 
@@ -470,7 +475,8 @@ AST.Function = AST.Basic.extend
 	exprType: dopple.ExprEnum.FUNCTION,
 
 	name: "",
-	rootName: null
+	rootName: null,
+	obj: null
 });
 
 /* Expression Function Call */
@@ -579,10 +585,6 @@ AST.For = AST.Basic.extend
 /* Expression Format */
 AST.Format = AST.Basic.extend
 ({
-	init: function(name) {
-		this.name = name;
-	},
-
 	defaultValue: function() {
 		return '"\\n"';
 	},
@@ -595,23 +597,19 @@ AST.Format = AST.Basic.extend
 /* Expression Class */
 AST.Class = AST.Basic.extend
 ({
-	init: function(name, scope) 
-	{
+	init: function(name, scope) {
 		this.name = name;
 		this.scope = scope;
-
-		var scope = new dopple.Scope(scope);
-		this.constructFunc = new AST.Function(name, scope, []);			
 	},
 
 	//
-	type: dopple.VarEnum.Class,
-	exprEnum: dopple.ExprEnum.Class,
+	type: 0,
+	exprType: dopple.ExprEnum.CLASS,
 
 	name: "",
 	str: "[object Object]",
 	scope: null,
 	isStatic: true,
 
-	constructFunc: null
+	constrFunc: null
 });

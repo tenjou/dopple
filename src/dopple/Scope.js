@@ -111,5 +111,6 @@ dopple.Scope.prototype =
 
 	//
 	defOutput: "",
-	isVirtual: false
+	isVirtual: false,
+	objs: null
 };

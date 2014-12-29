@@ -14,6 +14,8 @@ dopple.Extern.prototype =
 {
 	func: function(name, params, returnType)
 	{
+		returnType = returnType || 0;
+		
 		var funcParams = null;
 
 		if(params) 

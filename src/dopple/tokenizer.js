@@ -78,9 +78,9 @@ dopple.Tokenizer = dopple.Class.extend
 
 				if(strToken === "else") 
 				{
-					this.peek();
-					if(this.peekToken.str === "if") {
-						this.eat();
+					this.internalPeek();
+					if(this.internalPeekToken.str === "if") {
+						this.internalEat();
 						token.str = "else if";
 					}
 				}				
@@ -269,6 +269,26 @@ dopple.Tokenizer = dopple.Class.extend
 		this.cursor = this.peekCursor;
 	},
 
+	internalPeek: function() 
+	{
+		var tmpCursor = this.cursor;
+
+		this.nextToken(this.internalPeekToken);
+
+		this.internalPeekCursor = this.cursor;
+		this.cursor = tmpCursor;
+
+		return this.internalPeekToken;
+	},
+
+	internalEat: function() 
+	{
+		this.token.type = this.internalPeekToken.type;
+		this.token.str = this.internalPeekToken.str;
+		this.token.value = this.internalPeekToken.value;
+		this.cursor = this.internalPeekCursor;
+	},	
+
 	nextChar: function() 
 	{
 		if(this.cursor >= this.bufferLength) {
@@ -336,12 +356,13 @@ dopple.Tokenizer = dopple.Class.extend
 	//
 	buffer: "",
 	bufferLength: 0,
-	cursor: 0, peekCursor: 0,
+	cursor: 0, peekCursor: 0, internalPeekCursor: 0,
 	currChar: "",
 
 	customKeyword: null,
 
 	token: new dopple.Token(),
 	peekToken: new dopple.Token(),
+	internalPeekToken: new dopple.Token(),
 	tokenEnum: dopple.TokenEnum
 });
