@@ -284,6 +284,7 @@ dopple.Resolver.prototype =
 
 	settings: dopple.settings,
 	exprEnum: dopple.ExprEnum,
+	varEnum: dopple.VarEnum,
 
 	numDiscards: 0
 };

@@ -12,6 +12,7 @@ Compiler.Basic = dopple.Class.extend
 		}
 
 		this.lexer = lexer;
+		this.genBuffer = [];
 	},
 
 	compile: function(source)
@@ -70,6 +71,11 @@ Compiler.Basic = dopple.Class.extend
 		this.tabs = this.tabs.substr(0, this.tabs.length - 1);
 	},	
 
+	OutputGen: function() {
+		this.pre = "";
+		this.post = "";
+		this.length = "";
+	},
 
 	//
 	settings: dopple.settings,
@@ -87,10 +93,9 @@ Compiler.Basic = dopple.Class.extend
 	outputExpr: "",
 	outputScope: "",
 
-	outputPre: "",
-	outputPost: "",
-	outputLength: "",	
+	genBuffer: null,	
 
 	exprEnum: dopple.ExprEnum,
 	varEnum: dopple.VarEnum
 });
+

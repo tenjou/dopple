@@ -65,6 +65,7 @@ dopple.Scope.prototype =
 				var name = "__temp" + this.tmps.id++;
 				varExpr = new AST.Var(name, null, type);
 				varExpr.var = varExpr;
+				varExpr.type = type;
 
 				var group = this.varGroup[type];
 				if(!group) {
