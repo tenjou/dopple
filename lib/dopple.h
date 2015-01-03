@@ -22,13 +22,21 @@ const NUMBER maxDoubleDigits = DBL_MANT_DIG - DBL_MIN_EXP + 3;
 NUMBER __dopple_strOffset = NUMBER_SIZE;
 NUMBER __dopple_strLength = 0;
 double __dopple_tmp = 0;
+NUMBER __dopple_tmp2 = 0;
 char __dopple_digits[maxDoubleDigits];
 
+#define STR_APPEND_START() __dopple_strOffset = NUMBER_SIZE;
+#define STR_APPEND_END(str) __dopple_tmp2 = __dopple_strLength - 5; \
+	str[0] = __dopple_tmp2; str[1] = __dopple_tmp2 >> 8; str[2] = __dopple_tmp2 >> 16; str[3] = __dopple_tmp2 >> 24;
 #define STR_MALLOC(var) var = malloc(__dopple_strLength + NUMBER_SIZE);
-#define STR_APPEND_LENGTH(str, length) str[0] = length; str[1] = length >> 8; str[2] = length >> 16; str[3] = length >> 24;
 #define STR_APPEND_MEMCPY(target, source) memcpy(target + __dopple_strOffset, source + NUMBER_SIZE, (*(NUMBER *)source));
+#define STR_APPEND_MEMCPY_ZERO(target, source, length) memcpy(target + __dopple_strOffset, source, length);
+#define STR_APPEND_STR(ptr, str, length) memcpy(ptr + __dopple_strOffset, str, length);
+
+#define STR_APPEND_NUM(ptr, length, value) snprintf(ptr + __dopple_strOffset, length + 1, "%.16g", value);
 #define STR_INC_NUM_OFFSET(num) __dopple_strOffset += num;
 #define STR_INC_STR_OFFSET(ptr) __dopple_strOffset += (*(NUMBER *)ptr);
+#define STR_NUM_LEN(num) snprintf(NULL, 0, "%.16g", num);
 
 #ifndef NAN
 	#define NAN 0.0 / 0.0;

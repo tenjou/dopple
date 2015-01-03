@@ -254,35 +254,26 @@ Compiler.C = Compiler.Basic.extend
 
 			if(expr.type === this.varEnum.STRING)
 			{
+				varExpr = this.scope.addTmpString(false);
+				var name = varExpr.value;
 				var outputGen = new this.OutputGen();
-
-				var name;
-				// if(varExpr) {
-				// 	name = varExpr.fullName;
-				// 	output = "malloc(__dopple_strLength + NUMBER_SIZE)";
-				// }
-				// else {
-					varExpr = this.scope.addTmpString(false);
-					name = varExpr.value;
-					output = name;
-					outputGen.post = this.tabs + "STR_MALLOC(" + name + ");\n";
-				//}	
 
 				outputGen.pre = this.tabs + "\n"
 				outputGen.length = this.tabs + "__dopple_strLength = ";
 
+				outputGen.post = this.tabs + "STR_APPEND_START();\n";
+				outputGen.post += this.tabs + "STR_MALLOC(" + name + ");\n";
+
 				this._emitConcatExpr(name, expr.lhs, false, outputGen);
 				this._emitConcatExpr(name, expr.rhs, true, outputGen);
 
-				outputGen.pre += this.tabs + "__dopple_strOffset = NUMBER_SIZE;\n";
-
 				outputGen.length += "5;\n";
-				outputGen.post += this.tabs + "STR_APPEND_LENGTH(" + name + ", (__dopple_strLength - 5));\n\n";	
+				outputGen.post += this.tabs + "STR_APPEND_END(" + name + ");\n\n";	
 
 				this.genBuffer.push(outputGen);
 				this.global.endTmpBlock();
 
-				return output;
+				return name;
 			}
 			else
 			{
@@ -325,9 +316,8 @@ Compiler.C = Compiler.Basic.extend
 				tmpVarNum = this.global.addTmpI32(true);
 
 				outputGen.pre += this.tabs + tmpVarTotal.value + " = " + this.emitNumBinaryExpr(expr) + ";\n";
-				outputGen.pre += this.tabs + tmpVarNum.value + " = snprintf(NULL, 0, \"%.16g\", " + tmpVarTotal.value + ");\n";
-				outputGen.post += this.tabs + "snprintf(" + name + 
-					" + __dopple_strOffset, " + tmpVarNum.value + " + 1, \"%.16g\", " + tmpVarTotal.value + ");\n";
+				outputGen.pre += this.tabs + tmpVarNum.value + " = STR_NUMBER_LENGTH(" + tmpVarTotal.value + ");\n";
+				outputGen.post += this.tabs + "STR_APPEND_NUM(" + name + ", " + tmpVarNum.value + ", " + tmpVarTotal.value + ");\n";
 				if(!last) {
 					outputGen.post += this.tabs + "STR_INC_NUM_OFFSET(" + tmpVarNum.value + ");\n";	
 				}
@@ -342,13 +332,13 @@ Compiler.C = Compiler.Basic.extend
 		{
 			if(!last) 
 			{
-				outputGen.post += this.tabs + "memcpy(" + name + " + __dopple_strOffset, \"" + 
-				 	expr.value + "\", " + expr.length + ");\n"				
-				outputGen.post += this.tabs + "__dopple_strOffset += " + expr.length + ";\n";	
+				outputGen.post += this.tabs + "STR_APPEND_STR(" + name + ", \"" + expr.value + "\", " + expr.length + ");\n"				
+				outputGen.post += this.tabs + "STR_INC_NUM_OFFSET(" + expr.length + ");\n";	
 			}
-			else {
-				outputGen.post += this.tabs + "memcpy(" + name + " + __dopple_strOffset, \"" + 
-				 	expr.value + "\\0\", " + (expr.length + 1) + ");\n"
+			else 
+			{
+				outputGen.post += this.tabs + "STR_APPEND_MEMCPY_ZERO(" + name + ", \"" + 
+					(expr.value + "\\0") + "\", " + (expr.length + 1) + ");\n";
 			}
 
 			outputGen.length += expr.length + " + ";
@@ -362,11 +352,10 @@ Compiler.C = Compiler.Basic.extend
 				value += ".0";
 			}
 
-			outputGen.pre += this.tabs + tmpVarNum.value + " = snprintf(NULL, 0, \"%.16g\", " + value + ");\n";
-			outputGen.post += this.tabs + "snprintf(" + name + 
-				" + __dopple_strOffset, " + tmpVarNum.value + " + 1, \"%.16g\", " + value + ");\n";
+			outputGen.pre += this.tabs + tmpVarNum.value + " = STR_NUM_LEN(" + value + ");\n";
+			outputGen.post += this.tabs + "STR_APPEND_NUM(" + name + ", " + tmpVarNum.value + ", " + value + ");\n";
 			if(!last) {
-				outputGen.post += this.tabs + "__dopple_strOffset += " + tmpVarNum.value + ";\n";	
+				outputGen.post += this.tabs + "STR_INC_NUM_OFFSET(" + tmpVarNum.value + ");\n";	
 			}
 
 			outputGen.length += tmpVarNum.value + " + ";
@@ -404,9 +393,8 @@ Compiler.C = Compiler.Basic.extend
 		{
 			var tmpVarNum = this.global.addTmpI32(true);
 
-			outputGen.pre += this.tabs + tmpVarNum.value + " = snprintf(NULL, 0, \"%.17g\", " + expr.value + ");\n";
-			outputGen.post += this.tabs + "snprintf(" + name + 
-				" + __dopple_strOffset, " + tmpVarNum.value + " + 1, \"%.17g\", " + expr.value + ");\n"	
+			outputGen.pre += this.tabs + tmpVarNum.value + " = STR_NUM_LEN(" + expr.value + ");\n";
+			outputGen.post += this.tabs + "STR_APPEND_NUM(" + name + ", " + tmpVarNum.value + ", " + expr.value + ");\n"	
 			if(!last) {
 				outputGen.post += this.tabs + "STR_INC_NUM_OFFSET(" + tmpVarNum.value + ");\n";	
 			}
