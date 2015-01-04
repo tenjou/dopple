@@ -307,6 +307,8 @@ Lexer.Basic = dopple.Class.extend
 				if(this.peekedToken.str !== ".") { break; }
 				this.eatToken();	
 			}
+
+			this.nextToken();
 		}
 
 		return expr;
