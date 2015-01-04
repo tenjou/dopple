@@ -666,7 +666,7 @@ Compiler.C = Compiler.Basic.extend
 		this.tmpOutput1 = "";
 		this.tmpOutput2 = "";
 
-		var exprType, varType, arg, name;
+		var exprType, varType, arg, name, value;
 		var numArgs = args.length;
 		for(var i = 0; i < numArgs; i++) 
 		{
@@ -684,9 +684,15 @@ Compiler.C = Compiler.Basic.extend
 
 				this.emitBinaryArg(arg);
 			}			
-			else if(exprType === this.exprEnum.NUMBER) {
+			else if(exprType === this.exprEnum.NUMBER) 
+			{
+				value = arg.value;
+				if(Math.floor(value) === value) {
+					value += ".0";
+				}
+
 				this.tmpOutput1 += "%.17g ";
-				this.tmpOutput2 += arg.value + ", ";
+				this.tmpOutput2 += value + ", ";
 			}
 			else if(exprType === this.exprEnum.STRING) {
 				this.tmpOutput1 += "%s ";
