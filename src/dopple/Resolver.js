@@ -265,11 +265,23 @@ dopple.Resolver.prototype =
 			var argExpr;
 			for(i = 0; i < numArgs; i++)
 			{
-				argExpr = this.optimizer.do(args[i]);
-				if(!argExpr.analyse()) { 
-					return false; 
+				argExpr = args[i];
+				if(argExpr.exprType === this.exprEnum.FUNCTION_CALL) 
+				{
+					if(!this.resolveFuncCall(argExpr)) {
+						return false;
+					}
+
+					//argExpr.type = argExpr.func.type;
 				}
-				args[i] = argExpr;
+				else
+				{
+					argExpr = this.optimizer.do(argExpr);
+					if(!argExpr.analyse()) { 
+						return false; 
+					}
+					args[i] = argExpr;
+				}
 
 				if(i < numParams && params[i].type === 0) {
 					params[i].type = argExpr.type;

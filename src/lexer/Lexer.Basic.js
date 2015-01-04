@@ -410,6 +410,7 @@ Lexer.Basic = dopple.Class.extend
 
 		var varName = this.token.str;
 		this.currName = varName;
+		this.tmpName = varName;
 		this.nextToken();
 
 		if(this.token.str === "(") 
@@ -456,7 +457,6 @@ Lexer.Basic = dopple.Class.extend
 			   this.token.type === this.tokenEnum.BINOP_ASSIGN)
 			{
 				var op = this.token.str;
-				this.tmpName = this.currName;
 				this.currName = "";
 				this.nextToken();
 
@@ -491,6 +491,7 @@ Lexer.Basic = dopple.Class.extend
 		}
 
 		this.currName = "";
+		this.tmpName = "";
 
 		return expr;
 	},	
@@ -762,6 +763,8 @@ Lexer.Basic = dopple.Class.extend
 				this.nextToken();
 				continue;
 			}
+
+			this.tmpName = "";
 		}
 
 		this.nextToken();
@@ -776,7 +779,7 @@ Lexer.Basic = dopple.Class.extend
 	{
 		this.nextToken();
 
-		var name = this.currName;
+		var name = this.tmpName;
 		var rootName = "";
 		if(this.token.type === this.tokenEnum.NAME) 
 		{
@@ -1141,6 +1144,8 @@ Lexer.Basic = dopple.Class.extend
 				var parentExpr = this.parentList[numItems - 1];
 				funcExpr = parentExpr.scope.vars[fullName];				
 			}
+
+			this.parentList = null;
 		}
 
 		if(!funcExpr) 

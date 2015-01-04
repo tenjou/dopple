@@ -729,6 +729,20 @@ Compiler.C = Compiler.Basic.extend
 					this.tmpOutput2 += name + ", ";
 				}
 			}
+			else if(exprType === this.exprEnum.FUNCTION_CALL) 
+			{
+				var funcCallOutput = this.emitFuncCall(arg);
+				varType = arg.func.type;
+
+				if(varType === this.varEnum.STRING) {
+					this.tmpOutput1 += "%s ";
+					this.tmpOutput2 += funcCallOutput + " + NUMBER_SIZE, ";
+				}
+				else {
+					this.tmpOutput1 += "%.17g ";
+					this.tmpOutput2 += funcCallOutput + ", ";
+				}
+			}			
 			else if(exprType === this.exprEnum.UNARY) 
 			{
 				this.tmpOutput1 += "%.17g ";
