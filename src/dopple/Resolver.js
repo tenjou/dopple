@@ -51,8 +51,12 @@ dopple.Resolver.prototype =
 			}
 		}
 
-		var item, group;
-		for(var key in scope.vars)
+		var key, item, group;
+		for(key in scope.vars) {
+			scope.varGroup = {};
+		}
+
+		for(key in scope.vars)
 		{
 			item = scope.vars[key];
 			if(item.exprType !== this.exprEnum.VAR) { continue; }

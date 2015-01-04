@@ -4,7 +4,7 @@ dopple.Scope = function(parent)
 {
 	this.parent = parent || null;
 	this.vars = {};
-	this.varGroup = {};
+	this.varGroup = null;
 	this.exprs = [];
 	this.returns = [];
 	this.tmps = {

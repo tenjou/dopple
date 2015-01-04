@@ -71,8 +71,11 @@ Compiler.C = Compiler.Basic.extend
 		var tmpOutput = "";
 		var tabs = "";
 
-		if(scope !== this.global) {
+		if(scope !== this.global) 
+		{
 			tabs = this.tabs;
+
+			this.haveNewline = scope.varGroup ? true : false;
 		}
 		else if(scope.objs)
 		{
@@ -82,6 +85,8 @@ Compiler.C = Compiler.Basic.extend
 				this.global.defOutput += this.emitCls(objs[i]);
 			}
 		}
+
+		this.newNewline = false;
 
 		// Emit expressions:
 		var expr, type;
@@ -124,9 +129,15 @@ Compiler.C = Compiler.Basic.extend
 				this.genBuffer.length = 0;
 			}
 			output += tmpOutput;
+
+			this.haveNewline = false;
+			if(this.newNewline) {
+				this.haveNewline = true;
+				this.newNewline = false;
+			}
 		}
 
-		if(!isVirtual)
+		if(!isVirtual && scope.varGroup)
 		{
 			var defOutput = "";
 
@@ -258,7 +269,13 @@ Compiler.C = Compiler.Basic.extend
 				var name = varExpr.value;
 				var outputGen = new this.OutputGen();
 
-				outputGen.pre = this.tabs + "\n"
+				if(!this.haveNewline) {
+					outputGen.pre = "\n";
+				}
+
+				this.haveNewline = false;
+				this.newNewline = true;
+				
 				outputGen.length = this.tabs + "__dopple_strLength = ";
 
 				outputGen.post = this.tabs + "STR_APPEND_START();\n";
@@ -269,7 +286,7 @@ Compiler.C = Compiler.Basic.extend
 
 				outputGen.length += "5;\n";
 				outputGen.post += this.tabs + "STR_APPEND_END(" + name + ");\n\n";	
-
+			
 				this.genBuffer.push(outputGen);
 				this.global.endTmpBlock();
 
@@ -768,5 +785,8 @@ Compiler.C = Compiler.Basic.extend
 	scopeOutput: "",
 
 	tmpOutput1: "",
-	tmpOutput2: ""
+	tmpOutput2: "",
+
+	haveNewline: false,
+	newNewline: false
 });
