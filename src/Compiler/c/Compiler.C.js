@@ -66,7 +66,7 @@ Compiler.C = Compiler.Basic.extend
 		this.scope = scope;
 		this.incTabs();
 
-		var i, item, items, numItems;
+		var i, n, item, items, numItems;
 		var output = "";
 		var tmpOutput = "";
 		var tabs = "";
@@ -119,8 +119,8 @@ Compiler.C = Compiler.Basic.extend
 			numItems = this.genBuffer.length;
 			if(numItems > 0) 
 			{
-				for(i = 0; i < numItems; i++) {
-					item = this.genBuffer[i];
+				for(n = 0; n < numItems; n++) {
+					item = this.genBuffer[n];
 					output += item.pre;
 					output += item.length;
 					output += item.post;
@@ -137,7 +137,7 @@ Compiler.C = Compiler.Basic.extend
 			}
 		}
 
-		if(!isVirtual && scope.varGroup)
+		if(!isVirtual)
 		{
 			var defOutput = "";
 
@@ -179,8 +179,14 @@ Compiler.C = Compiler.Basic.extend
 				}
 			}	
 
-			if(defOutput) {
-				this.scope.defOutput = defOutput;
+			if(defOutput) 
+			{
+				if(this.scope.defOutput) {
+					this.scope.defOutput += "\n" + defOutput;
+				}
+				else {
+					this.scope.defOutput = defOutput;
+				}
 			}
 		}
 
@@ -225,7 +231,7 @@ Compiler.C = Compiler.Basic.extend
 		if(varExpr.parentList)
 		{
 			if(exprType === this.exprEnum.VAR) {
-				output += varExpr.fullName + expr.value + ";\n";
+				output += varExpr.fullName + expr.fullName + ";\n";
 			}
 			else if(exprType === this.exprEnum.STRING) {
 				output += varExpr.fullName + strOp + "\"" + expr.createHex() + "\"\"" + expr.value + "\";\n";
@@ -247,8 +253,14 @@ Compiler.C = Compiler.Basic.extend
 	{
 		var exprType = expr.exprType;
 
-		if(exprType === this.exprEnum.NUMBER || 
-		   exprType === this.exprEnum.VAR || 
+		if(exprType === this.exprEnum.VAR) 
+		{
+			if(expr.fullName) {
+				return expr.fullName;
+			}
+			return dopple.makeVarName(expr);
+		}
+		else if(exprType === this.exprEnum.NUMBER ||  
 		   exprType === this.exprEnum.BOOL) 
 		{
 			return expr.value;
@@ -388,30 +400,35 @@ Compiler.C = Compiler.Basic.extend
 	_emitConcatExpr_var: function(name, expr, last, outputGen)
 	{
 		var value;
-		if(expr.exprType === this.exprEnum.FUNCTION_CALL) {
+
+		if(expr.exprType === this.exprEnum.FUNCTION_CALL) 
+		{
 			var funcOutput = this.emitFuncCall(expr);
+
 			expr = this.scope.addTmp(expr.func.type, false);
-			outputGen.pre += this.tabs + expr.value + " = " + funcOutput + ";\n";
+			value = expr.value;
+
+			outputGen.pre += this.tabs + value + " = " + funcOutput + ";\n";
 		}
 		else {
-			value = expr.value;
+			value = dopple.makeVarName(expr);
 		}
 
 		if(expr.type === this.varEnum.STRING) 
 		{
-			outputGen.post += this.tabs + "STR_APPEND_MEMCPY(" + name + ", " + expr.value + ");\n";
+			outputGen.post += this.tabs + "STR_APPEND_MEMCPY(" + name + ", " + value + ");\n";
 			if(!last) {
-				outputGen.post += this.tabs + "STR_INC_STR_OFFSET(" + expr.value + ");\n";
+				outputGen.post += this.tabs + "STR_INC_STR_OFFSET(" + value + ");\n";
 			}
 
-			outputGen.length += "(*(NUMBER *)" + expr.value + ") + ";
+			outputGen.length += "(*(NUMBER *)" + value + ") + ";
 		}
 		else if(expr.type === this.varEnum.NUMBER)
 		{
 			var tmpVarNum = this.global.addTmpI32(true);
 
-			outputGen.pre += this.tabs + tmpVarNum.value + " = STR_NUM_LEN(" + expr.value + ");\n";
-			outputGen.post += this.tabs + "STR_APPEND_NUM(" + name + ", " + tmpVarNum.value + ", " + expr.value + ");\n"	
+			outputGen.pre += this.tabs + tmpVarNum.value + " = STR_NUM_LEN(" + value + ");\n";
+			outputGen.post += this.tabs + "STR_APPEND_NUM(" + name + ", " + tmpVarNum.value + ", " + value + ");\n"	
 			if(!last) {
 				outputGen.post += this.tabs + "STR_INC_NUM_OFFSET(" + tmpVarNum.value + ");\n";	
 			}

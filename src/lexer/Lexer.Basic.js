@@ -437,10 +437,6 @@ Lexer.Basic = dopple.Class.extend
 				expr = this.parseFuncCall();
 				if(!expr) { return null; }
 			}
-			else 
-			{
-				console.log(varName, this.currName);
-			}
 
 			this.parentList = null;
 		}
@@ -567,7 +563,8 @@ Lexer.Basic = dopple.Class.extend
 		var objExpr = parentList[parentList.length - 1];
 		this.scope = objExpr.scope;
 
-		var memberExpr = this.scope.vars[this.currName];
+		var varName = this.currName;
+		var memberExpr = this.scope.vars[varName];
 
 		this.nextToken();	
 
@@ -575,37 +572,24 @@ Lexer.Basic = dopple.Class.extend
 		if(!memberExpr) 
 		{
 			var expr = this.parseExpr();
-			expr = this.optimizer.do(expr);
 
 			if(expr.exprType === this.exprEnum.FUNCTION) {
 				memberExpr = expr;
 			}
 			else
 			{
-				memberExpr = new AST.Var(this.currName, parentList);
+				memberExpr = new AST.Var(varName, parentList);
+				memberExpr.expr = expr;
 				memberExpr.var = memberExpr;
 
-				var varExpr = new AST.Var(this.currName, parentList);
-				varExpr.expr = expr;
-				varExpr.var = memberExpr;
-				varExpr.analyse();
-				memberExpr.type = varExpr.type;
-
-				this.global.varBuffer.push(varExpr);
-				this.scope.vars[this.currName] = memberExpr;	
-				this.scope.defBuffer.push(memberExpr);				
+				this.scope.vars[varName] = memberExpr;		
 			}	
 		}
 		else
 		{	
-			var varExpr = new AST.Var(this.currName, parentList);
+			var varExpr = new AST.Var(varName, parentList);
 			varExpr.expr = this.parseExpr();
-			varExpr.expr = this.optimizer.do(varExpr.expr);
-			varExpr.var = memberExpr;
-			varExpr.analyse();	
-
-			this.scope.vars[this.currName] = varExpr;
-			this.scope.varBuffer.push(varExpr);				
+			varExpr.var = memberExpr;	
 		}	
 
 		this.scope = this.scope.parent;
