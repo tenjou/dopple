@@ -17,33 +17,35 @@ dopple.Error = {
 
 dopple.error = function(owner, type, arg)
 {
+	var line = "(" + owner.fileName + ":" + owner.currLine + ") ";
+
 	var errorEnum = this.Error;
 	if(type === errorEnum.REFERENCE_ERROR) {
-		console.error("ReferenceError: " + arg + " is not defined");
+		console.error(line + "ReferenceError: " + arg + " is not defined");
 	}
 	else if(type === this.Error.UNEXPECTED_NUMBER) {
-		console.error("SyntaxError: Unexpected number");
+		console.error(line + "SyntaxError: Unexpected number");
 	}		
 	else if(type === this.Error.UNEXPECTED_TOKEN) {
-		console.error("SyntaxError: Unexpected token " + arg);
+		console.error(line + "SyntaxError: Unexpected token " + arg);
 	}	
 	else if(type === this.Error.UNEXPECTED_TOKEN_ILLEGAL) {
-		console.error("SyntaxError: Unexpected token ILLEGAL");
+		console.error(line + "SyntaxError: Unexpected token ILLEGAL");
 	}		 
 	else if(type === this.Error.UNEXPECTED_ID) {
-		console.error("SyntaxError: Unexpected identifier");
+		console.error(line + "SyntaxError: Unexpected identifier");
 	}		
 	else if(type === this.Error.UNEXPECTED_EOI) {
-		console.error("SyntaxError: Unexpected end of input");
+		console.error(line + "SyntaxError: Unexpected end of input");
 	}
 	else if(type === errorEnum.TOO_MANY_ARGUMENTS) {
-		console.error("Too many arguments passed to the \"" + arg + "\" function");
+		console.error(line + "Too many arguments passed to the \"" + arg + "\" function");
 	}
 	else if(type === errorEnum.REDEFINITION) {
-		console.error("Redefined: " + arg);
+		console.error(line + "Redefined: " + arg);
 	}				
 	else {
-		console.error("Error: Unknown error");
+		console.error(line + "Error: Unknown error");
 	}
 
 	owner.error = type;	

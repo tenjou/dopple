@@ -11,7 +11,7 @@ Lexer.Basic = dopple.Class.extend
 		this.scope = this.global;
 		this.funcs = [];
 		
-		this.tokenizer = new dopple.Tokenizer();
+		this.tokenizer = new dopple.Tokenizer(this);
 		this.extern = new dopple.Extern(this);
 		
 		this.process.varType = 0;
@@ -20,7 +20,7 @@ Lexer.Basic = dopple.Class.extend
 	read: function(buffer) 
 	{
 		this.loadExterns();
-
+		
 		this.tokenizer.setBuffer(buffer);
 		this.nextToken();
 		if(!this.parseBody(true)) {
@@ -36,14 +36,8 @@ Lexer.Basic = dopple.Class.extend
 		string.mutator("length", this.varEnum.NUMBER, this.varEnum.NUMBER);
 	},
 
-	nextToken: function() 
-	{
-		if(!this._skipNextToken) {
-			this.token = this.tokenizer.nextToken(null);
-		}
-		else {
-			this._skipNextToken = false;
-		}
+	nextToken: function(){
+		this.token = this.tokenizer.nextToken(null);
 	},
 
 	peekToken: function() {
@@ -105,10 +99,10 @@ Lexer.Basic = dopple.Class.extend
 						}
 					}
 
+					this.nextToken();
 					if(this.token.str !== ",") { break; }
 
 					forceInitial = true;
-					this._skipNextToken = false;
 					this.nextToken();
 				}
 			}
@@ -146,15 +140,23 @@ Lexer.Basic = dopple.Class.extend
 
 				this.scope.exprs.push(expr);
 			}
-			else if(type == this.tokenEnum.EOF) 
+			else if(type === this.tokenEnum.EOF) 
 			{
 				if(isGlobal) { return true; }
 				this.tokenSymbolError();
 				return false;				
-			}		
+			}
+
+			if(!this.properLineBreak()) { 
+				return false;
+			}
 
 			this.currName = "";
 			this.nextToken();
+
+			while(this.token.type === this.tokenEnum.COMMENT) {
+				this.nextToken();
+			}
 		} while(this.token.str !== "}");
 
 		return true;
@@ -264,18 +266,12 @@ Lexer.Basic = dopple.Class.extend
 		return expr;
 	},
 
-	parseNumber: function() 
-	{
-		var expr = new AST.Number(this.token.value);
-		this.nextToken();
-		return expr;
+	parseNumber: function() {
+		return new AST.Number(this.token.value);
 	},
 
-	parseBool: function()
-	{
-		var expr = new AST.Bool(this.token.value);
-		this.nextToken();
-		return expr;
+	parseBool: function() {
+		return new AST.Bool(this.token.value);
 	},
 
 	parseName: function()
@@ -549,10 +545,6 @@ Lexer.Basic = dopple.Class.extend
 		if(expr) {
 			varExpr.expr = expr;
 		}
-		
-		if(this.token.str !== ";") {
-			this._skipNextToken = true;
-		}	
 
 		return varExpr;		
 	},
@@ -746,7 +738,7 @@ Lexer.Basic = dopple.Class.extend
 				}
 		
 				if(expr.exprType === this.exprEnum.FUNCTION) {
-
+					this.scope.vars[expr.name] = expr;
 				}
 				else if(expr.exprType === this.exprEnum.CLASS) {
 
@@ -769,7 +761,6 @@ Lexer.Basic = dopple.Class.extend
 
 		this.nextToken();
 		this.scope = this.global;
-		this._skipNextToken = true;
 		this.parentList = null;
 
 		return objExpr;
@@ -803,6 +794,7 @@ Lexer.Basic = dopple.Class.extend
 		funcExpr.empty = false;
 		funcExpr.scope = new dopple.Scope(this.scope);	
 		this.scope = funcExpr.scope;
+		this.parentList = null;
 		
 		var vars = this.parseFuncParams();
 		if(!vars) { return null; }
@@ -837,7 +829,6 @@ Lexer.Basic = dopple.Class.extend
 		this.scope = this.scope.parent;
 
 		this.nextToken();
-		this._skipNextToken = true;
 
 		return funcExpr;
 	},	
@@ -1144,8 +1135,6 @@ Lexer.Basic = dopple.Class.extend
 				var parentExpr = this.parentList[numItems - 1];
 				funcExpr = parentExpr.scope.vars[fullName];				
 			}
-
-			this.parentList = null;
 		}
 
 		if(!funcExpr) 
@@ -1181,12 +1170,26 @@ Lexer.Basic = dopple.Class.extend
 		return parentName;		
 	},
 
+	properLineBreak: function()
+	{
+		if(this.token.str !== ";" && this.token.str !== "\n") {
+			this.tokenSymbolError();
+			return false;
+		}
+
+		return true;
+	},
+
 	tokenSymbolError: function()
 	{
 		this.isError = true;
 
 		if(this.token.type === this.tokenEnum.EOF) {
 			dopple.error(this, dopple.Error.UNEXPECTED_EOI);
+			return true;
+		}
+		else if(this.token.type === this.tokenEnum.KEYWORD) {
+			dopple.error(this, dopple.Error.UNEXPECTED_TOKEN, this.token.str);	
 			return true;
 		}
 		else if(this.token.type === this.tokenEnum.NUMBER) {
@@ -1246,6 +1249,11 @@ Lexer.Basic = dopple.Class.extend
 		return false;
 	},
 
+	incLine: function() {
+		this.currLine++;
+		this.lineBreak = true;
+	},
+
 	//
 	tokenizer: null,
 	token: null,
@@ -1264,6 +1272,9 @@ Lexer.Basic = dopple.Class.extend
 	defTypes: {},
 	process: {},
 	numVarTypes: 0,	
+
+	fileName: "source.js",
+	currLine: 1,
 
 	precedence: {
 		"=": 2,
@@ -1289,10 +1300,10 @@ Lexer.Basic = dopple.Class.extend
 	currExpr: false,
 	parentList: null,
 	
-	_skipNextToken: false,
 	isError: false,
 
 	tokenEnum: dopple.TokenEnum,
 	varEnum: dopple.VarEnum,
 	exprEnum: dopple.ExprEnum
 });
+

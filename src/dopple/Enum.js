@@ -13,7 +13,8 @@ dopple.TokenEnum = {
 	COMMENT: 9,
 	ASSIGN: 10,
 	BINOP_ASSIGN: 11,
-	EOL: 12
+	EOL: 12,
+	NEWLINE: 13
 };
 
 dopple.ExprEnum = {

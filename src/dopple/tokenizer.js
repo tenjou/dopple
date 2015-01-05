@@ -31,7 +31,8 @@ dopple.Token = dopple.Class.extend
 
 dopple.Tokenizer = dopple.Class.extend
 ({
-	init: function(buffer)  {
+	init: function(lexer)  {
+		this.lexer = lexer;
 		this.customKeyword = {};
 	},
 
@@ -56,7 +57,14 @@ dopple.Tokenizer = dopple.Class.extend
 		this.nextChar();
 
 		// Skip spaces
-		while(isSpace(this.currChar)) {
+		while(isSpace(this.currChar)) 
+		{
+			if(this.currChar === "\n") {
+				this.lexer.incLine();
+				token.str = this.currChar;
+				token.type = this.tokenEnum.NEWLINE;
+				return token;
+			}
 			this.nextChar();
 		}
 
@@ -354,6 +362,7 @@ dopple.Tokenizer = dopple.Class.extend
 
 
 	//
+	lexer: null,
 	buffer: "",
 	bufferLength: 0,
 	cursor: 0, peekCursor: 0, internalPeekCursor: 0,
