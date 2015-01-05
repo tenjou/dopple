@@ -228,7 +228,7 @@ dopple.Resolver.prototype =
 
 		var funcExpr = expr.func;
 		if(funcExpr.empty) {
-			dopple.error(this, dopple.Error.REFERENCE_ERROR, funcExpr.name);
+			dopple.error(funcExpr.line, dopple.Error.REFERENCE_ERROR, funcExpr.name);
 			return false;
 		}
 

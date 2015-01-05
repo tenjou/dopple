@@ -5,6 +5,10 @@ var AST = {};
 /* Expression Basic */
 AST.Basic = dopple.Class.extend
 ({
+	_init: function() {
+		this.line = dopple.lexer.currLine;
+	},
+
 	analyse: function() { return true; },
 
 	to: function(type) {
@@ -85,6 +89,8 @@ AST.Basic = dopple.Class.extend
 	empty: false,
 	flag: 0,
 	numUses: 0,
+
+	line: 0,
 
 	exprEnum: dopple.ExprEnum,
 	varEnum: dopple.VarEnum

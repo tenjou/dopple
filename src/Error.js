@@ -15,9 +15,9 @@ dopple.Error = {
 	UNSUPPORTED_FEATURE: 1002
 };
 
-dopple.error = function(owner, type, arg)
+dopple.error = function(line, type, arg)
 {
-	var line = "(" + owner.fileName + ":" + owner.currLine + ") ";
+	var line = "(" + dopple.lexer.fileName + ":" + line + ") ";
 
 	var errorEnum = this.Error;
 	if(type === errorEnum.REFERENCE_ERROR) {
@@ -48,7 +48,7 @@ dopple.error = function(owner, type, arg)
 		console.error(line + "Error: Unknown error");
 	}
 
-	owner.error = type;	
+	dopple.lexer.error = type;	
 };
 
 // dopple.throw = function(type, arg)
