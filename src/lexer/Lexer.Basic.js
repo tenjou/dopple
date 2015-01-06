@@ -820,9 +820,15 @@ Lexer.Basic = dopple.Class.extend
 		}		
 
 		this.nextToken();
-		if(!this.parseBody(false)) {
-			return null;
+		if(this.token.str !== "}") 
+		{
+			if(!this.parseBody(false)) {
+				return null;
+			}
 		}
+		else {
+			this.nextToken();
+		}	
 		
 		this.scope = this.scope.parent;
 		return funcExpr;
@@ -889,7 +895,7 @@ Lexer.Basic = dopple.Class.extend
 		if(this.token.str !== "{") {
 			this.tokenSymbolError();
 			return null;				
-		}		
+		}	
 
 		var virtualScope = this.scope.createVirtual();
 		this.scope = virtualScope;
@@ -900,6 +906,9 @@ Lexer.Basic = dopple.Class.extend
 			if(!this.parseBody(false)) {
 				return false;
 			}
+		}
+		else {
+			this.nextToken();
 		}	
 
 		this.scope = this.scope.parent;
