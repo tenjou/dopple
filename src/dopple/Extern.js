@@ -35,6 +35,8 @@ dopple.Extern.prototype =
 		func.extern = true;
 		func.type = returnType;
 		this.scope.vars[name] = func;
+
+		return func;
 	},
 
 	obj: function(name)
@@ -59,7 +61,8 @@ dopple.ExternClass.prototype =
 {
 	func: function(name, params, returnType) {
 		this.extern.scope = this.objExpr.scope;
-		this.extern.func(this.objExpr.name + "$" + name, params, returnType);
+		var func = this.extern.func(name, params, returnType);
+		func.parentList = [ this.objExpr ];
 		this.extern.scope = this.extern.global;
 	},
 

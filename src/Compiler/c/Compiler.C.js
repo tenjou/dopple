@@ -231,15 +231,14 @@ Compiler.C = Compiler.Basic.extend
 		if(varExpr.parentList)
 		{
 			if(exprType === this.exprEnum.VAR) {
-				output += varExpr.fullName + expr.fullName + ";\n";
+				output += varExpr.fullName + expr.fullName;
 			}
 			else if(exprType === this.exprEnum.STRING) {
-				output += varExpr.fullName + strOp + "\"" + expr.createHex() + "\"\"" + expr.value + "\";\n";
+				output += varExpr.fullName + strOp + "\"" + expr.createHex() + "\"\"" + expr.value + "\"";
 			}
 			else {
 				output += varExpr.fullName + strOp;
 				output += this.emitExpr(expr);
-				output += ";\n";
 			}
 		}
 		else {
@@ -584,7 +583,7 @@ Compiler.C = Compiler.Basic.extend
 		{
 			varExpr = vars[key];
 			if(varExpr.exprType === this.exprEnum.VAR) {
-				output += this.tabs + this.emitVar(varExpr);
+				output += this.tabs + this.emitVar(varExpr) + ";\n";
 			}
 		}
 
