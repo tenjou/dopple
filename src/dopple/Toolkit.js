@@ -21,6 +21,26 @@ dopple.makeVarName = function(varExpr)
 	return name;
 };
 
+dopple.makeName = function(name, parentList)
+{
+	if(!parentList) {
+		return name;
+	}
+
+	var numItems = parentList.length;
+	if(numItems <= 0) {
+		return name;
+	}
+	
+	var newName = "";
+	for(var i = 0; i < numItems; i++) {
+		newName += parentList[i].name + ".";
+	}
+	newName += name;
+
+	return newName;
+};
+
 dopple.makeFuncName = function(funcExpr)
 {
 	var parentList = funcExpr.parentList;

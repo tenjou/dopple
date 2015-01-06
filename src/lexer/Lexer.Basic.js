@@ -289,7 +289,8 @@ Lexer.Basic = dopple.Class.extend
 			var parentList = this.parseParentList();
 			if(!parentList) { return null; }
 
-			expr = parentList[parentList.length - 1];
+			var expr = this.getVar(this.currName, parentList);
+			if(!expr) { return null; }
 		}
 		else
 		{
@@ -1104,7 +1105,7 @@ Lexer.Basic = dopple.Class.extend
 			var parentScope = parentList[parentList.length - 1].scope;
 			expr = parentScope.vars[this.currName];
 			if(!expr) {
-				this.refError(this.currName);
+				this.refError(dopple.makeName(this.currName, parentList));
 				return null;
 			}
 		}

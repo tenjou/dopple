@@ -6,7 +6,7 @@ var AST = {};
 AST.Basic = dopple.Class.extend
 ({
 	_init: function() {
-		this.line = dopple.lexer.currLine;
+		this.line = dopple.lexer.line;
 	},
 
 	analyse: function() { return true; },
