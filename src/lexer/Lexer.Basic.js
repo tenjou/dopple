@@ -173,6 +173,7 @@ Lexer.Basic = dopple.Class.extend
 			this.currName = "";
 		} while(this.token.str !== "}");
 
+		this.nextToken();
 		return true;
 	},
 
@@ -636,21 +637,17 @@ Lexer.Basic = dopple.Class.extend
 					return false;
 				}
 			}
+			else {
+				this.nextToken();
+			}
 
 			this.scope = this.scope.parent;
 
-			if(this.token.str !== "}") {
-				this.tokenSymbolError();
-				return false;
-			}
-
 			ifExpr.addBranch(type, expr, virtualScope);
 
-			this.peekToken();
-			if(this.peekedToken.str !== "else if" && this.peekedToken.str !== "else") {
+			if(this.token.str !== "else if" && this.token.str !== "else") {
 				break;
 			}
-			this.eatToken();
 		}
 		
 		this.scope.exprs.push(ifExpr);
@@ -827,15 +824,7 @@ Lexer.Basic = dopple.Class.extend
 			return null;
 		}
 		
-		if(this.token.str !== "}") {
-			this.tokenSymbolError();
-			return null;
-		}	
-		
-		//
 		this.scope = this.scope.parent;
-		this.nextToken();
-
 		return funcExpr;
 	},
 
@@ -883,7 +872,7 @@ Lexer.Basic = dopple.Class.extend
 
 		// Iter Expression:
 		this.nextToken();
-		if(this.token.str !== ";")
+		if(this.token.str !== ")")
 		{
 			expr = this.parseExpr(null);
 			if(!expr) { return null; }
@@ -914,11 +903,6 @@ Lexer.Basic = dopple.Class.extend
 		}	
 
 		this.scope = this.scope.parent;
-
-		if(this.token.str !== "}") {
-			this.tokenSymbolError();
-			return null;				
-		}		
 
 		forExpr.scope = virtualScope;
 		this.scope.exprs.push(forExpr);

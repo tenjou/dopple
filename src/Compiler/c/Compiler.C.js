@@ -545,8 +545,10 @@ Compiler.C = Compiler.Basic.extend
 				{
 					output += this.varMap[varDef.type] + varDef.value;
 				}
-				else {
-					console.error("(Unresolved Argument)", 
+				else 
+				{
+					var line = "(" + this.lexer.fileName + ":" + varDef.line + ") ";
+					console.error(line + "(Unresolved Argument)", 
 						"Function \"" + funcName + "\" has an unresolved argument \"" + varDef.value + "\"");
 					this.error = true;
 					return null;

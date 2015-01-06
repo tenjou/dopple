@@ -575,7 +575,7 @@ AST.For = AST.Basic.extend
 	init: function() {
 		this.initExpr = null;
 		this.cmpExpr = null;
-		this.iterExpr = [];
+		this.iterExpr = null;
 	},
 
 	//
