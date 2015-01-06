@@ -115,12 +115,6 @@ Lexer.Basic = dopple.Class.extend
 					return false;
 				}
 			}
-			else if(type === this.tokenEnum.NUMBER) 
-			{
-				if(!this.parseNumber()) {
-					return false;
-				}
-			}
 			else if(str === "if") 
 			{
 				if(!this.parseIf()) {
@@ -149,6 +143,12 @@ Lexer.Basic = dopple.Class.extend
 
 				this.scope.exprs.push(expr);
 			}
+			else if(type === this.tokenEnum.NUMBER) 
+			{
+				if(!this.parseExpr(null)) {
+					return false;
+				}
+			}			
 			else if(type === this.tokenEnum.COMMENT) {
 				this.nextToken();
 			}
