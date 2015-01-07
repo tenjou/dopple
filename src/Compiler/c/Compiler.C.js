@@ -2,16 +2,16 @@
 
 Compiler.C = Compiler.Basic.extend
 ({
-	init: function() 
+	load: function()
 	{
-		this.createLexer();
-
 		this.varMap[this.varEnum.VOID] = "void ";
 		this.varMap[this.varEnum.NUMBER] = "double ";
 		this.varMap[this.varEnum.BOOL] = "int32_t ";
 		this.varMap[this.varEnum.I32] = "int32_t ";
 		this.varMap[this.varEnum.NAME] = "const char *";
 		this.varMap[this.varEnum.STRING] = "char *";
+
+		this.createLexer();
 	},
 
 	createLexer: function()
@@ -45,7 +45,6 @@ Compiler.C = Compiler.Basic.extend
 		this.global.returns.push(returnExpr);
 
 		var output = this.emitScope(this.global);
-		this.emitFuncs(this.lexer.funcs);
 
 		this.scopeOutput = "int main(int argc, char *argv[]) \n{\n";
 		this.scopeOutput += output;
@@ -85,6 +84,8 @@ Compiler.C = Compiler.Basic.extend
 				this.global.defOutput += this.emitCls(objs[i]);
 			}
 		}
+
+		this.emitFuncs(scope.funcs);
 
 		this.newNewline = false;
 
@@ -145,11 +146,12 @@ Compiler.C = Compiler.Basic.extend
 			var group;
 			for(var key in scope.varGroup)
 			{
-				group = scope.varGroup[key];
 				defOutput += tabs + this.varMap[key];
+				group = scope.varGroup[key];
 				numItems = group.length;
+				type = parseInt(key);
 
-				if(parseInt(key) === this.varEnum.STRING) 
+				if(type === this.varEnum.STRING) 
 				{
 					for(i = 0; i < numItems; i++) 
 					{
@@ -162,6 +164,22 @@ Compiler.C = Compiler.Basic.extend
 							defOutput += ";\n";
 						}
 					}
+				}
+				else if(type > 99)
+				{
+					defOutput += " *";
+
+					for(i = 0; i < numItems; i++) 
+					{
+						item = group[i];
+						defOutput += item.value;
+						if(i < numItems - 1) {
+							defOutput += ", *";
+						}
+						else {
+							defOutput += ";\n";
+						}
+					}				
 				}
 				else
 				{
@@ -310,6 +328,17 @@ Compiler.C = Compiler.Basic.extend
 				output += this.emitExpr(expr.rhs, null);
 				return output;
 			}	
+		}
+		else if(exprType === this.exprEnum.ALLOC) 
+		{
+			if(varExpr) 
+			{
+				output = "MALLOC_CLS(" + expr.cls.name + ");\n";
+				output += this.tabs + this.emitFuncCall(expr.constrCall, true);
+				if(this.error) { return null; }	
+			}			
+			
+			return output;
 		}
 		else if(exprType === this.exprEnum.UNARY) 
 		{
@@ -503,10 +532,10 @@ Compiler.C = Compiler.Basic.extend
 		this.funcOutput = "";
 
 		var output = null;
-		var numFuncs = this.funcs.length;
+		var numFuncs = funcs.length;
 		for(var i = 0; i < numFuncs; i++) 
 		{
-			output = this.emitFunc(this.funcs[i]);
+			output = this.emitFunc(funcs[i]);
 			if(this.error) { return null; }
 
 			if(output) {
@@ -606,7 +635,7 @@ Compiler.C = Compiler.Basic.extend
 		return output;
 	},	
 
-	emitFuncCall: function(funcCall) 
+	emitFuncCall: function(funcCall, genThis) 
 	{
 		var i, arg, param;
 		var params = funcCall.func.params;
@@ -659,7 +688,16 @@ Compiler.C = Compiler.Basic.extend
 
 	emitCls: function(clsExpr)
 	{
-		var output = "static struct {";
+		var output;
+
+		if(clsExpr.isStatic) {
+			output = "static";
+		}
+		else {
+			output = "typedef";
+		}
+
+		output += " struct {";
 
 		var varExpr;
 		var vars = clsExpr.scope.vars;
@@ -673,8 +711,11 @@ Compiler.C = Compiler.Basic.extend
 
 		output += "\n} " + clsExpr.name + ";\n\n";
 
-		output += this.emitFunc(clsExpr.constrFunc);
-		if(this.error) { return null; }		
+		if(clsExpr.isStatic) 
+		{
+			output += this.emitFunc(clsExpr.constrFunc);
+			if(this.error) { return null; }				
+		}	
 
 		return output;
 	},

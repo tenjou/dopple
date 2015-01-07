@@ -19,7 +19,12 @@ Compiler.Basic = dopple.Class.extend
 	{
 		this.output = "";
 		
-		if(this.lexer.read(source)) {
+		if(this.lexer.read(source)) 
+		{
+			this.varEnum = dopple.VarEnum;
+			this.varMap = dopple.VarMap;
+			this.load();
+
 			this.global = this.lexer.global;
 			this.funcs = this.lexer.funcs;
 			this.emit();
@@ -27,6 +32,8 @@ Compiler.Basic = dopple.Class.extend
 
 		return this.output;	
 	},	
+
+	loadVarMap: function() {},
 
 	emitNumBinaryExpr: function(expr) 
 	{

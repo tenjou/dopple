@@ -63,6 +63,10 @@ Lexer.Mantra = Lexer.Basic.extend
 			this.handleUnexpectedToken();
 		}
 
+		if(vars.length === 0) {
+			return null;
+		}
+
 		return vars;		
 	},
 

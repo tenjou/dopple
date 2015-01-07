@@ -41,15 +41,18 @@ dopple.ExprEnum = {
 	SETTER: 20
 };
 
-dopple.VarEnum = {
+dopple._VarEnum = {
 	VOID: 0,
 	NUMBER: 1,
 	STRING: 2,
 	BOOL: 3,
 	FUNCTION: 4,
 	FUNCTION_PTR: 5,
-	CLASS: 6,
+	OBJECT: 6,
 	NAME: 10,
 	FORMAT: 11,
 	I32: 12
 };
+
+dopple.VarEnum = null;
+dopple.VarMap = null;

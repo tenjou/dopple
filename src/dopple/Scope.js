@@ -5,7 +5,9 @@ dopple.Scope = function(parent)
 	this.parent = parent || null;
 	this.vars = {};
 	this.varGroup = null;
+	this.funcs = [];
 	this.exprs = [];
+	this.objs = [];
 	this.returns = [];
 	this.tmps = {
 		id: 0,
@@ -20,6 +22,7 @@ dopple.Scope.prototype =
 		var scope = new dopple.Scope();
 		scope.parent = this;
 		scope.vars = this.vars;
+		scope.funcs = this.funcs;
 		scope.returns = this.returns;
 		scope.temps = this.tmps;
 		scope.isVirtual = true;
@@ -111,6 +114,5 @@ dopple.Scope.prototype =
 
 	//
 	defOutput: "",
-	isVirtual: false,
-	objs: null
+	isVirtual: false
 };

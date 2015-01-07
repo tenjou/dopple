@@ -93,7 +93,7 @@ AST.Basic = dopple.Class.extend
 	line: 0,
 
 	exprEnum: dopple.ExprEnum,
-	varEnum: dopple.VarEnum
+	varEnum: dopple._VarEnum
 });
 
 /* Expression Number */
@@ -128,7 +128,7 @@ AST.Number = AST.Basic.extend
 
 	//
 	value: 0,
-	type: dopple.VarEnum.NUMBER,
+	type: dopple._VarEnum.NUMBER,
 	exprType: dopple.ExprEnum.NUMBER
 });
 
@@ -181,7 +181,7 @@ AST.String = AST.Basic.extend
 	get value() { return this._value; },
 
 	//
-	type: dopple.VarEnum.STRING,
+	type: dopple._VarEnum.STRING,
 	exprType: dopple.ExprEnum.STRING,
 
 	_value: "",
@@ -228,7 +228,7 @@ AST.Bool = AST.Basic.extend
 	},
 
 	//
-	type: dopple.VarEnum.BOOL,
+	type: dopple._VarEnum.BOOL,
 	exprType: dopple.ExprEnum.BOOL,
 	value: 0
 });
@@ -428,7 +428,7 @@ AST.Unary = AST.Basic.extend
 	},
 
 	//
-	type: dopple.VarEnum.NUMBER,
+	type: dopple._VarEnum.NUMBER,
 	exprType: dopple.ExprEnum.UNARY,
 
 	varExpr: null,
@@ -456,13 +456,6 @@ AST.If = AST.Basic.extend
 	//
 	exprType: dopple.ExprEnum.IF,
 	branches: null
-});
-
-/* Expression Alloc */
-AST.Alloc = AST.Basic.extend
-({
-	//
-	exprType: dopple.ExprEnum.ALLOC
 });
 
 /* Expression Function */
@@ -565,7 +558,7 @@ AST.Name = AST.Basic.extend
 	},
 
 	//
-	type: dopple.VarEnum.NAME,
+	type: dopple._VarEnum.NAME,
 	exprType: dopple.ExprEnum.NAME
 });
 
@@ -596,7 +589,7 @@ AST.Format = AST.Basic.extend
 	},
 
 	//
-	type: dopple.VarEnum.FORMAT,
+	type: dopple._VarEnum.FORMAT,
 	exprType: dopple.ExprEnum.FORMAT
 });
 
@@ -609,7 +602,7 @@ AST.Class = AST.Basic.extend
 	},
 
 	//
-	type: 0,
+	type: dopple._VarEnum.OBJECT,
 	exprType: dopple.ExprEnum.CLASS,
 
 	name: "",
@@ -619,3 +612,19 @@ AST.Class = AST.Basic.extend
 
 	constrFunc: null
 });
+
+/* Expression Alloc */
+AST.Alloc = AST.Basic.extend
+({
+	init: function(cls) {
+		this.cls = cls;
+	},
+
+	//
+	type: dopple._VarEnum.OBJECT,
+	exprType: dopple.ExprEnum.ALLOC,
+
+	cls: null,
+	constrCall: null
+});
+

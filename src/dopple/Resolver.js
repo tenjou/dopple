@@ -54,6 +54,7 @@ dopple.Resolver.prototype =
 		var key, item, group;
 		for(key in scope.vars) {
 			scope.varGroup = {};
+			break;
 		}
 
 		for(key in scope.vars)

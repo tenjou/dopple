@@ -11,7 +11,6 @@ Lexer.Basic = dopple.Class.extend
 		this.settings = dopple.settings;
 		this.global = new dopple.Scope();
 		this.scope = this.global;
-		this.funcs = [];
 		
 		this.tokenizer = new dopple.Tokenizer();
 		this.extern = new dopple.Extern(this);
@@ -21,6 +20,7 @@ Lexer.Basic = dopple.Class.extend
 
 	read: function(buffer) 
 	{
+		this.loadVarEnum();
 		this.loadExterns();
 		
 		this.tokenizer.setBuffer(buffer);
@@ -30,6 +30,18 @@ Lexer.Basic = dopple.Class.extend
 		}
 
 		return dopple.resolver.resolve(this.global);
+	},
+
+	loadVarEnum: function() 
+	{
+		this.varEnum = {};
+		for(var key in dopple._VarEnum) {
+			this.varEnum[key] = dopple._VarEnum[key];
+		}
+		dopple.VarEnum = this.varEnum;
+
+		this.varMap = {};
+		dopple.VarMap = this.varMap;
 	},
 
 	loadExterns: function()
@@ -383,13 +395,74 @@ Lexer.Basic = dopple.Class.extend
 			return null;
 		}
 
-		var funcExpr = this.getVar(this.token.str);
-		if(!funcExpr) { return null; }
+		var clsExpr = this.getVar(this.token.str);
+		if(!clsExpr) { return null; }
 
-		var allocExpr = new AST.Alloc(funcExpr);
-		console.log(this.token);
+		if(clsExpr.exprType !== this.exprEnum.CLASS) 
+		{
+			// If it's a function convert to a class:
+			if(clsExpr.exprType === this.exprEnum.FUNCTION) {
+				clsExpr = this.convertFuncToCls(clsExpr);
+			}
+			else {
+				dopple.error(clsExpr.line, dopple.Error.EXPECTED_FUNCTION, dopple.makeFuncName(clsExpr));
+				return null;				
+			}
+		}
 
+		this.nextToken();
+
+		if(this.token.str === "(") 
+		{
+			this.nextToken();
+
+			if(this.token.str !== ")") {
+				this.tokenSymbolError();
+				return null;
+			}
+
+			this.nextToken();
+		}
+
+		var allocExpr = new AST.Alloc(clsExpr);
+		allocExpr.type = allocExpr.cls.type;
+		allocExpr.constrCall = new AST.FunctionCall(clsExpr.constrFunc);
 		return allocExpr;
+	},
+
+	convertFuncToCls: function(funcExpr)
+	{
+		var parentScope = this.global;
+
+		if(funcExpr.parentList) {
+			parentScope = funcExpr.parentList[funcExpr.parentList - 1].scope;
+		}
+
+		// Class:
+		var scope = new dopple.Scope(parentScope);
+		var clsExpr = new AST.Class(funcExpr.name, scope);
+		clsExpr.type = this.registerType(funcExpr.name);
+		clsExpr.constrFunc = funcExpr;
+		clsExpr.isStatic = false;
+		parentScope.vars[funcExpr.name] = clsExpr;	
+		parentScope.objs.push(clsExpr);
+
+		// Constructor:
+		funcExpr.name = "constructor";
+		funcExpr.parentList = [ clsExpr ];
+		funcExpr.obj = clsExpr;		
+
+		var funcs = parentScope.funcs;
+		var numFuncs = funcs.length;
+		for(var i = 0; i < numFuncs; i++) {
+			if(funcs[i] === funcExpr) {
+				funcs[i] = funcs[numFuncs - 1];
+				funcs.pop();
+				break;
+			}
+		}
+
+		return clsExpr;	
 	},
 
 	parseVar: function(forceInitial)
@@ -794,7 +867,7 @@ Lexer.Basic = dopple.Class.extend
 			funcExpr.rootName = rootName;
 			funcExpr.scope = new dopple.Scope(this.scope);
 			this.scope.vars[name] = funcExpr;	
-			this.funcs.push(funcExpr);			
+			this.scope.funcs.push(funcExpr);			
 		}
 		else if(funcExpr.exprType !== this.exprEnum.FUNCTION) {
 			dopple.error(funcExpr.line, dopple.Error.EXPECTED_FUNCTION, dopple.makeFuncName(funcExpr));
@@ -804,7 +877,8 @@ Lexer.Basic = dopple.Class.extend
 		this.scope = funcExpr.scope;
 		
 		var vars = this.parseFuncParams();
-		if(!vars) { return null; }
+		if(this.isError) { return null; }
+
 		funcExpr.params = vars;		
 
 		// Parse pre-inner body:
@@ -948,6 +1022,10 @@ Lexer.Basic = dopple.Class.extend
 		if(this.token.str !== ")") {
 			this.handleUnexpectedToken();
 		}	
+
+		if(params.length === 0) {
+			return null;
+		}
 
 		return params;		
 	},
@@ -1130,6 +1208,19 @@ Lexer.Basic = dopple.Class.extend
 		return expr;
 	},
 
+	getFuncVar: function(name) 
+	{
+		var funcExpr = this.getVar(name);
+		if(!funcExpr) { return null; }
+
+		if(funcExpr.exprType !== this.exprEnum.FUNCTION) {
+			dopple.error(funcExpr.line, dopple.Error.EXPECTED_FUNCTION, dopple.makeFuncName(funcExpr));
+			return null;
+		}	
+
+		return funcExpr;	
+	},
+
 	getFunc: function(name, parentList) 
 	{
 		var funcExpr = null;
@@ -1231,6 +1322,10 @@ Lexer.Basic = dopple.Class.extend
 
 	refError: function(name) 
 	{
+		if(!name) {
+			name = "undefined";
+		}
+
 		this.isError = true;
 		dopple.error(this.line, dopple.Error.REFERENCE_ERROR, name);
 	},
@@ -1257,6 +1352,13 @@ Lexer.Basic = dopple.Class.extend
 		return false;
 	},
 
+	registerType: function(name) {
+		var index = this.typeIndex++;
+		this.varEnum[name] = index;
+		this.varMap[index] = name;
+		return index;
+	},
+
 	//
 	tokenizer: null,
 	token: null,
@@ -1278,6 +1380,8 @@ Lexer.Basic = dopple.Class.extend
 
 	fileName: "source.js",
 	line: 1,
+
+	typeIndex: 100,
 
 	precedence: {
 		"=": 2,
@@ -1306,7 +1410,8 @@ Lexer.Basic = dopple.Class.extend
 	isError: false,
 
 	tokenEnum: dopple.TokenEnum,
-	varEnum: dopple.VarEnum,
-	exprEnum: dopple.ExprEnum
+	exprEnum: dopple.ExprEnum,
+	varEnum: null,
+	varMap: null
 });
 
