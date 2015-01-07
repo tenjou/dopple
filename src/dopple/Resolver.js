@@ -82,7 +82,16 @@ dopple.Resolver.prototype =
 			return true;
 		}
 
-		expr.expr = this.optimizer.do(expr.expr);
+		if(expr.expr.exprType === this.exprEnum.ALLOC) 
+		{
+			if(!this.resolveAlloc(expr.expr)) {
+				return false;
+			}
+		}
+		else {
+			expr.expr = this.optimizer.do(expr.expr);
+		}
+
 		if(!expr.analyse(this)) {
 			return false;
 		}
@@ -313,6 +322,18 @@ dopple.Resolver.prototype =
 			if(expr.exprType !== this.exprEnum.VAR) { continue; }
 			
 			if(!this.resolveVar(expr)) { 
+				return false;
+			}
+		}
+
+		return true;
+	},
+
+	resolveAlloc: function(allocExpr) 
+	{
+		if(!allocExpr.cls.isStatic) 
+		{
+			if(!this.resolveFuncCall(allocExpr.constrCall)) {
 				return false;
 			}
 		}

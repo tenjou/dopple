@@ -78,11 +78,16 @@ Compiler.C = Compiler.Basic.extend
 		}
 		else if(scope.objs)
 		{
+			var prevTabs = this.tabs;
+			this.tabs = "";
+
 			var objs = scope.objs;
 			var numItems = objs.length;
 			for(i = 0; i < numItems; i++) {
 				this.global.defOutput += this.emitCls(objs[i]);
 			}
+
+			this.tabs = prevTabs;
 		}
 
 		this.emitFuncs(scope.funcs);
@@ -334,7 +339,7 @@ Compiler.C = Compiler.Basic.extend
 			if(varExpr) 
 			{
 				output = "MALLOC_CLS(" + expr.cls.name + ");\n";
-				output += this.tabs + this.emitFuncCall(expr.constrCall, true);
+				output += this.tabs + this.emitFuncCall(expr.constrCall, varExpr.value);
 				if(this.error) { return null; }	
 			}			
 			
@@ -561,6 +566,11 @@ Compiler.C = Compiler.Basic.extend
 		var funcName = dopple.makeFuncName(func);
 		var output = this.varMap[func.type] + funcName + "(";
 
+		var obj = func.obj;
+		if(obj) {
+			output += this.varMap[obj.type] + " *this";
+		}
+
 		if(numParams) 
 		{
 			var varDef, type;
@@ -592,7 +602,7 @@ Compiler.C = Compiler.Basic.extend
 		output += ") \n{\n";
 	
 		// If is constructor - initialize class variables:
-		if(func.obj) {
+		if(func.obj && func.obj.isStatic) {
 			output += this.emitConstrFunc(func.obj);
 		}
 		else {
@@ -635,7 +645,7 @@ Compiler.C = Compiler.Basic.extend
 		return output;
 	},	
 
-	emitFuncCall: function(funcCall, genThis) 
+	emitFuncCall: function(funcCall, thisVar) 
 	{
 		var i, arg, param;
 		var params = funcCall.func.params;
@@ -645,6 +655,16 @@ Compiler.C = Compiler.Basic.extend
 		var numArgs = args ? args.length : 0;
 
 		var output = dopple.makeFuncName(funcCall.func) + "(";
+
+		if(thisVar) 
+		{
+			if(numParams === 0) {
+				output += thisVar;
+			}
+			else {
+				output += thisVar + ", ";
+			}
+		}
 
 		// Write arguments:
 		for(i = 0; i < numArgs; i++)
@@ -711,11 +731,8 @@ Compiler.C = Compiler.Basic.extend
 
 		output += "\n} " + clsExpr.name + ";\n\n";
 
-		if(clsExpr.isStatic) 
-		{
-			output += this.emitFunc(clsExpr.constrFunc);
-			if(this.error) { return null; }				
-		}	
+		output += this.emitFunc(clsExpr.constrFunc);
+		if(this.error) { return null; }				
 
 		return output;
 	},
