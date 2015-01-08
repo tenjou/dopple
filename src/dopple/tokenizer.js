@@ -315,7 +315,7 @@ dopple.Tokenizer = dopple.Class.extend
 
 	isKeyword: function(str)
 	{
-		if(str === "var" || str === "function" || str === "new" || str === "return" ||
+		if(str === "var" || str === "this" || str === "function" || str === "new" || str === "return" ||
 		   str === "if" || str === "else" || str === "for" || str === "while" || str === "do" )
 		{
 			return true;

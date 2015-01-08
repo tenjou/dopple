@@ -38,7 +38,8 @@ dopple.ExprEnum = {
 	ALLOC: 17,
 	MUTATOR: 18,
 	GETTER: 19,
-	SETTER: 20
+	SETTER: 20,
+	THIS: 21
 };
 
 dopple._VarEnum = {

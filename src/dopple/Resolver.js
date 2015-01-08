@@ -57,6 +57,7 @@ dopple.Resolver.prototype =
 			break;
 		}
 
+		// Local variables:
 		for(key in scope.vars)
 		{
 			item = scope.vars[key];
@@ -72,6 +73,23 @@ dopple.Resolver.prototype =
 
 			group.push(item);
 		}
+
+		// Local static variables:
+		for(key in scope.staticVars)
+		{
+			item = scope.staticVars[key];
+			if(item.exprType !== this.exprEnum.VAR) { continue; }
+			if(item.isArg) { continue; }
+			if(item.type === 0) { continue; }
+
+			group = scope.staticVarGroup[item.type];
+			if(!group) {
+				group = [];
+				scope.staticVarGroup[item.type] = group;
+			}
+
+			group.push(item);
+		}		
 
 		return true;
 	},

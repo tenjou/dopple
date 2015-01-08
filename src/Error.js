@@ -13,7 +13,9 @@ dopple.Error = {
 	INVALID_TYPE_CONVERSION: "Invalid Type Conversion: ",
 	TOO_MANY_ARGUMENTS: 1001,
 	UNSUPPORTED_FEATURE: 1002,
-	EXPECTED_FUNCTION: 1003,
+	EXPECTED_FUNC: 1003,
+	EXPECTED_CLS: 1004,
+	EXPECTED_CLS_OR_FUNC: 1005
 };
 
 dopple.error = function(line, type, arg)
@@ -47,6 +49,12 @@ dopple.error = function(line, type, arg)
 	}	
 	else if(type === errorEnum.EXPECTED_FUNCTION) {
 		console.error(line + "Expected to be a function: " + arg);
+	}	
+	else if(type === errorEnum.EXPECTED_CLS) {
+		console.error(line + "Expected to be a class: " + arg);
+	}		
+	else if(type === errorEnum.EXPECTED_CLS_OR_FUNC) {
+		console.error(line + "Expected to be a class or function: " + arg);
 	}			
 	else {
 		console.error(line + "Error: Unknown error");

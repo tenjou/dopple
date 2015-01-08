@@ -41,12 +41,12 @@ dopple.Extern.prototype =
 
 	obj: function(name)
 	{
-		var scope = new dopple.Scope(this.scope);
-		var objExpr = new AST.Class(name, scope);
+		var objExpr = new AST.Class(name);
+		objExpr.scope = new dopple.Scope(this.scope, objExpr);
 		objExpr.extern = true;
 		this.scope.vars[name] = objExpr;
 
-		return new dopple.ExternClass(this, scope, objExpr);
+		return new dopple.ExternClass(this, objExpr.scope, objExpr);
 	}
 };
 

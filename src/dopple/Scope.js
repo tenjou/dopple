@@ -1,8 +1,9 @@
 "use strict";
 
-dopple.Scope = function(parent)
+dopple.Scope = function(parent, owner)
 {
 	this.parent = parent || null;
+	this.owner = owner || null;
 	this.vars = {};
 	this.varGroup = null;
 	this.funcs = [];
@@ -22,6 +23,7 @@ dopple.Scope.prototype =
 		var scope = new dopple.Scope();
 		scope.parent = this;
 		scope.vars = this.vars;
+		scope.staticVars = this.staticVars;
 		scope.funcs = this.funcs;
 		scope.returns = this.returns;
 		scope.temps = this.tmps;
@@ -114,5 +116,8 @@ dopple.Scope.prototype =
 
 	//
 	defOutput: "",
-	isVirtual: false
+	isVirtual: false,
+	
+	staticVars: null,
+	staticVarGroup: null	
 };

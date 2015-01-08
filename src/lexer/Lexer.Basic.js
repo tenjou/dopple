@@ -121,6 +121,11 @@ Lexer.Basic = dopple.Class.extend
 					this.nextToken();
 				}
 			}
+			else if(str === "this")
+			{
+				this.parseThis()
+				if(this.isError) { return false; }
+			}
 			else if(type === this.tokenEnum.STRING)
 			{
 				if(!this.parseString()) {
@@ -243,6 +248,9 @@ Lexer.Basic = dopple.Class.extend
 		else if(type === this.tokenEnum.NAME) {	
 			expr = this.parseName();
 		}
+		else if(str === "this") {
+			expr = this.parseThis();
+		}
 		else if(type === this.tokenEnum.STRING) {
 			expr = this.parseString();
 		}		
@@ -274,6 +282,10 @@ Lexer.Basic = dopple.Class.extend
 			this.tokenError();
 			return null;
 		}	
+
+		if(this.isError) {
+			return null;
+		}
 
 		this.currName = "";	
 
@@ -405,7 +417,7 @@ Lexer.Basic = dopple.Class.extend
 				clsExpr = this.convertFuncToCls(clsExpr);
 			}
 			else {
-				dopple.error(clsExpr.line, dopple.Error.EXPECTED_FUNCTION, dopple.makeFuncName(clsExpr));
+				dopple.error(clsExpr.line, dopple.Error.EXPECTED_FUNC, dopple.makeFuncName(clsExpr));
 				return null;				
 			}
 		}
@@ -439,18 +451,28 @@ Lexer.Basic = dopple.Class.extend
 		}
 
 		// Class:
-		var scope = new dopple.Scope(parentScope);
-		var clsExpr = new AST.Class(funcExpr.name, scope);
+		var clsExpr = new AST.Class(funcExpr.name);
+		clsExpr.scope = new dopple.Scope(parentScope, clsExpr);
 		clsExpr.type = this.registerType(funcExpr.name);
 		clsExpr.constrFunc = funcExpr;
 		clsExpr.isStatic = false;
+		clsExpr.childParentList = [ clsExpr ];
+		clsExpr.scope.funcs.push(funcExpr);
 		parentScope.vars[funcExpr.name] = clsExpr;	
 		parentScope.objs.push(clsExpr);
 
 		// Constructor:
 		funcExpr.name = "constructor";
 		funcExpr.parentList = [ clsExpr ];
-		funcExpr.obj = clsExpr;		
+		funcExpr.obj = clsExpr;
+		funcExpr.scope = funcExpr.scope.createVirtual();
+		funcExpr.scope.parent = clsExpr.scope;
+
+		if(funcExpr.scope.staticVars) {
+			clsExpr.scope.vars = funcExpr.scope.staticVars;
+			funcExpr.scope.staticVars = null;
+			funcExpr.scope.staticVarGroup = null;
+		}				
 
 		var funcs = parentScope.funcs;
 		var numFuncs = funcs.length;
@@ -660,6 +682,71 @@ Lexer.Basic = dopple.Class.extend
 		this.scope = this.scope.parent;
 	},
 
+	parseThis: function()
+	{
+		var varExpr = null;
+		var varName = "";
+		var scope = this.scope;
+		var parentList = [ new AST.This(scope.owner) ];
+
+		this.nextToken();
+		while(this.token.str === ".")
+		{
+			if(varExpr) 
+			{
+				if(varExpr.exprType !== this.tokenEnum.CLASS ||
+				   varExpr.exprType !== this.tokenEnum.FUNCTION)
+				{
+					dopple.error(varExpr.line, dopple.Error.EXPECTED_CLS_OR_FUNC, dopple.makeFuncName(varExpr));
+					return null;
+				}
+
+				parentList.push(varExpr);
+			}
+			else if(parentList.length > 1) {
+				this.refError(this.token.str); 
+				return null; 
+			}
+
+			this.nextToken();
+			if(this.token.type !== this.tokenEnum.NAME) {
+				this.tokenError();
+				return null;
+			}
+
+			if(!scope.staticVars) {
+				scope.staticVars = {};
+				scope.staticVarGroup = [];
+			}
+
+			varName = this.token.str;
+			varExpr = scope.staticVars[varName];
+			
+			this.nextToken();
+		}
+
+		if(parentList.length < 1) {
+			this.tokenSymbolError();
+			return null;
+		}
+
+		var op = this.token.str;
+
+		this.nextToken();
+		var expr = this.parseExpr();
+		if(!expr) { return null; }
+
+		varExpr = new AST.Var(varName, parentList);
+		varExpr.expr = expr;
+		varExpr.op = op;
+		varExpr.isDef = true;
+		varExpr.var = varExpr;
+		scope.staticVars[varName] = varExpr;
+		scope.exprs.push(varExpr);
+
+		return null;
+	},
+
 	parseIf: function()
 	{
 		var ifExpr = new AST.If();
@@ -743,14 +830,14 @@ Lexer.Basic = dopple.Class.extend
 			return null;
 		}
 
-		this.scope = new dopple.Scope(this.global);
-
-		var objExpr = new AST.Class(name, this.scope);
+		var objExpr = new AST.Class(name);
+		objExpr.scope = new dopple.Scope(this.global, objExpr);
 		this.global.vars[name] = objExpr;
 		if(!this.global.objs) {
 			this.global.objs = [];
 		}
 		this.global.objs.push(objExpr);
+		this.scope = objExpr.scope;
 
 		var parentList = [ objExpr ];
 
@@ -759,6 +846,7 @@ Lexer.Basic = dopple.Class.extend
 		constrFunc.obj = objExpr;
 		this.scope.vars["constructor"] = constrFunc;
 		objExpr.constrFunc = constrFunc;
+		objExpr.scope.funcs.push(constrFunc);
 
 		var constrFuncCall = new AST.FunctionCall(constrFunc);
 		this.global.exprs.push(constrFuncCall);
@@ -865,12 +953,12 @@ Lexer.Basic = dopple.Class.extend
 		if(!funcExpr) {
 			funcExpr = new AST.Function(name, null, null, parentList);
 			funcExpr.rootName = rootName;
-			funcExpr.scope = new dopple.Scope(this.scope);
+			funcExpr.scope = new dopple.Scope(this.scope, funcExpr);
 			this.scope.vars[name] = funcExpr;	
 			this.scope.funcs.push(funcExpr);			
 		}
 		else if(funcExpr.exprType !== this.exprEnum.FUNCTION) {
-			dopple.error(funcExpr.line, dopple.Error.EXPECTED_FUNCTION, dopple.makeFuncName(funcExpr));
+			dopple.error(funcExpr.line, dopple.Error.EXPECTED_FUNC, dopple.makeFuncName(funcExpr));
 			return null;
 		}
 
@@ -1040,7 +1128,7 @@ Lexer.Basic = dopple.Class.extend
 		if(!funcExpr) { return null; }
 
 		if(funcExpr.exprType !== this.exprEnum.FUNCTION) {
-			dopple.error(funcExpr.line, dopple.Error.EXPECTED_FUNCTION, dopple.makeFuncName(funcExpr));
+			dopple.error(funcExpr.line, dopple.Error.EXPECTED_FUNC, dopple.makeFuncName(funcExpr));
 			return null;
 		}
 
@@ -1132,15 +1220,22 @@ Lexer.Basic = dopple.Class.extend
 	parseParentList: function()
 	{
 		var parentList = [];
+		var objExpr = null;
 
 		do
 		{
+			if(objExpr && objExpr.exprType !== this.tokenEnum.CLASS) {
+				dopple.error(funcExpr.line, dopple.Error.EXPECTED_CLS, dopple.makeFuncName(funcExpr));
+				return null;
+			}
+
 			this.nextToken();
 			if(this.token.type !== this.tokenEnum.NAME) {
 				this.tokenError();
+				return null;
 			}
 
-			var objExpr = this.getVar(this.currName);
+			objExpr = this.getVar(this.currName);
 			if(!objExpr) { return null; }
 
 			parentList.push(objExpr);
@@ -1214,7 +1309,7 @@ Lexer.Basic = dopple.Class.extend
 		if(!funcExpr) { return null; }
 
 		if(funcExpr.exprType !== this.exprEnum.FUNCTION) {
-			dopple.error(funcExpr.line, dopple.Error.EXPECTED_FUNCTION, dopple.makeFuncName(funcExpr));
+			dopple.error(funcExpr.line, dopple.Error.EXPECTED_FUNC, dopple.makeFuncName(funcExpr));
 			return null;
 		}	
 

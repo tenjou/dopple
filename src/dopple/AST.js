@@ -596,9 +596,8 @@ AST.Format = AST.Basic.extend
 /* Expression Class */
 AST.Class = AST.Basic.extend
 ({
-	init: function(name, scope) {
+	init: function(name) {
 		this.name = name;
-		this.scope = scope;
 	},
 
 	//
@@ -610,7 +609,8 @@ AST.Class = AST.Basic.extend
 	scope: null,
 	isStatic: true,
 
-	constrFunc: null
+	constrFunc: null,
+	childParentList: null
 });
 
 /* Expression Alloc */
@@ -627,4 +627,21 @@ AST.Alloc = AST.Basic.extend
 	cls: null,
 	constrCall: null
 });
+
+/* Expression This */
+AST.This = AST.Basic.extend
+({
+	init: function(cls) {
+		this.cls = cls;
+	},
+
+	//
+	type: dopple._VarEnum.OBJECT,
+	exprType: dopple.ExprEnum.THIS,
+
+	cls: null,
+	value: "this",
+	name: "this"
+});
+
 
