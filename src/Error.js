@@ -15,10 +15,12 @@ dopple.Error = {
 	UNSUPPORTED_FEATURE: 1002,
 	EXPECTED_FUNC: 1003,
 	EXPECTED_CLS: 1004,
-	EXPECTED_CLS_OR_FUNC: 1005
+	EXPECTED_CLS_OR_FUNC: 1005,
+	EXPR_WITH_VOID: 2000,
+	INCOMPATIBLE_TYPE: 2001
 };
 
-dopple.error = function(line, type, arg)
+dopple.error = function(line, type, arg, arg2)
 {
 	var line = "(" + dopple.lexer.fileName + ":" + line + ") ";
 
@@ -55,12 +57,29 @@ dopple.error = function(line, type, arg)
 	}		
 	else if(type === errorEnum.EXPECTED_CLS_OR_FUNC) {
 		console.error(line + "Expected to be a class or function: " + arg);
-	}			
+	}	
+	else if(type === errorEnum.EXPR_WITH_VOID) {
+		console.error(line + arg + " has an expression with type 'void'");
+	}	
+	else if(type === errorEnum.INCOMPATIBLE_TYPE) {
+		console.error(line + "Expression of " + arg + " has an incompatible type: " + arg2);
+	}	
 	else {
 		console.error(line + "Error: Unknown error");
 	}
 
 	dopple.lexer.error = type;	
+	dopple.isError = true;
+};
+
+dopple.refError = function(line, name) 
+{
+	if(!name) {
+		name = "undefined";
+	}
+
+	dopple.isError = true;
+	dopple.error(line, dopple.Error.REFERENCE_ERROR, name);
 };
 
 // dopple.throw = function(type, arg)

@@ -19,12 +19,10 @@ Compiler.Basic = dopple.Class.extend
 	{
 		this.output = "";
 		
-		if(this.lexer.read(source)) 
-		{
-			this.varEnum = dopple.VarEnum;
-			this.varMap = dopple.VarMap;
-			this.load();
+		this.lexer.prepare();
+		this.prepare();
 
+		if(this.lexer.read(source)) {
 			this.global = this.lexer.global;
 			this.funcs = this.lexer.funcs;
 			this.emit();

@@ -2,20 +2,19 @@
 
 Compiler.C = Compiler.Basic.extend
 ({
-	load: function()
+	prepare: function()
 	{
+		this.varEnum = dopple.VarEnum;
+		this.varMap = dopple.VarMap;
+
 		this.varMap[this.varEnum.VOID] = "void ";
 		this.varMap[this.varEnum.NUMBER] = "double ";
-		this.varMap[this.varEnum.BOOL] = "int32_t ";
+		this.varMap[this.varEnum.BOOL] = "char ";
 		this.varMap[this.varEnum.I32] = "int32_t ";
 		this.varMap[this.varEnum.NAME] = "const char *";
 		this.varMap[this.varEnum.STRING] = "char *";
 
-		this.createLexer();
-	},
-
-	createLexer: function()
-	{
+		//
 		var extern = this.lexer.extern;
 
 		extern.func("confirm", [ this.varEnum.STRING ]);
@@ -25,10 +24,6 @@ Compiler.C = Compiler.Basic.extend
 		console.func("log", [ this.varEnum.FORMAT ]);
 		console.func("warn", [ this.varEnum.FORMAT ]);
 		console.func("error", [ this.varEnum.FORMAT ]);
-
-		// var NAME = extern.obj("NAME");
-		// NAME.getter("length", null, Variable.Type.NUMBER);
-		// NAME.setter("length", [ Variable.Type.NUMBER, "value" ]);
 
 		extern.func("alert", [ this.varEnum.STRING ]);
 		extern.func("confirm", [ this.varEnum.STRING ]);
@@ -95,6 +90,8 @@ Compiler.C = Compiler.Basic.extend
 		for(i = 0; i < numExprs; i++)
 		{
 			expr = exprs[i];
+			if(expr.hidden) { continue; }
+
 			type = expr.exprType;
 
 			if(type === this.exprEnum.VAR) {
@@ -229,10 +226,6 @@ Compiler.C = Compiler.Basic.extend
 
 	emitVar: function(varExpr)
 	{
-		if(this.settings.stripDeadCode && varExpr.var.numUses === 0) {
-			return null;
-		}
-
 		var output = "";
 		var varType = varExpr.var.type;
 
@@ -641,8 +634,8 @@ Compiler.C = Compiler.Basic.extend
 	{
 		var output;
 
-		if(returnExpr.expr) {
-			output = this.tabs + "return " + this.emitExpr(returnExpr.expr.expr, null) + ";\n";
+		if(returnExpr.varExpr) {
+			output = this.tabs + "return " + this.emitExpr(returnExpr.varExpr.expr, null) + ";\n";
 		}
 		else {
 			output = this.tabs + "return;\n";

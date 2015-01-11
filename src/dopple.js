@@ -1,7 +1,8 @@
 "use strict";
 
 var dopple = {
-	lexer: null
+	lexer: null,
+	isError: false
 };
 
 if(typeof(exports) !== "undefined") {

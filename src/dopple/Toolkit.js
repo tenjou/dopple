@@ -86,3 +86,29 @@ dopple.createVarFromType = function(type)
 	return varExpr;	
 };
 
+dopple.strType = function(type)
+{
+	var varEnum = dopple.VarEnum;
+	for(var key in varEnum) 
+	{
+		if(varEnum[key] === type) {
+			return key;
+		}
+	}
+
+	return "";
+};
+
+dopple.strExprType = function(exprType)
+{
+	var exprEnum = dopple.ExprEnum;
+	for(var key in exprEnum) 
+	{
+		if(exprEnum[key] === exprType) {
+			return key;
+		}
+	}
+
+	return "";
+};
+

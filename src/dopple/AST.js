@@ -15,30 +15,6 @@ AST.Basic = dopple.Class.extend
 		return "void";
 	},
 
-	strType: function()
-	{
-		for(var key in this.varEnum) 
-		{
-			if(this.varEnum[key] === this.type) {
-				return key;
-			}
-		}
-
-		return "";
-	},
-
-	strExprType: function()
-	{
-		for(var key in this.exprEnum) 
-		{
-			if(this.exprEnum[key] === this.exprType) {
-				return key;
-			}
-		}
-
-		return "";
-	},
-
 	Flag: {
 		RESOLVED: 1,
 		RESOLVING: 2,
@@ -46,7 +22,8 @@ AST.Basic = dopple.Class.extend
 		ASSIGNED_FROM_VS: 8,
 		GETTER: 16,
 		SETTER: 32,
-		EXTERN: 64
+		EXTERN: 64,
+		HIDDEN: 128
 	},
 
 	setFlag: function(value, flag) 
@@ -82,6 +59,18 @@ AST.Basic = dopple.Class.extend
 	get extern() { 
 		return (this.flag & this.Flag.EXTERN) === this.Flag.EXTERN;
 	},
+
+	set hidden(value) 
+	{
+		if(value) {
+			this.flag |= this.Flag.HIDDEN;
+		}
+		else {
+			this.flag &= ~this.Flag.HIDEEN;
+		}
+	},
+
+	get hidden() { return (this.flag & this.Flag.HIDDEN); },
 
 	//
 	type: 0,
@@ -283,47 +272,6 @@ AST.Var = AST.Basic.extend
 		}
 	},
 
-	analyse: function(resolver)
-	{	
-		if(!this.expr) { return true; }
-		if(this.resolved) { return true; }
-		
-		var type = this.expr.exprType;
-		if(type === this.exprEnum.BINARY) {
-			this.type = this.expr.analyse(resolver);
-		}
-		else if(type === this.exprEnum.FUNCTION_CALL) 
-		{
-			if(!resolver.resolveFuncCall(this.expr)) {
-				return false;
-			}
-			this.type = this.expr.func.type;
-		}
-		else if(type === this.exprEnum.FUNCTION) {
-			this.type = this.varEnum.FUNCTION_PTR;			
-		}
-		else
-		{
-			if(this.type !== 0 && this.type !== this.expr.type) 
-			{
-				console.error("(INVALID_TYPE_CONVERSION) Can't convert a variable " + this.var.name + ":" + 
-					this.var.strType() + " to " + this.expr.strType());
-				return false;
-			}
-			
-			this.type = this.expr.type;		
-		}
-
-		if(this.type === 0) {
-			console.error("(Resolver) An expression with type 'void'");
-			return false;
-		}		
-
-		this.resolved = true;
-
-		return true;
-	},	
-
 	//
 	exprType: dopple.ExprEnum.VAR,
 
@@ -334,9 +282,22 @@ AST.Var = AST.Basic.extend
 	op: "",
 	expr: null,
 	value: "unknown",
-
 	isDef: false,
 	isArg: false
+});
+
+/* Expression Name */
+AST.Name = AST.Basic.extend
+({
+	init: function(varExpr, parentList) {
+		this.value = name;
+		this.parentList = parentList;
+	},
+
+	//
+	value: "<unknown>",
+	exprType: dopple.ExprEnum.NAME,
+	varExpr: null
 });
 
 /* Expression Binary */
@@ -347,60 +308,6 @@ AST.Binary = AST.Basic.extend
 		this.lhs = lhs;
 		this.rhs = rhs;		
 	},
-
-	analyse: function(resolver)
-	{
-		var lhsType, rhsType;
-
-		if(this.lhs.exprType === this.exprEnum.BINARY) {
-			lhsType = this.lhs.analyse(resolver);
-		}
-		else 
-		{
-			if(this.lhs.exprType === this.exprEnum.FUNCTION_CALL) {
-				resolver.resolveFuncCall(this.lhs);
-				lhsType = this.lhs.func.type;
-			}
-			else {
-				lhsType = this.lhs.type;
-			}
-		}
-
-		if(this.rhs.exprType === this.exprEnum.BINARY) {
-			rhsType = this.rhs.analyse(resolver);
-		}
-		else 
-		{
-			if(this.rhs.exprType === this.exprEnum.FUNCTION_CALL) {
-				resolver.resolveFuncCall(this.rhs);
-				rhsType = this.rhs.func.type;
-			}
-			else {
-				rhsType = this.rhs.type;
-			}
-		}
-
-		if(lhsType === rhsType) 
-		{
-			if(this.lhs.type === this.varEnum.BOOL && this.rhs.type === this.varEnum.BOOL) {
-				this.type = this.varEnum.NUMBER;
-			}
-			else {
-				this.type = lhsType;
-			}
-
-			return this.type;
-		}
-
-		if(lhsType === this.varEnum.STRING || rhsType === this.varEnum.STRING) {
-			this.type = this.varEnum.STRING;
-			return this.varEnum.STRING;
-		}
-
-		Error.throw(Error.Type.INVALID_TYPE_CONVERSION, this.lhs.strType() + " to " + this.rhs.strType());		
-
-		return 0;
-	},	
 
 	//
 	exprType: dopple.ExprEnum.BINARY,
@@ -537,29 +444,13 @@ AST.Setter = AST.Basic.extend
 /* Expression Function Call */
 AST.Return = AST.Basic.extend
 ({
-	init: function(expr) {
-		this.expr = expr;
+	init: function(varExpr) {
+		this.varExpr = varExpr;
 	},
 
 	//
 	exprType: dopple.ExprEnum.RETURN,
-	expr: null
-});
-
-/* Expression Name */
-AST.Name = AST.Basic.extend
-({
-	init: function(str) {
-		this.value = str || "";
-	},
-
-	defaultValue: function() {
-		return "\"undefined\"";
-	},
-
-	//
-	type: dopple._VarEnum.NAME,
-	exprType: dopple.ExprEnum.NAME
+	varExpr: null
 });
 
 /* Expression For */

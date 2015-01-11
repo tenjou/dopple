@@ -2,53 +2,54 @@
 
 dopple.Resolver = function() {
 	this.optimizer = new dopple.Optimizer(this);
+	this.scope = null;
+	this.scopeBuffer = [];
 };
 
 dopple.Resolver.prototype = 
 {
+	handle: function(scope) {
+		this.varEnum = dopple.VarEnum;
+		this.resolve(scope);
+	},
+
 	resolve: function(scope)
 	{
+		this.pushScope(scope);
+
 		var expr, type, i;
 		var exprs = scope.exprs;
-		var numExpr = exprs.length;
-		for(i = 0; i < numExpr; i++)
+		var numExprs = exprs.length;
+		for(i = 0; i < numExprs; i++)
 		{
 			expr = exprs[i];
 			if(expr.extern) { continue; }
 
 			type = expr.exprType;
+			switch(type)
+			{
+				case this.exprEnum.VAR: 
+					this.resolveVar(expr);
+					break;
 
-			if(type === this.exprEnum.VAR) 
-			{
-				if(!this.resolveVar(expr)) {
-					return false;
-				}				
+				case this.exprEnum.IF:
+					this.resolveIf(expr);
+					break;
+
+				case this.exprEnum.FOR:
+					this.resolveFor(expr);
+					break;
+
+				case this.exprEnum.FUNCTION_CALL:
+					this.resolveFuncCall(expr);
+					break;
+
+				case this.exprEnum.RETURN:
+					this.resolveReturn(expr);
+					break;
 			}
-			else if(type === this.exprEnum.IF) 
-			{
-				if(!this.resolveIf(expr)) {
-					return false;
-				}
-			}
-			else if(type === this.exprEnum.FOR)
-			{
-				if(!this.resolveFor(expr)) {
-					return false;
-				}
-			}
-			else if(type === this.exprEnum.FUNCTION_CALL) 
-			{
-				if(!this.resolveFuncCall(expr)) {
-					return false;
-				}
-			}
-			else if(type === this.exprEnum.RETURN) 
-			{
-				expr.expr.expr = this.optimizer.do(expr.expr.expr);
-				if(!expr.expr.analyse(this)) {
-					return false;
-				}				
-			}
+
+			if(dopple.isError) { return; }
 		}
 
 		var key, item, group;
@@ -89,47 +90,201 @@ dopple.Resolver.prototype =
 			}
 
 			group.push(item);
-		}		
+		}	
 
-		return true;
+		this.popScope();
 	},
 
-	resolveVar: function(expr)
+	resolveRef: function(varExpr)
 	{
-		if(this.settings.stripDeadCode && expr.var.numUses === 0) {
-			return true;
-		}
-
-		if(expr.expr.exprType === this.exprEnum.ALLOC) 
+		// Define variable or check if is defined:
+		var originalVarExpr = this.scope.vars[varExpr.value];
+		if(!originalVarExpr)
 		{
-			if(!this.resolveAlloc(expr.expr)) {
-				return false;
+			if(varExpr.isDef) {
+				this.scope.vars[varExpr.value] = varExpr;
+				originalVarExpr = varExpr;
+			}
+			else {
+				dopple.refError(varExpr.line, varExpr.value);
 			}
 		}
 		else {
-			expr.expr = this.optimizer.do(expr.expr);
+			varExpr.type = originalVarExpr.type;
 		}
 
-		if(!expr.analyse(this)) {
-			return false;
-		}
-
-		if(!expr.expr) {
-			console.error("(Resolver) Unresolved variable '" + dopple.makeVarName(expr) + "'");
-			return false;
-		}
-
-		return true;
+		return originalVarExpr;
 	},
 
-	resolveExpr: function(expr)
+	resolveVar: function(varExpr)
 	{
-		expr = this.optimizer.do(expr);
-		if(!expr.analyse(this)) {
-			return null;
+		if(varExpr.flag & varExpr.Flag.RESOLVED) { return; }
+
+		var originalVarExpr = this.resolveRef(varExpr);
+		if(dopple.isError) { return; }
+
+		if(varExpr.expr)
+		{
+			varExpr.var = originalVarExpr;
+
+			this.analyseExpr(varExpr);
+			varExpr.expr = this.optimizer.do(varExpr.expr);
+		}
+		else {
+			varExpr.hidden = true;
 		}
 
-		return expr;		
+		// if(varExpr.expr.exprType === this.exprEnum.ALLOC) 
+		// {
+		// 	if(!this.resolveAlloc(varExpr.expr)) {
+		// 		return false;
+		// 	}
+		// }
+		// else {
+			
+		// }
+
+		varExpr.flag |= varExpr.Flag.RESOLVED;
+	},
+
+	resolveName: function(varExpr)
+	{
+		if(varExpr.flag & varExpr.Flag.RESOLVED) { return; }
+
+		this.resolveRef(varExpr);
+
+		varExpr.flag |= varExpr.Flag.RESOLVED;
+	},
+
+	resolveExpr: function(varExpr) 
+	{
+		if(varExpr.flag & varExpr.Flag.RESOLVED) { return; }
+
+		this.analyseExpr(varExpr);
+		if(dopple.isError) { return; }
+
+		varExpr.expr = this.optimizer.do(varExpr.expr);
+		varExpr.flag |= varExpr.Flag.RESOLVED;
+	},
+
+	analyseExpr: function(varExpr)
+	{	
+		var exprType = varExpr.expr.exprType;
+
+		//
+		if(exprType === this.exprEnum.VAR) {
+			this.resolveName(varExpr.expr);
+			varExpr.type = varExpr.expr.type;
+		}
+		else if(exprType === this.exprEnum.BINARY) {
+			varExpr.type = this.analyseBinary(varExpr.expr, varExpr);
+		}
+		else if(exprType === this.exprEnum.FUNCTION_CALL) 
+		{
+			this.resolveFuncCall(varExpr.expr);
+			varExpr.type = varExpr.expr.func.type;
+		}
+		else if(exprType === this.exprEnum.FUNCTION) {
+			varExpr.type = this.varEnum.FUNCTION_PTR;			
+		}
+		else {	
+			varExpr.type = varExpr.expr.type;		
+		}
+
+		if(this.isError) { return; }
+
+		// Check if type is sufficient:
+		if(varExpr.type === 0) {
+			dopple.error(varExpr.line, dopple.Error.EXPR_WITH_VOID, varExpr.value);
+		}	
+		else 
+		{
+			if(varExpr.var.type === 0) {
+				varExpr.var.type = varExpr.type;
+			}
+			else if(varExpr.var.type !== varExpr.type)
+			{
+				dopple.error(varExpr.line, dopple.Error.INCOMPATIBLE_TYPE, varExpr.value, 
+					dopple.strType(varExpr.type) + " != " + dopple.strType(varExpr.var.type));
+			}
+		}
+	},	
+
+	analyseBinary: function(binExpr, varExpr)
+	{
+		var lhsType, rhsType;
+		var exprType;
+
+		// LHS:
+		if(binExpr.lhs.exprType === this.exprEnum.BINARY) {
+			lhsType = this.analyseBinary(binExpr.lhs, varExpr);
+		}
+		else 
+		{
+			exprType = binExpr.lhs.exprType;
+
+			if(exprType === this.exprEnum.VAR) 
+			{
+				this.resolveName(binExpr.lhs);
+				lhsType = binExpr.lhs.type;
+			}
+			if(exprType === this.exprEnum.FUNCTION_CALL) {
+				this.resolveFuncCall(binExpr.lhs);
+				lhsType = binExpr.lhs.func.type;
+			}
+			else {
+				lhsType = binExpr.lhs.type;
+			}
+		}
+
+		if(dopple.isError) { return; }
+
+		// RHS:
+		if(binExpr.rhs.exprType === this.exprEnum.BINARY) {
+			rhsType = this.analyseBinary(binExpr.rhs, varExpr);
+		}
+		else 
+		{
+			exprType = binExpr.rhs.exprType;
+
+			if(exprType === this.exprEnum.VAR) 
+			{
+				this.resolveName(binExpr.rhs);
+				rhsType = binExpr.rhs.type;
+			}
+			else if(exprType === this.exprEnum.FUNCTION_CALL) {
+				this.resolveFuncCall(binExpr.rhs);
+				rhsType = binExpr.rhs.func.type;
+			}
+			else {
+				rhsType = binExpr.rhs.type;
+			}
+		}
+
+		if(dopple.isError) { return; }
+
+		// Type checking:
+		if(lhsType === rhsType) 
+		{
+			if(binExpr.lhs.type === this.varEnum.BOOL && binExpr.rhs.type === this.varEnum.BOOL) {
+				binExpr.type = this.varEnum.NUMBER;
+			}
+			else {
+				binExpr.type = lhsType;
+			}
+
+			return binExpr.type;
+		}
+
+		if(lhsType === this.varEnum.STRING || rhsType === this.varEnum.STRING) {
+			binExpr.type = this.varEnum.STRING;
+			return this.varEnum.STRING;
+		}
+
+		dopple.error(varExpr.line, dopple.Error.INCOMPATIBLE_TYPE, varExpr.value, 
+			dopple.strType(binExpr.lhs.type) + " != " + dopple.strType(binExpr.rhs.type));
+
+		return 0;
 	},
 
 	resolveIf: function(expr)
@@ -183,19 +338,15 @@ dopple.Resolver.prototype =
 		return true;
 	},
 
-	resolveFunc: function(expr) 
+	resolveFunc: function(funcExpr) 
 	{
-		if(expr.resolved) { return true; }
-
-		if(expr.obj) {
-			this.resolveObj(expr.obj);
-		}
+		if(funcExpr.flag & funcExpr.Flag.RESOLVED) { return; }
 
 		var retExpr, i;
-		var retExprs = expr.scope.returns;
+		var retExprs = funcExpr.scope.returns;
 		var numRetExprs = retExprs.length;
 
-		if(expr.type === 0 && expr.resolving) 
+		if(funcExpr.type === 0 && (funcExpr.flag & funcExpr.Flag.RESOLVING)) 
 		{
 			// Try first to guess function type if type is unknown:
 			for(i = 0; i < numRetExprs; i++)
@@ -206,8 +357,8 @@ dopple.Resolver.prototype =
 				//retExpr.expr = this.optimizer.do(retExpr.expr);
 				retExpr.analyse(this);	
 
-				if(expr.type === 0) {
-					expr.type = retExpr.type;
+				if(funcExpr.type === 0) {
+					funcExpr.type = retExpr.type;
 					break;
 				}				
 			}
@@ -215,53 +366,60 @@ dopple.Resolver.prototype =
 			return true;
 		}
 
-		expr.resolving = true;
+		if(funcExpr.obj) {
+			this.resolveObj(funcExpr.obj);
+		}		
+
+		funcExpr.flag |= funcExpr.Flag.RESOLVING;
 
 		// Error: If type is defined without return expression:
-		if(expr.type !== 0 && numRetExprs === 0) {
-			console.error("ReturnError: Function \'" + expr.name + "\' requires at least one return expression");
+		if(funcExpr.type !== 0 && numRetExprs === 0) {
+			console.error("ReturnError: Function \'" + funcExpr.name + "\' requires at least one return expression");
 			return false;		
 		}
 
-		if(!this.resolve(expr.scope)) { return false; }
+		this.resolve(funcExpr.scope);
+		if(dopple.isError) { return; }
 
 		// Re-check function type:
 		for(i = 0; i < numRetExprs; i++)
 		{
-			retExpr = retExprs[i].expr;
+			retExpr = retExprs[i].varExpr;
 			if(!retExpr) { continue; }
 
-			if(expr.type === 0) {
-				expr.type = retExpr.type;
+			if(funcExpr.type === 0) {
+				funcExpr.type = retExpr.type;
 			}
-			else if(expr.type !== retExpr.type) 
+			else if(funcExpr.type !== retExpr.type) 
 			{
-				console.error("ReturnError: Function \'" + expr.name + 
+				console.error("ReturnError: Function \'" + funcExpr.name + 
 					"\' different return expressions dont have matching return types: is " + 
-					expr.strType() + " but expected " + retExpr.strType());
+					funcExpr.strType() + " but expected " + retExpr.strType());
 				return false;
 			}
 		}
 
-		expr.resolved = true;
-		expr.resolving = false;
+		funcExpr.flag |= funcExpr.Flag.RESOLVED;
+		funcExpr.flag &= ~funcExpr.Flag.RESOLVING;
 
 		return true;
 	},
 
-	resolveFuncCall: function(expr) 
+	resolveFuncCall: function(callExpr) 
 	{
-		if(expr.resolved || expr.resolving) { return true; }
-		expr.resolving = true;
+		if(callExpr.flag & callExpr.Flag.RESOLVED) { return; }
+		if(callExpr.flag & callExpr.Flag.RESOLVING) { return; }
 
-		var funcExpr = expr.func;
+		callExpr.flag |= callExpr.Flag.RESOLVING;
+
+		var funcExpr = callExpr.func;
 		if(funcExpr.empty) {
 			dopple.error(funcExpr.line, dopple.Error.REFERENCE_ERROR, funcExpr.name);
-			return false;
+			return;
 		}
 
 		var i;
-		var args = expr.args;
+		var args = callExpr.args;
 		var params = funcExpr.params;
 		if(params)
 		{
@@ -319,15 +477,18 @@ dopple.Resolver.prototype =
 
 		if(!funcExpr.extern)
 		{
-			if(!this.resolveFunc(funcExpr)) {
-				return false;
-			}
+			this.resolveFunc(funcExpr);
+			if(dopple.isError) { return; }
 		}
 
-		expr.resolved = true;
-		expr.resolving = false;
+		callExpr.flag |= callExpr.Flag.RESOLVED;
+		callExpr.flag &= ~callExpr.Flag.RESOLVING;
 
 		return true;
+	},
+
+	resolveReturn: function(retExpr) {
+		this.resolveExpr(retExpr.varExpr);
 	},
 
 	resolveObj: function(objExpr)
@@ -357,6 +518,15 @@ dopple.Resolver.prototype =
 		}
 
 		return true;
+	},	
+
+	pushScope: function(scope) {
+		this.scopeBuffer.push(scope);
+		this.scope = scope;
+	},
+
+	popScope: function() {
+		this.scope = this.scopeBuffer.pop();
 	},
 
 	//
@@ -364,7 +534,7 @@ dopple.Resolver.prototype =
 
 	settings: dopple.settings,
 	exprEnum: dopple.ExprEnum,
-	varEnum: dopple.VarEnum,
+	varEnum: null,
 
 	numDiscards: 0
 };
