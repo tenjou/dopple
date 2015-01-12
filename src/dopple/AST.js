@@ -367,10 +367,9 @@ AST.If = AST.Basic.extend
 /* Expression Function */
 AST.Function = AST.Basic.extend
 ({
-	init: function(name, scope, params, parentList) 
+	init: function(name, params, parentList) 
 	{
 		this.name = name;
-		this.scope = scope;
 		this.parentList = parentList || null;
 
 		if(params) 

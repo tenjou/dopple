@@ -3,12 +3,14 @@
 dopple.Resolver = function() {
 	this.optimizer = new dopple.Optimizer(this);
 	this.scope = null;
+	this.global = null;
 };
 
 dopple.Resolver.prototype = 
 {
 	handle: function(scope) {
 		this.varEnum = dopple.VarEnum;
+		this.global = scope;
 		this.resolve(scope);
 	},
 
@@ -384,7 +386,6 @@ dopple.Resolver.prototype =
 
 	resolveFunc: function(funcExpr) 
 	{
-		console.log("resolve", funcExpr.name);
 		if(funcExpr.flag & funcExpr.Flag.RESOLVED) { return; }
 
 		var retExpr, i;
@@ -471,7 +472,7 @@ dopple.Resolver.prototype =
 		// Error: If function call has too many arguments and function does not take args:
 		if(numArgs > numParams) 
 		{
-			if(funcExpr.argIndex === -1) {
+			if(funcExpr.argsIndex === -1) {
 				dopple.error(callExpr.line, dopple.Error.TOO_MANY_ARGS, funcExpr.name, numArgs, numParams);
 				return;	
 			}
@@ -545,11 +546,11 @@ dopple.Resolver.prototype =
 		}
 
 		this.scope.vars[clsExpr.name] = clsExpr;
-		if(!this.scope.clases) {
-			this.scope.clases = [ clsExpr ];
+		if(!this.scope.classes) {
+			this.scope.classes = [ clsExpr ];
 		}
 		else {
-			this.scope.clases.push(clsExpr);
+			this.scope.classes.push(clsExpr);
 		}
 
 		var prevScope = this.scope;

@@ -680,6 +680,9 @@ Compiler.C = Compiler.Basic.extend
 				if(arg.exprType === this.exprEnum.BINARY) {
 					output += this.emitExpr(arg);			
 				}
+				else if(arg.isArg) {
+					output += this.emitDefaultValue(arg);
+				}
 				else {
 					output += arg.castTo(param);
 				}
@@ -872,6 +875,26 @@ Compiler.C = Compiler.Basic.extend
 		}			
 
 		return true;
+	},
+
+	emitDefaultValue: function(varExpr) 
+	{
+		var type = varExpr.type;
+		switch(type)
+		{
+			case this.varEnum.NUMBER:
+			case this.varEnum.BOOL:
+				return "0";
+
+			case this.varEnum.STRING:
+				return "\"\\x0\\x0\\x0\\x0\"\"\"";
+		}
+
+		if(type > 99) {
+			return "null";
+		}
+
+		return "Unknown";
 	},
 
 	makeVarName: function(varExpr)

@@ -1,14 +1,13 @@
 "use strict";
 
-dopple.Scope = function(parent, owner)
+dopple.Scope = function(parent)
 {
 	this.parent = parent || null;
-	this.owner = owner || null;
 	this.vars = {};
 	this.varGroup = null;
 	this.funcs = [];
 	this.exprs = [];
-	this.clases = [];
+	this.classes = [];
 	this.returns = [];
 	this.tmps = {
 		id: 0,
