@@ -386,6 +386,7 @@ dopple.Resolver.prototype =
 
 	resolveFunc: function(funcExpr) 
 	{
+		if(funcExpr.numUnresolvedParams > 0) { return; }
 		if(funcExpr.flag & funcExpr.Flag.RESOLVED) { return; }
 
 		var retExpr, i;
@@ -502,6 +503,7 @@ dopple.Resolver.prototype =
 
 			if(paramExpr.type === 0) {
 				paramExpr.type = argExpr.type;
+				funcExpr.numUnresolvedParams--;
 			}
 			else if(paramExpr.type !== argExpr.type) 
 			{

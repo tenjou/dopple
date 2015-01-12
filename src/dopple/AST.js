@@ -376,6 +376,7 @@ AST.Function = AST.Basic.extend
 		{
 			this.params = params;
 			this.numParams = params.length;
+			this.numUnresolvedParams = this.numParams;
 
 			for(var i = 0; i < this.numParams; i++) 
 			{
@@ -394,6 +395,7 @@ AST.Function = AST.Basic.extend
 	rootName: null,
 	params: null,
 	numParams: 0,
+	numUnresolvedParams: 0,
 	cls: null,
 
 	argsIndex: -1
