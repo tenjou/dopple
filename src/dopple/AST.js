@@ -75,7 +75,6 @@ AST.Basic = dopple.Class.extend
 	//
 	type: 0,
 	exprType: 0,
-	empty: false,
 	flag: 0,
 	numUses: 0,
 
@@ -372,9 +371,21 @@ AST.Function = AST.Basic.extend
 	{
 		this.name = name;
 		this.scope = scope;
-		this.params = params;
-		this.numParams = (params) ? params.length : 0;
 		this.parentList = parentList || null;
+
+		if(params) 
+		{
+			this.params = params;
+			this.numParams = params.length;
+
+			for(var i = 0; i < this.numParams; i++) 
+			{
+				if(this.params.type === this.varEnum.ARGS) {
+					this.argsIndex = i;
+					break;
+				}
+			}
+		}
 	},
 
 	//
@@ -382,22 +393,35 @@ AST.Function = AST.Basic.extend
 
 	name: "",
 	rootName: null,
-	obj: null
+	params: null,
+	numParams: 0,
+	cls: null,
+
+	argsIndex: -1
 });
 
 /* Expression Function Call */
 AST.FunctionCall = AST.Basic.extend
 ({
-	init: function(func, args) {
-		this.func = func;
-		if(args) { this.args = args; }
+	init: function(name, parentList, args) 
+	{
+		this.name = name || "";
+		this.parentList = parentList || null;
+
+		if(args) {
+			this.args = args;
+			this.numArgs = args.length;
+		}
 	},
 
 	//
 	exprType: dopple.ExprEnum.FUNCTION_CALL,
 
-	func: null,
-	args: null
+	name: "",
+	parentList: null,
+	args: null,
+	numArgs: 0,
+	func: null
 });
 
 /* Expression Mutator */

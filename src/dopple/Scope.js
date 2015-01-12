@@ -8,7 +8,7 @@ dopple.Scope = function(parent, owner)
 	this.varGroup = null;
 	this.funcs = [];
 	this.exprs = [];
-	this.objs = [];
+	this.clases = [];
 	this.returns = [];
 	this.tmps = {
 		id: 0,

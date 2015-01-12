@@ -39,34 +39,34 @@ dopple.Extern.prototype =
 		return func;
 	},
 
-	obj: function(name)
+	cls: function(name)
 	{
-		var objExpr = new AST.Class(name);
-		objExpr.scope = new dopple.Scope(this.scope, objExpr);
-		objExpr.extern = true;
-		this.scope.vars[name] = objExpr;
+		var clsExpr = new AST.Class(name);
+		clsExpr.scope = new dopple.Scope(this.scope, clsExpr);
+		clsExpr.extern = true;
+		this.scope.vars[name] = clsExpr;
 
-		return new dopple.ExternClass(this, objExpr.scope, objExpr);
+		return new dopple.ExternClass(this, clsExpr.scope, clsExpr);
 	}
 };
 
-dopple.ExternClass = function(extern, scope, objExpr)
+dopple.ExternClass = function(extern, scope, clsExpr)
 {
 	this.scope = scope,
 	this.extern = extern;
-	this.objExpr = objExpr;
+	this.clsExpr = clsExpr;
 };
 
 dopple.ExternClass.prototype =
 {
 	func: function(name, params, returnType) {
-		this.extern.scope = this.objExpr.scope;
+		this.extern.scope = this.clsExpr.scope;
 		var func = this.extern.func(name, params, returnType);
-		func.parentList = [ this.objExpr ];
+		func.parentList = [ this.clsExpr ];
 		this.extern.scope = this.extern.global;
 	},
 
-	obj: function() {
+	cls: function() {
 
 	},
 

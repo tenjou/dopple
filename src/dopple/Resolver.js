@@ -3,7 +3,6 @@
 dopple.Resolver = function() {
 	this.optimizer = new dopple.Optimizer(this);
 	this.scope = null;
-	this.scopeBuffer = [];
 };
 
 dopple.Resolver.prototype = 
@@ -15,9 +14,30 @@ dopple.Resolver.prototype =
 
 	resolve: function(scope)
 	{
-		this.pushScope(scope);
+		var prevScope = this.scope;
+		this.scope = scope;
 
-		var expr, type, i;
+		// Resolve classes:
+		var i;
+		var classes = scope.classes;
+		var numClasses = classes.length;
+		for(i = 0; i < numClasses; i++) 
+		{
+			this.resolveCls(classes[i]);
+			if(dopple.isError) { return; }
+		}
+
+		// Resolve functions:
+		var funcs = scope.funcs;
+		var numFuncs = funcs.length;
+		for(i = 0; i < numFuncs; i++) 
+		{
+			this.registerFunc(funcs[i]);
+			if(dopple.isError) { return; }
+		}
+
+		// Resolve the rest of the scope:
+		var expr, type;
 		var exprs = scope.exprs;
 		var numExprs = exprs.length;
 		for(i = 0; i < numExprs; i++)
@@ -92,7 +112,16 @@ dopple.Resolver.prototype =
 			group.push(item);
 		}	
 
-		this.popScope();
+		this.scope = prevScope;
+	},
+
+	registerFunc: function(funcExpr) 
+	{
+		if(this.scope.vars[funcExpr.name]) {
+			dopple.error(funcExpr.line, dopple.Error.REDEFINITION, funcExpr.name);
+			return;
+		}	
+		this.scope.vars[funcExpr.name] = funcExpr; 
 	},
 
 	resolveRef: function(varExpr)
@@ -120,18 +149,33 @@ dopple.Resolver.prototype =
 	{
 		if(varExpr.flag & varExpr.Flag.RESOLVED) { return; }
 
-		var originalVarExpr = this.resolveRef(varExpr);
-		if(dopple.isError) { return; }
-
-		if(varExpr.expr)
+		var expr = varExpr.expr;
+		if(expr)
 		{
-			varExpr.var = originalVarExpr;
+			var exprType = expr.exprType;
+			if(exprType === this.exprEnum.CLASS) {
+				this.resolveCls(varExpr.expr);
+				varExpr.hidden = true;
+			}
+			else if(exprType === this.exprEnum.FUNCTION) {
+				this.resolveFunc(varExpr.expr);
+				varExpr.hidden = true;
+			}
+			else
+			{	
+				varExpr.var = this.resolveRef(varExpr);
+				if(dopple.isError) { return; }
 
-			this.analyseExpr(varExpr);
-			varExpr.expr = this.optimizer.do(varExpr.expr);
+				this.analyseExpr(varExpr);
+				varExpr.expr = this.optimizer.do(varExpr.expr);
+			}
 		}
-		else {
-			varExpr.hidden = true;
+		else 
+		{
+			this.resolveRef(varExpr);
+			if(dopple.isError) { return; }	
+
+			varExpr.hidden = true;		
 		}
 
 		// if(varExpr.expr.exprType === this.exprEnum.ALLOC) 
@@ -340,6 +384,7 @@ dopple.Resolver.prototype =
 
 	resolveFunc: function(funcExpr) 
 	{
+		console.log("resolve", funcExpr.name);
 		if(funcExpr.flag & funcExpr.Flag.RESOLVED) { return; }
 
 		var retExpr, i;
@@ -364,11 +409,7 @@ dopple.Resolver.prototype =
 			}
 
 			return true;
-		}
-
-		if(funcExpr.obj) {
-			this.resolveObj(funcExpr.obj);
-		}		
+		}	
 
 		funcExpr.flag |= funcExpr.Flag.RESOLVING;
 
@@ -412,68 +453,73 @@ dopple.Resolver.prototype =
 
 		callExpr.flag |= callExpr.Flag.RESOLVING;
 
-		var funcExpr = callExpr.func;
-		if(funcExpr.empty) {
-			dopple.error(funcExpr.line, dopple.Error.REFERENCE_ERROR, funcExpr.name);
+		var funcExpr = this.getVar(callExpr.name, callExpr.parentList);
+		if(!funcExpr) { 
+			dopple.error(callExpr.line, dopple.Error.REFERENCE_ERROR, callExpr.name);
+			return; 
+		}
+
+		if(funcExpr.exprType !== this.exprEnum.FUNCTION) {
+			dopple.error(callExpr.line, dopple.Error.EXPECTED_FUNC, callExpr.name);
 			return;
 		}
 
-		var i;
 		var args = callExpr.args;
-		var params = funcExpr.params;
-		if(params)
+		var numArgs = callExpr.numArgs;
+		var numParams = funcExpr.numParams;
+
+		// Error: If function call has too many arguments and function does not take args:
+		if(numArgs > numParams) 
 		{
-			var numArgs = args.length;
-			var numParams = params.length;
-
-			// If function call has too many arguments, check first if any of argument is FORMAT:
-			var format;
-			if(numArgs > numParams) 
-			{
-				format = false; 
-
-				for(i = 0; i < numParams; i++) 
-				{
-					if(params[i].type === this.varEnum.FORMAT) {
-						format = true;
-						break;
-					}
-				}
-
-				if(!format) {
-					console.error("TOO_MANY_ARGS: Function call \"" + funcExpr.name + "\" has " 
-						+ numArgs + " args, expecting maximum of " + numParams + " args");
-					return false;				
-				}
-			}	
-
-			// Analyse all argument expressions:
-			var argExpr;
-			for(i = 0; i < numArgs; i++)
-			{
-				argExpr = args[i];
-				if(argExpr.exprType === this.exprEnum.FUNCTION_CALL) 
-				{
-					if(!this.resolveFuncCall(argExpr)) {
-						return false;
-					}
-
-					//argExpr.type = argExpr.func.type;
-				}
-				else
-				{
-					argExpr = this.optimizer.do(argExpr);
-					if(!argExpr.analyse()) { 
-						return false; 
-					}
-					args[i] = argExpr;
-				}
-
-				if(i < numParams && params[i].type === 0) {
-					params[i].type = argExpr.type;
-				}
+			if(funcExpr.argIndex === -1) {
+				dopple.error(callExpr.line, dopple.Error.TOO_MANY_ARGS, funcExpr.name, numArgs, numParams);
+				return;	
 			}
 		}
+
+		// Resolve all arguments:
+		var argExpr, paramExpr;
+		for(var i = 0; i < numArgs; i++)
+		{
+			argExpr = callExpr.args[i];
+			paramExpr = funcExpr.params[i];
+
+			if(argExpr.exprType === this.exprEnum.FUNCTION_CALL) 
+			{
+				this.resolveFuncCall(argExpr);
+				if(dopple.isError) { return; }
+
+				argExpr.type = argExpr.func.type;
+			}
+			else 
+			{
+				argExpr.analyse();
+				if(dopple.isError) { return; }
+
+				args[i] = this.optimizer.do(argExpr);
+			}
+
+			if(paramExpr.type === 0) {
+				paramExpr.type = argExpr.type;
+			}
+			else if(paramExpr.type !== argExpr.type) 
+			{
+				dopple.error(callExpr.line, dopple.Error.INCOMPATIBLE_TYPE, callExpr.name, 
+					dopple.strType(argExpr.type) + " != " + dopple.strType(funcExpr.type));
+				return;
+			}
+		}
+
+		// Add missing arguments so they fill argument with default value:
+		if(numArgs < numParams)
+		{
+			args.length = numParams;
+			for(i--; i < numParams; i++) {
+				args[i] = funcExpr.params[i];
+			}
+		}
+
+		callExpr.func = funcExpr;
 
 		if(!funcExpr.extern)
 		{
@@ -483,29 +529,59 @@ dopple.Resolver.prototype =
 
 		callExpr.flag |= callExpr.Flag.RESOLVED;
 		callExpr.flag &= ~callExpr.Flag.RESOLVING;
-
-		return true;
 	},
 
 	resolveReturn: function(retExpr) {
 		this.resolveExpr(retExpr.varExpr);
 	},
 
-	resolveObj: function(objExpr)
+	resolveCls: function(clsExpr)
 	{
+		if(clsExpr.flag & clsExpr.Flag.RESOLVED) { return; }
+
+		if(this.scope.vars[clsExpr.name]) {
+			dopple.error(clsExpr.line, dopple.Error.REDEFINITION, clsExpr.name);
+			return;
+		}
+
+		this.scope.vars[clsExpr.name] = clsExpr;
+		if(!this.scope.clases) {
+			this.scope.clases = [ clsExpr ];
+		}
+		else {
+			this.scope.clases.push(clsExpr);
+		}
+
+		var prevScope = this.scope;
+		this.scope = clsExpr.scope;
+
 		var expr;
-		var vars = objExpr.scope.vars;
+		var vars = clsExpr.scope.vars;
 		for(var key in vars) 
 		{
 			expr = vars[key];
-			if(expr.exprType !== this.exprEnum.VAR) { continue; }
-			
-			if(!this.resolveVar(expr)) { 
-				return false;
+
+			switch(expr.exprType)
+			{
+				case this.exprEnum.VAR:
+					this.resolveVar(expr);
+					break;
+
+				case this.exprEnum.FUNCTION:
+					this.resolveFunc(expr);
+					break;
+
+				case this.exprEnum.CLASS:
+					this.resolveCls(expr);
+					break;
 			}
+			
+			if(dopple.isError) { return; }
 		}
 
-		return true;
+		this.scope = prevScope;
+
+		clsExpr.flag |= clsExpr.Flag.RESOLVED;		
 	},
 
 	resolveAlloc: function(allocExpr) 
@@ -518,15 +594,20 @@ dopple.Resolver.prototype =
 		}
 
 		return true;
-	},	
-
-	pushScope: function(scope) {
-		this.scopeBuffer.push(scope);
-		this.scope = scope;
 	},
 
-	popScope: function() {
-		this.scope = this.scopeBuffer.pop();
+	getVar: function(name, parentList) 
+	{
+		var expr = this.scope.vars[name];
+		if(!expr) 
+		{
+			expr = this.global.vars[name];
+			if(!expr) {
+				return null;
+			}
+		}
+
+		return expr;
 	},
 
 	//

@@ -16,11 +16,12 @@ dopple.Error = {
 	EXPECTED_FUNC: 1003,
 	EXPECTED_CLS: 1004,
 	EXPECTED_CLS_OR_FUNC: 1005,
+	TOO_MANY_ARGS: 1006,
 	EXPR_WITH_VOID: 2000,
 	INCOMPATIBLE_TYPE: 2001
 };
 
-dopple.error = function(line, type, arg, arg2)
+dopple.error = function(line, type, arg, arg2, arg3)
 {
 	var line = "(" + dopple.lexer.fileName + ":" + line + ") ";
 
@@ -47,7 +48,7 @@ dopple.error = function(line, type, arg, arg2)
 		console.error(line + "Too many arguments passed to the \"" + arg + "\" function");
 	}
 	else if(type === errorEnum.REDEFINITION) {
-		console.error(line + "Redefined: " + arg);
+		console.error(line + "Redefined: " + arg + " is already defined previously");
 	}	
 	else if(type === errorEnum.EXPECTED_FUNCTION) {
 		console.error(line + "Expected to be a function: " + arg);
@@ -64,6 +65,11 @@ dopple.error = function(line, type, arg, arg2)
 	else if(type === errorEnum.INCOMPATIBLE_TYPE) {
 		console.error(line + "Expression of " + arg + " has an incompatible type: " + arg2);
 	}	
+	else if(type === errorEnum.TOO_MANY_ARGS) 
+	{
+		console.error(line + "Function call of " + arg + " has too many arguments: has " + 
+			arg2 + " but expected maximum is " + arg3);
+	}
 	else {
 		console.error(line + "Error: Unknown error");
 	}
@@ -71,30 +77,3 @@ dopple.error = function(line, type, arg, arg2)
 	dopple.lexer.error = type;	
 	dopple.isError = true;
 };
-
-dopple.refError = function(line, name) 
-{
-	if(!name) {
-		name = "undefined";
-	}
-
-	dopple.isError = true;
-	dopple.error(line, dopple.Error.REFERENCE_ERROR, name);
-};
-
-// dopple.throw = function(type, arg)
-// {	
-// 	else if(type === this.Error.INVALID_REGEXP) {
-// 		throw "SyntaxError: Invalid regular expression: missing " + arg;
-// 	}	
-
-// 	else if(type === this.Error.INVALID_TYPE_CONVERSION) {
-// 		console.error("Invalid Type Conversion: " + arg);
-// 	}
-// 	else if(type === this.Error.UNSUPPORTED_FEATURE) {
-// 		throw "Unsupported feature used: \"" + arg + "\"";
-// 	}
-// 	else {
-// 		console.error("Unknown Error");
-// 	}
-// };

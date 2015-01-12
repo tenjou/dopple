@@ -51,7 +51,7 @@ dopple._VarEnum = {
 	FUNCTION_PTR: 5,
 	OBJECT: 6,
 	NAME: 10,
-	FORMAT: 11,
+	ARGS: 11,
 	I32: 12
 };
 
