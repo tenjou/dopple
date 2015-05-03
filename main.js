@@ -1,16 +1,27 @@
 "use strict";
 
-function main()
+function main() 
 {
 	meta.ajax({
 		url: "source.js",
-		success: compile
+		success: function(source) {
+			parse(source);
+		}
 	});
 };
 
-function compile(source) 
+function parse(source) 
 {
-	var lexer = new Lexer.Mantra();
-	var compiler = new Compiler.C(lexer);
-	console.log("\n" + compiler.compile(source));
+	// try 
+	// {
+		var acornAST = acorn.parse(source);
+		// console.log(acornAST);
+
+		dopple.importAcorn(acornAST);
+		console.log(dopple.compile());
+		// console.log(dopple.scope);		
+	// }
+	// catch(err) {
+	// 	console.error(err);
+	// }
 };
