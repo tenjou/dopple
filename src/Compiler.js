@@ -140,8 +140,9 @@ dopple.compiler.cpp =
 			}
 		}
 
+		// Output the rest of the scope:
 		var body = scope.body;
-		var num = body.length;
+		num = body.length;
 		for(n = 0; n < num; n++) 
 		{
 			node = body[n];
@@ -278,7 +279,10 @@ dopple.compiler.cpp =
 		var output = this.createType(node.value) + node.name;
 		output += "(" + this.parseParams(node.params) + ") \n{\n";
 		
-		output += this.declOutput + "\n";
+		if(this.declOutput) {
+			output += this.declOutput + "\n";
+		}
+		
 		output += scopeOutput;
 		output += "}\n";
 
