@@ -54,9 +54,11 @@ dopple.Scope = function(parent) {
 	this.parent = parent || null;
 	this.vars = {};
 	this.body = [];
+	this.decls = [];
 };
 
-dopple.Scope.prototype = {
+dopple.Scope.prototype = 
+{
 	funcs: null,
 	returns: null,
 	classes: []
@@ -110,6 +112,7 @@ dopple.acorn =
 		this.lookup["ReturnStatement"] = this.parseReturn;
 		this.lookup["IfStatement"] = this.parseIf;
 		this.lookup["AssignmentExpression"] = this.parseAssignExpr;
+		this.lookup["SequenceExpression"] = this.parseSequenceExpr;
 		this.lookup["BinaryExpression"] = this.parseBinaryExpr;
 		this.lookup["CallExpression"] = this.parseCallExpr;
 		this.lookup["ObjectExpression"] = this.parseObjExpr;
@@ -265,6 +268,22 @@ dopple.acorn =
 		var assignExpr = new dopple.AST.Assign(this.cache.name, this.cache.parents, null, node.operator);
 		assignExpr.value = this.lookup[node.right.type].call(this, node.right);
 		return assignExpr;
+	},
+
+	parseSequenceExpr: function(node) 
+	{
+		var exprNode = null, expr = null;
+		var exprs = node.expressions;
+		var num = exprs.length;
+		for(var n = 0; n < num; n++) {
+			exprNode = exprs[n];
+			expr = this.lookup[exprNode.type].call(this, exprNode);
+			if(expr && expr.type !== this.type.FUNCTION_DEF) {
+				this.scope.body.push(expr);
+			}
+		}
+
+		return null;
 	},
 
 	parseName: function(node)

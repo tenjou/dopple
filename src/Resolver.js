@@ -68,8 +68,13 @@ dopple.Resolver.prototype =
 		node.flags |= (nodeValue.flags & this.flagType.PTR);
 
 		var expr = this.scope.vars[node.name];
-		if(!expr) {
-			this.scope.vars[node.name] = node;	
+		if(!expr) 
+		{
+			this.scope.vars[node.name] = node;
+
+			if((node.flags & this.flagType.EXTERN) === 0) {
+				this.scope.decls.push(node);
+			}
 		}
 		else 
 		{
@@ -109,7 +114,7 @@ dopple.Resolver.prototype =
 				throw "Incompatible type for " + node.name + " assignement";
 			}
 			else {
-				var assignExpr = new dopple.AST.Assign(node.name, node.value, "=");
+				var assignExpr = new dopple.AST.Assign(node.name, node.parents, node.value, "=");
 				assignExpr.flags |= this.flagType.RESOLVED;
 				return assignExpr;
 			}

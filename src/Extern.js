@@ -129,6 +129,7 @@ dopple.ExternClass.prototype =
 	{
 		var varExpr = new dopple.AST.Var(name, null, null);
 		varExpr.value = new dopple.AST.Number(0);
+		varExpr.flags |= dopple.Flag.Extern;
 		this.cls.scope.body.push(varExpr);
 	},
 
@@ -136,6 +137,7 @@ dopple.ExternClass.prototype =
 	{
 		var newExpr = new dopple.AST.New(clsName, null, null);
 		var varExpr = new dopple.AST.Var(name, null, newExpr);
+		varExpr.flags |= dopple.Flag.Extern;
 		this.cls.scope.body.push(varExpr);		
 	},
 
@@ -146,6 +148,7 @@ dopple.ExternClass.prototype =
 
 		var refExpr = new dopple.AST.Reference(refName, parents);
 		var varExpr = new dopple.AST.Var(name, null, refExpr);
+		varExpr.flags |= dopple.Flag.Extern;
 		this.cls.scope.body.push(varExpr);
 	},
 
