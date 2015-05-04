@@ -34,6 +34,15 @@ dopple.Extern.prototype =
 		cls.cls.global = true;
 		cls.finish();
 
+		cls = extern.addClass("Math");
+		cls.addFunc("abs", [ vars.Number ], vars.Number);
+		cls.addFunc("random", null, vars.Number);
+		cls.addFunc("sin", null, vars.Number);
+		cls.addFunc("cos", null, vars.Number);
+		cls.addVar("PI", vars.Number);
+		cls.cls.global = true;
+		cls.finish();		
+
 		cls = extern.addClass("WebGLShader");
 		cls.finish();	
 
@@ -44,6 +53,8 @@ dopple.Extern.prototype =
 
 		cls = extern.addClass("WebGLRenderingContext");
 		cls.addFunc("viewport", [ vars.Number, vars.Number, vars.Number, vars.Number ], null);
+		cls.addFunc("clear", [ vars.Number ], null);
+		cls.addFunc("clearColor", [ vars.Number, vars.Number, vars.Number, vars.Number ], null);
 		cls.addFunc("createShader", [ vars.Number ], vars.WebGLShader);
 		cls.addFunc("shaderSource", [ vars.WebGLShader, vars.String ], null);
 		cls.addFunc("compileShader", [ vars.WebGLShader ]);
@@ -58,7 +69,10 @@ dopple.Extern.prototype =
 		cls.addVar("VERTEX_SHADER", vars.Number);
 		cls.addVar("FRAGMENT_SHADER", vars.Number);	
 		cls.addVar("COMPILE_STATUS", vars.Number);	
-		cls.addVar("LINK_STATUS", vars.Number);		
+		cls.addVar("LINK_STATUS", vars.Number);	
+		cls.addVar("COLOR_BUFFER_BIT", vars.Number);
+		cls.addVar("DEPTH_BUFFER_BIT", vars.Number);
+		cls.addVar("STENCIL_BUFFER_BIT", vars.Number);
 		cls.finish();
 
 		cls = extern.addClass("Element");
@@ -76,10 +90,14 @@ dopple.Extern.prototype =
 
 		cls = extern.addClass("Window");
 		cls.addNew("document", "Document");
+		cls.addFunc("requestAnimationFrame", [ vars.Function ], null);
 		cls.finish();
 
 		extern.addNew("window", "Window");
 		extern.addRef("document", "window.document");
+
+		extern.addFunc("__dopple__create", null, null);
+		extern.addFunc("__dopple__destroy", null, null);
 	},
 
 	addClass: function(name) 
@@ -111,10 +129,31 @@ dopple.Extern.prototype =
 		this.scope.body.push(varExpr);
 	},
 
-	addFunc: function(name) {
-		var funcExpr = new dopple.AST.Function(name, null, new dopple.Scope(this.scope), null);
-		funcExpr.flags |= dopple.Flag.EXTERN;
+	addFunc: function(name, paramClasses, returnCls) 
+	{
+		var scope = new dopple.Scope(dopple.scope);
+
+		var refExpr = null;
+		var params = null;
+
+		if(paramClasses)
+		{
+			var num = paramClasses.length;
+			params = new Array(num);
+			for(var n = 0; n < num; n++) {
+				refExpr = new dopple.AST.Reference("p" + n, null);
+				refExpr.cls = paramClasses[n];
+				params[n] = refExpr;
+			}
+		}
+
+		var funcExpr = new dopple.AST.Function(name, null, scope, params);
 		this.scope.vars[name] = funcExpr;
+
+		if(returnCls) {
+			var retExpr = new dopple.AST.Return(new dopple.AST.New(returnCls.name, null, null));
+			scope.body.push(retExpr);			
+		}
 	}	
 };
 

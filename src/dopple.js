@@ -10,7 +10,13 @@ var dopple =
 		this.extern = new dopple.Extern(this.scope);
 		this.extern.loadExterns();
 
+		var createCall = new dopple.AST.FunctionCall("__dopple__create", null, null, null);
+		this.scope.body.push(createCall);		
+
 		dopple.acorn.parse(this.scope, ast);
+
+		var destroyCall = new dopple.AST.FunctionCall("__dopple__destroy", null, null, null);
+		this.scope.body.push(destroyCall);			
 	},
 
 	resolve: function() {
@@ -57,8 +63,8 @@ dopple.Scope = function(parent) {
 	this.decls = [];
 };
 
-dopple.Scope.prototype = 
-{
+dopple.Scope.prototype = {
+	virtual: false,
 	funcs: null,
 	returns: null,
 	classes: []
@@ -180,7 +186,7 @@ dopple.acorn =
 	},
 
 	parseNewExpr: function(node) {
-		return new dopple.AST.New(node.callee.name);
+		return new dopple.AST.New(node.callee.name, null, null);
 	},
 
 	parseMemberExpr: function(node) {
@@ -252,6 +258,7 @@ dopple.acorn =
 	parseIf: function(node)
 	{
 		var scope = new dopple.Scope(this.scope);
+		scope.virtual = true;
 		this.scope = scope;
 		this.parseBody(node.consequent.body);
 		this.scope = this.scope.parent;		

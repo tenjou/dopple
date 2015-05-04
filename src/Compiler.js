@@ -46,7 +46,9 @@ dopple.compiler.cpp =
 		scopeOutput += this.parseScope(this.scope);
 		scopeOutput += "}\n";
 
-		output += this.declOutput + "\n";
+		if(this.declOutput) {
+			output += this.declOutput + "\n";
+		}
 
 		var funcOutput = this.parseFuncs(this.scope.funcs);
 		if(funcOutput) {
@@ -65,85 +67,16 @@ dopple.compiler.cpp =
 
 		this.incTabs();
 
+		this.parseScopeDecls();	
+
 		var output = "";
 		var nodeOutput = "";
 
-		var declMap = {};
-		var strType = "";
-		var typeBuffer = null;		
-
-		// Group declerations in hashmap:
-		var node = null;
-		var decls = scope.decls;
-		var num = decls.length;
-		for(var n = 0; n < num; n++) 
-		{
-			node = decls[n];
-
-			strType = this.createType(node);
-			typeBuffer = declMap[strType];
-			if(!typeBuffer) {
-				typeBuffer = [ node ];
-				declMap[strType] = typeBuffer;
-			}
-			else {
-				typeBuffer.push(node);
-			}
-		}
-
-		// Output group by group all declerations:
-		var tabs = this.tabs;
-		if(this.scope === this.global) {
-			tabs = "";
-		}
-
-		this.declOutput = "";
-		var ptr = false;
-		for(var key in declMap)
-		{
-			typeBuffer = declMap[key];
-			this.declOutput += tabs + key;
-			num = typeBuffer.length - 1;
-			for(n = 0; n < num; n++) 
-			{
-				node = typeBuffer[n];
-				if(node.flags & this.flagType.PTR) { 
-					ptr = true;
-				}
-				else {
-					ptr = false;
-				}
-
-				if(node.value && node.value.flags & this.flagType.KNOWN) 
-				{
-					this.declOutput += this.createName(node) + " = " + 
-						this.lookup[node.value.type].call(this, node.value) + ", ";
-					if(ptr) {
-						this.declOutput += "*";
-					}
-					node.flags |= this.flagType.HIDDEN;
-				}
-				else {
-					this.declOutput += this.createName(node) + " = " + this.createDefaultValue(node) + ", ";
-				}
-			}
-
-			node = typeBuffer[n];
-			if(node.value && node.value.flags & this.flagType.KNOWN) 
-			{
-				this.declOutput += this.createName(node) + " = " + 
-					this.lookup[node.value.type].call(this, node.value) + ";\n";
-				node.flags |= this.flagType.HIDDEN;
-			}
-			else {
-				this.declOutput += this.createName(node) + " = " + this.createDefaultValue(node) + ";\n";
-			}
-		}
-
 		// Output the rest of the scope:
+		var node = null;
 		var body = scope.body;
-		num = body.length;
-		for(n = 0; n < num; n++) 
+		var num = body.length;
+		for(var n = 0; n < num; n++) 
 		{
 			node = body[n];
 			if(!node || node.flags & this.flagType.HIDDEN) { continue; }
@@ -165,6 +98,80 @@ dopple.compiler.cpp =
 		this.scope = prevScope;
 
 		return output;	
+	},
+
+	parseScopeDecls: function()
+	{
+		if(!this.scope.virtual) {
+			this.declMap = {};
+			this.declOutput = "";
+		}
+
+		var strType = "";
+		var typeBuffer = null;		
+
+		// Group declerations in hashmap:
+		var node = null;
+		var decls = this.scope.decls;
+		var num = decls.length;
+		for(var n = 0; n < num; n++) 
+		{
+			node = decls[n];
+
+			strType = this.createType(node);
+			typeBuffer = this.declMap[strType];
+			if(!typeBuffer) {
+				typeBuffer = [ node ];
+				this.declMap[strType] = typeBuffer;
+			}
+			else {
+				typeBuffer.push(node);
+			}
+		}
+
+		if(this.scope.virtual) { return; }
+
+		// Output group by group all declerations:
+		var tabs = this.tabs;
+		if(this.scope === this.global) {
+			tabs = "";
+		}
+
+		for(var key in this.declMap)
+		{
+			typeBuffer = this.declMap[key];
+			this.declOutput += tabs + key;
+			num = typeBuffer.length - 1;
+			for(n = 0; n < num; n++) 
+			{
+				node = typeBuffer[n];
+
+				if(node.value && node.value.flags & this.flagType.KNOWN) 
+				{
+					this.declOutput += this.createName(node) + " = " + 
+						this.lookup[node.value.type].call(this, node.value) + ", ";
+					node.flags |= this.flagType.HIDDEN;
+				}
+				else {
+					this.declOutput += this.createName(node) + " = " + this.createDefaultValue(node) + ", ";
+				}
+
+				if(node.flags & this.flagType.PTR) { 
+					this.declOutput += "*";
+				}			
+			}
+
+			node = typeBuffer[n];
+			if(node.value && node.value.flags & this.flagType.KNOWN) 
+			{
+				this.declOutput += this.createName(node) + " = " + 
+					this.lookup[node.value.type].call(this, node.value) + ";\n";
+				node.flags |= this.flagType.HIDDEN;
+			}
+			else {
+				this.declOutput += this.createName(node) + " = " + this.createDefaultValue(node) + ";\n";
+			}
+		}
 	},
 
 	parseNumber: function(node) {
@@ -520,5 +527,6 @@ dopple.compiler.cpp =
 	type: null,
 	flagType: null,
 
+	declMal: null,
 	declOutput: ""
 };

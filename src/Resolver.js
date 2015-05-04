@@ -34,7 +34,7 @@ dopple.Resolver.prototype =
 	do: function() 
 	{
 		this.numCls = this.global.vars.Number;
-		this.strCls = this.global.vars.String;	
+		this.strCls = this.global.vars.String;
 
 		this.resolveScope(this.global);
 	},
