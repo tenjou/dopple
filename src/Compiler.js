@@ -11,6 +11,7 @@ dopple.compiler.cpp =
 		this.varTypeName = dopple.VarTypeName;
 
 		this.scope = dopple.scope;
+		this.global = this.scope;
 
 		this.lookup = [];
 		this.lookup[this.type.NUMBER] = this.parseNumber;
@@ -34,29 +35,25 @@ dopple.compiler.cpp =
 		var mainReturn = new dopple.AST.Return(new dopple.AST.Number(0));
 		this.scope.body.push(mainReturn);
 
-		var output = "";
-		output += "#include \"dopple.h\"\n\n";
+		var output = "#include \"dopple.h\"\n\n";
 
 		var clsOutput = this.parseClasses(this.scope.classes);
 		if(clsOutput) {
-			output += clsOutput;
+			output += clsOutput + "\n";
 		}
 
-		var varOutput = this.parseGlobalVars(this.scope.body);
-		if(varOutput) {
-			output += varOutput + "\n";
-		}		
+		var scopeOutput = "int main(int argc, char *argv[]) \n{\n";
+		scopeOutput += this.parseScope(this.scope);
+		scopeOutput += "}\n";
+
+		output += this.declOutput + "\n";
 
 		var funcOutput = this.parseFuncs(this.scope.funcs);
 		if(funcOutput) {
 			output += funcOutput;
 		}
 
-		output += "int main(int argc, char *argv[]) \n{\n";
-
-		output += this.parseScope(this.scope);
-
-		output += "}\n";
+		output += scopeOutput;
 
 		return output;
 	},
@@ -71,10 +68,81 @@ dopple.compiler.cpp =
 		var output = "";
 		var nodeOutput = "";
 
+		var declMap = {};
+		var strType = "";
+		var typeBuffer = null;		
+
+		// Group declerations in hashmap:
 		var node = null;
+		var decls = scope.decls;
+		var num = decls.length;
+		for(var n = 0; n < num; n++) 
+		{
+			node = decls[n];
+
+			strType = this.createType(node);
+			typeBuffer = declMap[strType];
+			if(!typeBuffer) {
+				typeBuffer = [ node ];
+				declMap[strType] = typeBuffer;
+			}
+			else {
+				typeBuffer.push(node);
+			}
+		}
+
+		// Output group by group all declerations:
+		var tabs = this.tabs;
+		if(this.scope === this.global) {
+			tabs = "";
+		}
+
+		this.declOutput = "";
+		var ptr = false;
+		for(var key in declMap)
+		{
+			typeBuffer = declMap[key];
+			this.declOutput += tabs + key;
+			num = typeBuffer.length - 1;
+			for(n = 0; n < num; n++) 
+			{
+				node = typeBuffer[n];
+				if(node.flags & this.flagType.PTR) { 
+					ptr = true;
+				}
+				else {
+					ptr = false;
+				}
+
+				if(node.value && node.value.flags & this.flagType.KNOWN) 
+				{
+					this.declOutput += this.createName(node) + " = " + 
+						this.lookup[node.value.type].call(this, node.value) + ", ";
+					if(ptr) {
+						this.declOutput += "*";
+					}
+					node.flags |= this.flagType.HIDDEN;
+				}
+				else {
+					this.declOutput += this.createName(node) + " = " + this.createDefaultValue(node) + ", ";
+				}
+			}
+
+			node = typeBuffer[n];
+			if(node.value && node.value.flags & this.flagType.KNOWN) 
+			{
+				this.declOutput += this.createName(node) + " = " + 
+					this.lookup[node.value.type].call(this, node.value) + ";\n";
+				node.flags |= this.flagType.HIDDEN;
+			}
+			else {
+				this.declOutput += this.createName(node) + " = " + this.createDefaultValue(node) + ";\n";
+			}
+		}
+
 		var body = scope.body;
 		var num = body.length;
-		for(var n = 0; n < num; n++) 
+		for(n = 0; n < num; n++) 
 		{
 			node = body[n];
 			if(!node || node.flags & this.flagType.HIDDEN) { continue; }
@@ -161,12 +229,9 @@ dopple.compiler.cpp =
 
 	parseVar: function(node) 
 	{
-		var output = this.createType(node) + this.createName(node) + " = ";
+		var output = this.createName(node) + " = ";
 		if(node.value) {
 			output += this.lookup[node.value.type].call(this, node.value);
-		}	
-		else if(node.cls) {
-			output += this.createDefaultValue(node.cls.name);
 		}
 
 		return output;
@@ -208,10 +273,15 @@ dopple.compiler.cpp =
 
 	parseFunc: function(node)
 	{
+		var scopeOutput = this.parseScope(node.scope);
+
 		var output = this.createType(node.value) + node.name;
-		output += "(" + this.parseParams(node.params) + ")";
-		output += "\n{\n" + this.parseScope(node.scope);
+		output += "(" + this.parseParams(node.params) + ") \n{\n";
+		
+		output += this.declOutput + "\n";
+		output += scopeOutput;
 		output += "}\n";
+
 		return output;
 	},
 
@@ -264,12 +334,12 @@ dopple.compiler.cpp =
 		if(numArgs < numParams)
 		{
 			if(n === 0) {
-				output += this.createDefaultValue(params[n].type);
+				output += this.createDefaultValue(params[n]);
 				n++;
 			}
 
 			for(; n < numParams; n++) {
-				output += ", " + this.createDefaultValue(params[n].type);
+				output += ", " + this.createDefaultValue(params[n]);
 			}
 		}
 
@@ -438,9 +508,13 @@ dopple.compiler.cpp =
 
 	//
 	scope: null,
+	global: null,
+
 	lookup: null,
 	tabs: "",
 
 	type: null,
-	flagType: null
+	flagType: null,
+
+	declOutput: ""
 };
