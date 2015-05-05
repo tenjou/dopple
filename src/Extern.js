@@ -41,7 +41,18 @@ dopple.Extern.prototype =
 		cls.addFunc("cos", null, vars.Number);
 		cls.addVar("PI", vars.Number);
 		cls.cls.global = true;
-		cls.finish();		
+		cls.finish();	
+
+		cls = extern.addClass("Float32Array");
+		cls.addConstr([ vars.Number ]);
+		cls.finish();	
+
+		// cls = extern.addClass("Array");
+		// cls.addFunc("push", [ vars.Number ], vars.Number);
+		// cls.addFunc("pop", );
+		// cls.addFunc("shift", );
+		// cls.addVar("length", vars.Number);
+		// cls.finish();			
 
 		cls = extern.addClass("WebGLShader");
 		cls.finish();	
@@ -132,12 +143,11 @@ dopple.Extern.prototype =
 	addFunc: function(name, paramClasses, returnCls) 
 	{
 		var scope = new dopple.Scope(dopple.scope);
-
-		var refExpr = null;
 		var params = null;
 
 		if(paramClasses)
 		{
+			var refExpr = null;
 			var num = paramClasses.length;
 			params = new Array(num);
 			for(var n = 0; n < num; n++) {
@@ -194,12 +204,11 @@ dopple.ExternClass.prototype =
 	addFunc: function(name, paramClasses, returnCls) 
 	{
 		var scope = new dopple.Scope(dopple.scope);
-
-		var refExpr = null;
 		var params = null;
 
 		if(paramClasses)
 		{
+			var refExpr = null;
 			var num = paramClasses.length;
 			params = new Array(num);
 			for(var n = 0; n < num; n++) {
@@ -209,12 +218,36 @@ dopple.ExternClass.prototype =
 			}
 		}
 
-		var funcExpr = new dopple.AST.Function(name, null, scope, params);
+		var funcExpr = new dopple.AST.Function(name, null, null, params);
 		this.cls.scope.vars[name] = funcExpr;
 
 		if(returnCls) {
 			var retExpr = new dopple.AST.Return(new dopple.AST.New(returnCls.name, null, null));
 			scope.body.push(retExpr);			
+		}
+	},
+
+	addConstr: function(paramClasses)
+	{
+		if(!paramClasses) { return; }
+
+		var params = null;
+		var refExpr = null;
+		var num = paramClasses.length;
+		params = new Array(num);
+		for(var n = 0; n < num; n++) {
+			refExpr = new dopple.AST.Reference("p" + n, null);
+			refExpr.cls = paramClasses[n];
+			params[n] = refExpr;
+		}
+
+		var funcExpr = new dopple.AST.Function(name, null, null, params);	
+
+		if(!this.cls.constrBuffer) {
+			this.cls.constrBuffer = [ funcExpr ];
+		}
+		else {
+			this.cls.constrBuffer.push(funcExpr);
 		}
 	},
 

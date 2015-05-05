@@ -77,16 +77,17 @@ dopple.AST.Reference.prototype.flags |= dopple.Flag.HIDDEN;
 /* New */
 meta.class("dopple.AST.New", "dopple.AST.Base", 
 {
-	init: function(name, parents, params) {
+	init: function(name, parents, args) {
 		this.name = name;
 		this.parents = parents;
-		this.params = params;
+		this.args = args;
 	},
 
 	//
 	type: dopple.Type.NEW,
 	value: null, 
-	params: null
+	func: null,
+	args: null
 });
 
 dopple.AST.New.prototype.flags |= dopple.Flag.PTR;
@@ -191,6 +192,7 @@ meta.class("dopple.AST.FunctionCall", "dopple.AST.Base",
 	//
 	type: dopple.Type.FUNCTION_CALL,
 	value: null,
+	func: null,
 	args: null
 });
 
@@ -217,7 +219,6 @@ meta.class("dopple.AST.Class", "dopple.AST.Base",
 
 	//
 	type: dopple.Type.CLASS,
-	value: null,
-	constr: null,
+	constrBuffer: null,
 	alt: ""
 });

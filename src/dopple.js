@@ -186,12 +186,14 @@ dopple.acorn =
 	},
 
 	parseNewExpr: function(node) {
-		return new dopple.AST.New(node.callee.name, null, null);
+		var expr = new dopple.AST.New(node.callee.name, null, this.parseArgs(node.arguments));
+		return expr;
 	},
 
 	parseMemberExpr: function(node) {
 		this.parseName(node);
-		return new dopple.AST.Reference(this.cache.name, this.cache.parents);
+		var expr = new dopple.AST.Reference(this.cache.name, this.cache.parents);
+		return expr;
 	},
 
 	parseVar: function(node) {

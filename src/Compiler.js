@@ -208,11 +208,11 @@ dopple.compiler.cpp =
 
 	parseNew: function(node) 
 	{
-		if(node.value.type === this.type.VAR) {
-			return "new " + node.cls.name + "()";
+		if(node instanceof dopple.AST.Var) {
+			return "new " + node.cls.name + "(" + this.parseArgs(node) + ")";
 		}
 
-		return "new " + node.name + "()";
+		return "new " + node.name + "(" + this.parseArgs(node) + ")";
 	},	
 
 	parseBinary: function(node) 
@@ -320,7 +320,7 @@ dopple.compiler.cpp =
 
 	parseArgs: function(node)
 	{
-		var params = node.value.params;
+		var params = node.func.params;
 		if(!params) { return ""; }
 
 		var numParams = params.length

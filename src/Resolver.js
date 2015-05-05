@@ -228,6 +228,7 @@ dopple.Resolver.prototype =
 
 		this.resolveFunc(node.value);
 
+		node.func = node.value;
 		node.cls = node.value.returnCls;
 		if(node.cls === dopple.scope.vars.Function) {
 			node.cls = null;
@@ -255,10 +256,10 @@ dopple.Resolver.prototype =
 	{
 		node.value = this.getRefEx(node);
 
-		if(node.type === this.type.NEW) {
-			node.cls = node.value;
+		if(node instanceof dopple.AST.New) {
+			this.resolveNew(node);
 		}
-		else if(node.type === this.type.FUNCTION_CALL) {
+		else if(node instanceof dopple.AST.FunctionCall) {
 			this.resolveFuncCall(node);
 		}
 		else {
@@ -308,6 +309,57 @@ dopple.Resolver.prototype =
 	resolveClass: function(node) {
 		this.resolveScope(node.scope);
 	},	
+
+	resolveNew: function(node)
+	{
+		node.cls = node.value;
+
+		var args = node.args;
+		var numArgs = args ? args.length : 0;
+		if(numArgs === 0) { return node; }
+
+		var params = null;
+		var numParams = 0;
+
+		var param, arg, constr, i;
+		var constrBuffer = node.value.constrBuffer;
+		if(!constrBuffer) {
+			throw "Could not find matching constructor for: " + node.cls.name;
+		}
+
+		var num = constrBuffer.length;
+		for(var n = 0; n < num; n++) 
+		{
+			constr = constrBuffer[n];
+			params = constr.params;
+			numParams = params ? params.length : 0;
+
+			if(numArgs > numParams) { continue; }
+
+			// Validate arguments:
+			for(i = 0; i < numArgs; i++)
+			{
+				param = params[i];
+				arg = this.resolveValue(args[i]);
+
+				if(param.cls && param.cls !== arg.cls) 
+				{
+					throw "TypeError: #" + (n + 1) + " argument can not be casted from " + 
+						arg.cls.name + " to " + param.cls.name + " type";
+				}
+
+				param.cls = arg.cls;
+			}
+
+			node.func = constr;			
+		}
+
+		if(!node.func) {
+			throw "Could not find matching constructor for: " + node.cls.name;		
+		}
+
+		return node;
+	},
 
 	convertToClass: function(node) 
 	{
