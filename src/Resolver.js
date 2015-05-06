@@ -7,6 +7,7 @@ dopple.Resolver = function(scope)
 	this.lookup = null;
 	this.type = dopple.Type;
 	this.flagType = dopple.Flag;
+	this.ast = dopple.AST;
 
 	this.global = scope;
 	this.scope = scope;
@@ -61,11 +62,16 @@ dopple.Resolver.prototype =
 	resolveVar: function(node) 
 	{
 		var nodeValue = node.value;
-		nodeValue = this.resolveValue(nodeValue);
-		node.value = nodeValue;
-		node.cls = nodeValue.cls;
+		if(nodeValue) {
+			nodeValue = this.resolveValue(nodeValue);
+			node.value = nodeValue;
+			node.inheritFrom(nodeValue);
+		}
+		else {
+			node.flags |= this.flagType.HIDDEN;
+		}
+
 		node.flags |= this.flagType.RESOLVED;
-		node.flags |= (nodeValue.flags & this.flagType.PTR);
 
 		var expr = this.scope.vars[node.name];
 		if(!expr) 
@@ -76,7 +82,7 @@ dopple.Resolver.prototype =
 				this.scope.decls.push(node);
 			}
 		}
-		else 
+		else if(nodeValue)
 		{
 			var assignExpr = this.resolveAssignType(expr, node);
 			if(assignExpr) {
@@ -91,45 +97,36 @@ dopple.Resolver.prototype =
 	{
 		var nodeValue = node.value;
 		nodeValue = this.resolveValue(nodeValue);
-		node.value = nodeValue;
-		node.cls = nodeValue.cls;
-		node.flags |= this.flagType.RESOLVED;
-		node.flags |= (nodeValue.flags & this.flagType.PTR);
+		node.inheritFrom(nodeValue);
 
 		var expr = this.getRef(node);
-
 		var assignExpr = this.resolveAssignType(expr, node);
 		if(assignExpr) {
-			return assignExpr;
-		}	
+			node = assignExpr;
+		}
+		else {
+			node.value = nodeValue;
+		}
 
 		return node;
 	},	
 
 	resolveAssignType: function(expr, node)
 	{
+		var assignExpr = new dopple.AST.Assign(node.name, node.parents, node.value, "=");
+		assignExpr.inheritFrom(node.value);
+
 		if(expr.cls) 
 		{
 			if(expr.cls !== node.cls) {
 				throw "Incompatible type for " + node.name + " assignement";
 			}
-			else {
-				var assignExpr = new dopple.AST.Assign(node.name, node.parents, node.value, "=");
-				assignExpr.flags |= this.flagType.RESOLVED;
-				return assignExpr;
-			}
 		}
-		else if(node.cls) 
-		{
-			if(node.flags & this.flagType.PTR) {
-				expr.cls = node.cls;
-			}
-			else {
-				throw "Incompatible type for " + node.name + " assignment";
-			}
+		else {
+			expr.inheritFrom(assignExpr);
 		}
 
-		return null;
+		return assignExpr;
 	},
 
 	resolveIf: function(node) {
@@ -252,14 +249,39 @@ dopple.Resolver.prototype =
 		return node;	
 	},
 
+	resolveArray: function(node)
+	{
+		var bufferNode = null;
+		var cls = null;
+		var elements = node.elements;
+		var num = elements.length;
+
+		bufferNode = elements[0];
+		bufferNode = this.resolveValue(bufferNode);
+		cls = bufferNode.cls;
+
+		for(var n = 1; n < num; n++)
+		{
+			bufferNode = elements[n];
+			bufferNode = this.resolveValue(bufferNode);
+			if(cls !== bufferNode.cls) {
+				throw "Array cannot hold different type from the initial type";
+			}
+		}
+
+		node.templateCls = cls;
+
+		return node;
+	},
+
 	resolveRef: function(node) 
 	{
 		node.value = this.getRefEx(node);
 
-		if(node instanceof dopple.AST.New) {
+		if(node instanceof this.ast.New) {
 			this.resolveNew(node);
 		}
-		else if(node instanceof dopple.AST.FunctionCall) {
+		else if(node instanceof this.ast.FunctionCall) {
 			this.resolveFuncCall(node);
 		}
 		else {
@@ -295,10 +317,13 @@ dopple.Resolver.prototype =
 				node.cls = leftCls;
 			}		
 		}
-		else if(node instanceof dopple.AST.Unary) {
+		else if(node instanceof this.ast.Unary) {
 			node.value = this.resolveValue(node.value);
 			node.cls = this.global.vars.Boolean;
 		}
+		else if(node instanceof this.ast.Array) {
+			this.resolveArray(node);
+		}		
 		else if((node.flags & this.flagType.KNOWN) === 0) {
 			this.resolveRef(node);
 		}			

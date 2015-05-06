@@ -28,6 +28,7 @@ dopple.compiler.cpp =
 		this.lookup[this.type.FUNCTION_CALL] = this.parseFuncCall;
 		this.lookup[this.type.RETURN] = this.parseReturn;
 		this.lookup[this.type.NULL] = this.parseNull;
+		this.lookup[this.type.ARRAY] = this.parseArray;
 	},
 
 	compile: function()
@@ -46,6 +47,7 @@ dopple.compiler.cpp =
 		scopeOutput += this.parseScope(this.scope);
 		scopeOutput += "}\n";
 
+		output += this.preOutput;
 		if(this.declOutput) {
 			output += this.declOutput + "\n";
 		}
@@ -145,32 +147,36 @@ dopple.compiler.cpp =
 			for(n = 0; n < num; n++) 
 			{
 				node = typeBuffer[n];
-
-				if(node.value && node.value.flags & this.flagType.KNOWN) 
-				{
-					this.declOutput += this.createName(node) + " = " + 
-						this.lookup[node.value.type].call(this, node.value) + ", ";
-					node.flags |= this.flagType.HIDDEN;
-				}
-				else {
-					this.declOutput += this.createName(node) + " = " + this.createDefaultValue(node) + ", ";
-				}
+				this._outputScopeNode(node);
 
 				if(node.flags & this.flagType.PTR) { 
-					this.declOutput += "*";
-				}			
+					this.declOutput += ", *";
+				}	
+				else {
+					this.declOutput += ", ";
+				}		
 			}
 
-			node = typeBuffer[n];
-			if(node.value && node.value.flags & this.flagType.KNOWN) 
-			{
+			this._outputScopeNode(typeBuffer[n]);
+			this.declOutput += ";\n";
+		}
+	},
+
+	_outputScopeNode: function(node) 
+	{
+		if(node.value && node.value.flags & this.flagType.KNOWN) 
+		{
+			// if(node.value.flags & this.flagType.MEMORY_STACK) {
+			// 	this.declOutput += this.createName(node) + "()";
+			// }
+			// else {
 				this.declOutput += this.createName(node) + " = " + 
-					this.lookup[node.value.type].call(this, node.value) + ";\n";
-				node.flags |= this.flagType.HIDDEN;
-			}
-			else {
-				this.declOutput += this.createName(node) + " = " + this.createDefaultValue(node) + ";\n";
-			}
+					this.lookup[node.value.type].call(this, node.value);
+			//}
+			node.flags |= this.flagType.HIDDEN;
+		}
+		else {
+			this.declOutput += this.createName(node) + " = " + this.createDefaultValue(node);
 		}
 	},
 
@@ -257,6 +263,28 @@ dopple.compiler.cpp =
 
 	parseUnary: function(node) {
 		var output = node.op + this.lookup[node.value.type].call(this, node.value);
+		return output;
+	},
+
+	parseArray: function(node) 
+	{
+		var elementOutput = "";
+		var elementNode = null;
+		var elements = node.elements;
+		var num = elements.length;
+		for(var n = 0; n < num; n++) {
+			elementNode = elements[n];
+			elementOutput += this.lookup[elementNode.type].call(this, elementNode) + ", ";
+		}
+
+		var preOutput = this.createTemplateType(node) + " " + this.scope.genVar(node.cls) + " [] = { ";
+		preOutput += elementOutput;
+		preOutput += " }\n";
+		this.scope.cache.preOutput += preOutput;
+
+		console.log(preOutput);
+		
+		var output = "Array()";
 		return output;
 	},
 
@@ -428,18 +456,15 @@ dopple.compiler.cpp =
 
 	createType: function(node)
 	{
-		if(!node) {
-			return "void ";
-		}
-
-		var name = "";
-
 		if(!node || !node.cls) {
-			name = "void";
+			return "void *";
 		}
-		else {
-			name = node.cls.alt;
-		}
+
+		var name = node.cls.alt;
+
+		if(node.cls.flags & this.flagType.TEMPLATE) {
+			name += "<" + this.createTemplateType(node) + ">";
+		}			
 
 		if(node.flags & this.flagType.PTR) {
 			name += " *";
@@ -450,6 +475,21 @@ dopple.compiler.cpp =
 
 		return name;
 	},
+
+	createTemplateType: function(node)
+	{
+		if(!node || !node.cls) {
+			return "void *";
+		}
+
+		var name = node.cls.alt;		
+
+		if(node.flags & this.flagType.PTR) {
+			name += " *";
+		}
+
+		return name;
+	},	
 
 	createDefaultValue: function(node) 
 	{
@@ -527,6 +567,7 @@ dopple.compiler.cpp =
 	type: null,
 	flagType: null,
 
-	declMal: null,
-	declOutput: ""
+	declMap: null,
+	declOutput: "",
+	preOutput: ""
 };

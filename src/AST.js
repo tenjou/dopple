@@ -3,10 +3,19 @@
 /* Base */
 meta.class("dopple.AST.Base", 
 {
+	inheritFrom: function(node) {
+		this.cls = node.cls;
+		this.templateCls = node.templateCls;
+		this.flags |= (node.flags & dopple.Flag.PTR);
+		this.flags |= dopple.Flag.RESOLVED;		
+	},
+
+	//
 	name: "",
 	parents: null,
 	type: dopple.Type.UNNOWN,
 	cls: null,
+	templateCls: null,
 	flags: 0
 });
 
@@ -51,6 +60,20 @@ meta.class("dopple.AST.Bool", "dopple.AST.Base",
 });
 
 dopple.AST.Bool.prototype.flags |= dopple.Flag.KNOWN;
+
+/* Array */
+meta.class("dopple.AST.Array", "dopple.AST.Base", 
+{
+	init: function(elements) {
+		this.elements = elements;
+	},
+
+	//
+	type: dopple.Type.ARRAY,
+	elements: null
+});
+
+dopple.AST.Array.prototype.flags |= dopple.Flag.KNOWN | dopple.Flag.MEMORY_STACK;
 
 /* Null */
 meta.class("dopple.AST.Null", "dopple.AST.Base", {
@@ -219,6 +242,7 @@ meta.class("dopple.AST.Class", "dopple.AST.Base",
 
 	//
 	type: dopple.Type.CLASS,
+	proto: null,
 	constrBuffer: null,
-	alt: ""
+	alt: "",
 });
