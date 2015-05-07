@@ -6,6 +6,8 @@ var dopple =
 	{
 		this.scope = new dopple.Scope();
 
+		this.loadNativeVars();
+
 		this.resolver = new dopple.Resolver(this.scope);
 		this.extern = new dopple.Extern(this.scope);
 		this.extern.loadExterns();
@@ -17,6 +19,18 @@ var dopple =
 
 		var destroyCall = new dopple.AST.FunctionCall("__dopple__destroy", null, null, null);
 		this.scope.body.push(destroyCall);			
+	},
+
+	loadNativeVars: function()
+	{
+		this.nativeVars.Null = new dopple.AST.Class("Null");
+		dopple.AST.Null.prototype.cls = this.nativeVars.Null;
+
+		this.nativeVars.Args = new dopple.AST.Class("Args");
+		dopple.AST.Args.prototype.cls = this.nativeVars.Args;		
+
+		this.nativeVars.Template = new dopple.AST.Class("Template");
+		dopple.AST.Template.prototype.cls = this.nativeVars.Template;		
 	},
 
 	resolve: function() {
@@ -53,21 +67,9 @@ var dopple =
 	//
 	scope: null,
 	resolver: null,
-	extern: null
-};
+	extern: null,
 
-dopple.Scope = function(parent) {
-	this.parent = parent || null;
-	this.vars = {};
-	this.body = [];
-	this.decls = [];
-};
-
-dopple.Scope.prototype = {
-	virtual: false,
-	funcs: null,
-	returns: null,
-	classes: []
+	nativeVars: {}
 };
 
 dopple.Type = {
@@ -88,7 +90,10 @@ dopple.Type = {
 	NEW: 14,
 	RETURN: 15,
 	UNARY: 16,
-	NULL: 17
+	NULL: 17,
+	ARRAY: 18,
+	TEMPLATE: 19,
+	ARGS: 20
 };
 
 dopple.Flag = {
@@ -97,7 +102,10 @@ dopple.Flag = {
 	PTR: 4,
 	HIDDEN: 8,
 	GLOBAL: 16,
-	EXTERN: 32
+	EXTERN: 32,
+	MEMORY_STACK: 64,
+	MEMORY_HEAP: 128,
+	TEMPLATE: 256
 };
 
 dopple.acorn =  
@@ -125,6 +133,7 @@ dopple.acorn =
 		this.lookup["NewExpression"] = this.parseNewExpr;
 		this.lookup["MemberExpression"] = this.parseMemberExpr;
 		this.lookup["UnaryExpression"] = this.parseUnaryExpr;
+		this.lookup["ArrayExpression"] = this.parseArrayExpr;
 	},
 
 	parse: function(scope, ast) {
@@ -259,8 +268,7 @@ dopple.acorn =
 
 	parseIf: function(node)
 	{
-		var scope = new dopple.Scope(this.scope);
-		scope.virtual = true;
+		var scope = this.scope.createVirtual();
 		this.scope = scope;
 		this.parseBody(node.consequent.body);
 		this.scope = this.scope.parent;		
@@ -340,6 +348,22 @@ dopple.acorn =
 		var expr = this.lookup[node.argument.type].call(this, node.argument);
 		var unaryExpr = new dopple.AST.Unary(expr, node.operator);
 		return unaryExpr;
+	},
+
+	parseArrayExpr: function(node)
+	{
+		var elementNode = null;
+		var elements = node.elements;
+		var num = elements.length;
+		var buffer = (num > 0) ? new Array(num) : null;
+
+		for(var n = 0; n < num; n++) {
+			elementNode = elements[n];
+			buffer[n] = this.lookup[elementNode.type].call(this, elementNode);
+		}
+
+		var arrayExpr = new dopple.AST.Array(buffer);
+		return arrayExpr;
 	},
 
 	parseParams: function(paramNodes) 

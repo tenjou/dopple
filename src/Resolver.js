@@ -78,8 +78,14 @@ dopple.Resolver.prototype =
 		{
 			this.scope.vars[node.name] = node;
 
-			if((node.flags & this.flagType.EXTERN) === 0) {
-				this.scope.decls.push(node);
+			if((node.flags & this.flagType.EXTERN) === 0) 
+			{
+				if(!this.scope.cache.decls) {
+					this.scope.cache.decls = [ node ];
+				}
+				else {
+					this.scope.cache.decls.push(node);
+				}
 			}
 		}
 		else if(nodeValue)
@@ -251,25 +257,35 @@ dopple.Resolver.prototype =
 
 	resolveArray: function(node)
 	{
+		var elements = node.elements;
+		if(!node.elements) { return null; }
+
 		var bufferNode = null;
 		var cls = null;
-		var elements = node.elements;
+		var value = null;
 		var num = elements.length;
 
 		bufferNode = elements[0];
 		bufferNode = this.resolveValue(bufferNode);
+		value = bufferNode;
 		cls = bufferNode.cls;
 
 		for(var n = 1; n < num; n++)
 		{
 			bufferNode = elements[n];
 			bufferNode = this.resolveValue(bufferNode);
-			if(cls !== bufferNode.cls) {
-				throw "Array cannot hold different type from the initial type";
+			if(cls !== bufferNode.cls) 
+			{
+				if(!(bufferNode instanceof this.ast.Null) || 
+				     value.flags & this.flagType.PTR === 0) 
+				{
+					throw "Type does not match: expected [" 
+						+ this.createType(value) + "] but got [" + this.createType(bufferNode) + "]";					
+				}
 			}
 		}
 
-		node.templateCls = cls;
+		node.templateValue = value;
 
 		return node;
 	},
@@ -283,6 +299,9 @@ dopple.Resolver.prototype =
 		}
 		else if(node instanceof this.ast.FunctionCall) {
 			this.resolveFuncCall(node);
+		}
+		else if(node instanceof this.ast.Array) {
+			this.resolveArray(node);
 		}
 		else {
 			node.cls = node.value.cls;
@@ -341,7 +360,6 @@ dopple.Resolver.prototype =
 
 		var args = node.args;
 		var numArgs = args ? args.length : 0;
-		if(numArgs === 0) { return node; }
 
 		var params = null;
 		var numParams = 0;
@@ -449,6 +467,44 @@ dopple.Resolver.prototype =
 
 		return ref;	
 	},
+
+	createType: function(node)
+	{
+		if(!node || !node.cls) {
+			return "void *";
+		}
+
+		var name = node.cls.name;
+
+		if(node.cls.flags & this.flagType.TEMPLATE) {
+			name += "<" + this.createTemplateType(node) + ">";
+		}			
+
+		if(node.flags & this.flagType.PTR) {
+			name += " *";
+		}
+
+		return name;
+	},	
+
+	createTemplateType: function(node)
+	{
+		if(!node || !node.templateValue) {
+			return "void *";
+		}
+
+		var name = node.templateValue.cls.name;		
+
+		if(node.templateValue.flags & this.flagType.PTR) {
+			name += " *";
+		}
+
+		if(node.templateValue.value.templateValue) {
+			name += "<" + this.createTemplateType(node.templateValue.value) + ">";
+		}
+
+		return name;
+	},	
 
 	//
 	numCls: null,

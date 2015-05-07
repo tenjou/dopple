@@ -47,9 +47,9 @@ dopple.compiler.cpp =
 		scopeOutput += this.parseScope(this.scope);
 		scopeOutput += "}\n";
 
-		output += this.preOutput;
-		if(this.declOutput) {
-			output += this.declOutput + "\n";
+		var cache = this.scope.cache;
+		if(cache.declOutput) {
+			output += cache.declOutput + "\n";
 		}
 
 		var funcOutput = this.parseFuncs(this.scope.funcs);
@@ -84,14 +84,8 @@ dopple.compiler.cpp =
 			if(!node || node.flags & this.flagType.HIDDEN) { continue; }
 
 			nodeOutput = this.lookup[node.type].call(this, node);
-			if(nodeOutput) 
-			{
-				if(node instanceof dopple.AST.If) {
-					output += this.tabs + nodeOutput + "\n";
-				}
-				else {
-					output += this.tabs + nodeOutput + ";\n";
-				}
+			if(nodeOutput) {
+				output += this.tabs + nodeOutput + ";\n";
 			}
 		}
 		
@@ -104,9 +98,14 @@ dopple.compiler.cpp =
 
 	parseScopeDecls: function()
 	{
-		if(!this.scope.virtual) {
-			this.declMap = {};
-			this.declOutput = "";
+		var cache = this.scope.cache;
+		var decls = cache.decls;
+		if(!decls) { return; }
+
+		var declGroups = cache.declGroups;
+		if(!declGroups) {
+			declGroups = {};
+			cache.declGroups = declGroups;
 		}
 
 		var strType = "";
@@ -114,17 +113,16 @@ dopple.compiler.cpp =
 
 		// Group declerations in hashmap:
 		var node = null;
-		var decls = this.scope.decls;
 		var num = decls.length;
 		for(var n = 0; n < num; n++) 
 		{
 			node = decls[n];
 
 			strType = this.createType(node);
-			typeBuffer = this.declMap[strType];
+			typeBuffer = declGroups[strType];
 			if(!typeBuffer) {
 				typeBuffer = [ node ];
-				this.declMap[strType] = typeBuffer;
+				declGroups[strType] = typeBuffer;
 			}
 			else {
 				typeBuffer.push(node);
@@ -139,10 +137,10 @@ dopple.compiler.cpp =
 			tabs = "";
 		}
 
-		for(var key in this.declMap)
+		for(var key in declGroups)
 		{
-			typeBuffer = this.declMap[key];
-			this.declOutput += tabs + key;
+			typeBuffer = declGroups[key];
+			cache.declOutput += tabs + key;
 			num = typeBuffer.length - 1;
 			for(n = 0; n < num; n++) 
 			{
@@ -150,33 +148,32 @@ dopple.compiler.cpp =
 				this._outputScopeNode(node);
 
 				if(node.flags & this.flagType.PTR) { 
-					this.declOutput += ", *";
+					cache.declOutput += ", *";
 				}	
 				else {
-					this.declOutput += ", ";
+					cache.declOutput += ", ";
 				}		
 			}
 
 			this._outputScopeNode(typeBuffer[n]);
-			this.declOutput += ";\n";
+			cache.declOutput += ";\n";
 		}
 	},
 
 	_outputScopeNode: function(node) 
 	{
-		if(node.value && node.value.flags & this.flagType.KNOWN) 
+		if(node.flags & this.flagType.MEMORY_STACK) {
+			this.scope.cache.declOutput += this.createName(node);
+		}	
+		else if(node.value && node.value.flags & this.flagType.KNOWN) 
 		{
-			// if(node.value.flags & this.flagType.MEMORY_STACK) {
-			// 	this.declOutput += this.createName(node) + "()";
-			// }
-			// else {
-				this.declOutput += this.createName(node) + " = " + 
-					this.lookup[node.value.type].call(this, node.value);
-			//}
-			node.flags |= this.flagType.HIDDEN;
-		}
-		else {
-			this.declOutput += this.createName(node) + " = " + this.createDefaultValue(node);
+			this.scope.cache.declOutput += this.createName(node) + " = " + 
+				this.lookup[node.value.type].call(this, node.value);
+		}	
+		else 
+		{
+			this.scope.cache.declOutput += 
+				this.createName(node) + " = " + this.createDefaultValue(node);
 		}
 	},
 
@@ -248,17 +245,17 @@ dopple.compiler.cpp =
 			output += this.lookup[node.value.type].call(this, node.value);
 		}
 
+		var cache = this.scope.cache;
+		if(cache.preOutput) {
+			output = cache.preOutput + this.tabs + output;
+			cache.preOutput = "";
+		}
+
 		return output;
 	},
 
-	parseAssign: function(node)
-	{
-		var output = 
-			this.createName(node) + " " + 
-			node.op + " " + 
-			this.lookup[node.value.type].call(this, node.value);
-
-		return output;
+	parseAssign: function(node) {
+		return this.parseVar(node);
 	},
 
 	parseUnary: function(node) {
@@ -268,23 +265,35 @@ dopple.compiler.cpp =
 
 	parseArray: function(node) 
 	{
-		var elementOutput = "";
-		var elementNode = null;
+		var genVarName = "";
+
 		var elements = node.elements;
-		var num = elements.length;
-		for(var n = 0; n < num; n++) {
+		if(elements)
+		{
+			var elementOutput = "";
+			var elementNode = null;
+			var num = elements.length - 1;
+
+			for(var n = 0; n < num; n++) {
+				elementNode = elements[n];
+				elementOutput += this.lookup[elementNode.type].call(this, elementNode) + ", ";
+			}
 			elementNode = elements[n];
-			elementOutput += this.lookup[elementNode.type].call(this, elementNode) + ", ";
+			elementOutput += this.lookup[elementNode.type].call(this, elementNode);
+
+			genVarName = this.scope.genVar(node.templateCls);
+
+			var templateTypeName = this.createTemplateType(node);
+			var preOutput = templateTypeName;
+			if(templateTypeName[templateTypeName.length - 1] !== "*") {
+				preOutput += " ";
+			}
+			preOutput += genVarName + "[] = { " + elementOutput;
+			preOutput += " };\n";
+			this.scope.cache.preOutput += preOutput;
 		}
-
-		var preOutput = this.createTemplateType(node) + " " + this.scope.genVar(node.cls) + " [] = { ";
-		preOutput += elementOutput;
-		preOutput += " }\n";
-		this.scope.cache.preOutput += preOutput;
-
-		console.log(preOutput);
 		
-		var output = "Array()";
+		var output = "Array<" + this.createTemplateType(node) + ">(" + genVarName + ")";
 		return output;
 	},
 
@@ -462,8 +471,14 @@ dopple.compiler.cpp =
 
 		var name = node.cls.alt;
 
-		if(node.cls.flags & this.flagType.TEMPLATE) {
-			name += "<" + this.createTemplateType(node) + ">";
+		if(node.cls.flags & this.flagType.TEMPLATE) 
+		{
+			// if(node.templateValue instanceof this.ast.Null) {
+			// 	name += "<void *>";
+			// }
+			// else {
+				name += "<" + this.createTemplateType(node) + ">";
+			//}
 		}			
 
 		if(node.flags & this.flagType.PTR) {
@@ -478,14 +493,18 @@ dopple.compiler.cpp =
 
 	createTemplateType: function(node)
 	{
-		if(!node || !node.cls) {
+		if(!node || !node.templateValue) {
 			return "void *";
 		}
 
-		var name = node.cls.alt;		
+		var name = node.templateValue.cls.alt;		
 
-		if(node.flags & this.flagType.PTR) {
+		if(node.templateValue.flags & this.flagType.PTR) {
 			name += " *";
+		}
+
+		if(node.templateValue.value.templateValue) {
+			name += "<" + this.createTemplateType(node.templateValue.value) + ">";
 		}
 
 		return name;
@@ -565,9 +584,5 @@ dopple.compiler.cpp =
 	tabs: "",
 
 	type: null,
-	flagType: null,
-
-	declMap: null,
-	declOutput: "",
-	preOutput: ""
+	flagType: null
 };

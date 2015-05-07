@@ -11,21 +11,35 @@ dopple.Extern.prototype =
 	{
 		var extern = dopple.extern;
 		var vars = this.scope.vars;
+		var nativeVars = dopple.nativeVars;
+		var ast = dopple.AST;
 
 		var cls = extern.addClass("Number");
 		cls.cls.alt = "double";
-		dopple.AST.Number.prototype.cls = cls.cls;
+		ast.Number.prototype.cls = cls.cls;
 
 		cls = extern.addClass("Boolean");
 		cls.cls.alt = "bool";
-		dopple.AST.Bool.prototype.cls = cls.cls;
+		ast.Bool.prototype.cls = cls.cls;
 
 		cls = extern.addClass("String");
 		cls.cls.alt = "char";
-		dopple.AST.String.prototype.cls = cls.cls;
+		ast.String.prototype.cls = cls.cls;
 
 		cls = extern.addClass("Function");
-		dopple.AST.Function.prototype.cls = cls.cls;
+		ast.Function.prototype.cls = cls.cls;
+
+		cls = extern.addClass("Array");
+		cls.addConstr([ vars.Number ]);
+		cls.addConstr([ vars.Array ]);
+		cls.addConstr([ nativeVars.Args ]);
+		cls.addFunc("push", nativeVars.Template, vars.Number);
+		cls.addFunc("pop", nativeVars.Template, nativeVars.Template);
+		cls.addFunc("shift", nativeVars.Template, nativeVars.Template);
+		cls.addVar("length", vars.Number);
+		cls.cls.flags |= dopple.Flag.TEMPLATE;
+		cls.finish();
+		ast.Array.prototype.cls = cls.cls;
 
 		cls = extern.addClass("console");
 		cls.addFunc("log", [ vars.String ], null);
@@ -41,18 +55,11 @@ dopple.Extern.prototype =
 		cls.addFunc("cos", null, vars.Number);
 		cls.addVar("PI", vars.Number);
 		cls.cls.global = true;
-		cls.finish();	
+		cls.finish();		
 
 		cls = extern.addClass("Float32Array");
 		cls.addConstr([ vars.Number ]);
-		cls.finish();	
-
-		// cls = extern.addClass("Array");
-		// cls.addFunc("push", [ vars.Number ], vars.Number);
-		// cls.addFunc("pop", );
-		// cls.addFunc("shift", );
-		// cls.addVar("length", vars.Number);
-		// cls.finish();			
+		cls.finish();		
 
 		cls = extern.addClass("WebGLShader");
 		cls.finish();	
@@ -218,7 +225,7 @@ dopple.ExternClass.prototype =
 			}
 		}
 
-		var funcExpr = new dopple.AST.Function(name, null, null, params);
+		var funcExpr = new dopple.AST.Function(name, null, scope, params);
 		this.cls.scope.vars[name] = funcExpr;
 
 		if(returnCls) {
@@ -251,7 +258,12 @@ dopple.ExternClass.prototype =
 		}
 	},
 
-	finish: function() {
+	finish: function() 
+	{
+		if(!this.cls.constrBuffer) {
+			this.cls.constrBuffer = [ new dopple.AST.Function() ];
+		}
+
 		dopple.resolver.resolveClass(this.cls);
 	}
 };

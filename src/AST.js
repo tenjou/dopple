@@ -5,8 +5,9 @@ meta.class("dopple.AST.Base",
 {
 	inheritFrom: function(node) {
 		this.cls = node.cls;
-		this.templateCls = node.templateCls;
+		this.templateValue = node.templateValue;
 		this.flags |= (node.flags & dopple.Flag.PTR);
+		this.flags |= (node.flags & dopple.Flag.MEMORY_STACK);
 		this.flags |= dopple.Flag.RESOLVED;		
 	},
 
@@ -15,7 +16,7 @@ meta.class("dopple.AST.Base",
 	parents: null,
 	type: dopple.Type.UNNOWN,
 	cls: null,
-	templateCls: null,
+	templateValue: null,
 	flags: 0
 });
 
@@ -73,14 +74,24 @@ meta.class("dopple.AST.Array", "dopple.AST.Base",
 	elements: null
 });
 
-dopple.AST.Array.prototype.flags |= dopple.Flag.KNOWN | dopple.Flag.MEMORY_STACK;
+dopple.AST.Array.prototype.flags |= dopple.Flag.MEMORY_STACK;
 
 /* Null */
 meta.class("dopple.AST.Null", "dopple.AST.Base", {
 	type: dopple.Type.NULL
 });
 
-dopple.AST.Null.prototype.flags |= dopple.Flag.KNOWN | dopple.Flag.PTR;
+dopple.AST.Null.prototype.flags |= dopple.Flag.KNOWN;
+
+/* Args */
+meta.class("dopple.AST.Args", "dopple.AST.Base", {
+	type: dopple.Type.ARGS
+});
+
+/* Template */
+meta.class("dopple.AST.Template", "dopple.AST.Base", {
+	type: dopple.Type.TEMPLATE
+});
 
 /* Reference */
 meta.class("dopple.AST.Reference", "dopple.AST.Base", 
@@ -102,14 +113,13 @@ meta.class("dopple.AST.New", "dopple.AST.Base",
 {
 	init: function(name, parents, args) {
 		this.name = name;
-		this.parents = parents;
-		this.args = args;
+		this.parents = parents || null;
+		this.args = args || null;
 	},
 
 	//
 	type: dopple.Type.NEW,
-	value: null, 
-	func: null,
+	func: null, 
 	args: null
 });
 
@@ -191,10 +201,10 @@ meta.class("dopple.AST.If", "dopple.AST.Base",
 meta.class("dopple.AST.Function", "dopple.AST.Base", 
 {
 	init: function(name, parents, scope, params) {
-		this.name = name;
-		this.parents = parents;
-		this.scope = scope;
-		this.params = params;
+		this.name = name || "";
+		this.parents = parents || null;
+		this.scope = scope || null;
+		this.params = params || null;
 	},
 
 	//
@@ -237,7 +247,7 @@ meta.class("dopple.AST.Class", "dopple.AST.Base",
 	init: function(name, scope) {
 		this.name = name;
 		this.alt = name;
-		this.scope = scope;
+		this.scope = scope || null;
 	},
 
 	//
