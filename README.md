@@ -2,14 +2,14 @@
 
 Dopple is compiler that generates C++ or LLVM from JavaScript code.
 
-# 1. Work in progress
+## 1. Work in progress
 
 Proper readme and installation/packaging will follow soon(tm). 
 	
-# 2. License
+## 2. License
 
 Dopple is released under the Mozilla Public License v2.0 [MPL 2.0](https://www.mozilla.org/MPL/2.0/)
 
-# 3. Links 
+## 3. Links 
 	
 * [Twitter](https://twitter.com/ArthurShefer)
