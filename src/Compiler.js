@@ -5,10 +5,9 @@ dopple.compiler.cpp =
 {
 	prepare: function() 
 	{
+		this.ast = dopple.AST;
 		this.type = dopple.Type;
 		this.flagType = dopple.Flag;
-		this.varType = dopple.VarType;
-		this.varTypeName = dopple.VarTypeName;
 
 		this.scope = dopple.scope;
 		this.global = this.scope;
@@ -168,8 +167,16 @@ dopple.compiler.cpp =
 
 	_outputScopeNode: function(node) 
 	{
-		if(node.flags & this.flagType.MEMORY_STACK) {
+		if(node.flags & this.flagType.MEMORY_STACK) 
+		{
 			this.scope.cache.declOutput += this.createName(node);
+
+			if(node.value) 
+			{
+				if(node.value instanceof this.ast.Array && !node.value.elements) {
+					node.flags |= this.flagType.HIDDEN;
+				}
+			}
 		}	
 		else if(node.value && node.value.flags & this.flagType.KNOWN) 
 		{
@@ -605,6 +612,7 @@ dopple.compiler.cpp =
 	lookup: null,
 	tabs: "",
 
+	ast: null,
 	type: null,
 	flagType: null
 };
