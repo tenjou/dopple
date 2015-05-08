@@ -73,6 +73,7 @@ dopple.compiler.cpp =
 
 		var output = "";
 		var nodeOutput = "";
+		var cache = this.scope.cache;
 
 		// Output the rest of the scope:
 		var node = null;
@@ -84,6 +85,11 @@ dopple.compiler.cpp =
 			if(!node || node.flags & this.flagType.HIDDEN) { continue; }
 
 			nodeOutput = this.lookup[node.type].call(this, node);
+
+			if(cache.preOutput) {
+				output += cache.preOutput;
+				cache.preOutput = "";
+			}
 			if(nodeOutput) {
 				output += this.tabs + nodeOutput + ";\n";
 			}
@@ -207,7 +213,12 @@ dopple.compiler.cpp =
 		return "false";
 	},
 
-	parseRef: function(node) {
+	parseRef: function(node) 
+	{
+		if(node.value && node.value.flags & this.flagType.GETTER) {
+			return this.createGetterName(node);
+		}
+
 		return this.createName(node);
 	},
 
@@ -242,15 +253,19 @@ dopple.compiler.cpp =
 
 	parseVar: function(node) 
 	{
-		var output = this.createName(node) + " = ";
-		if(node.value) {
-			output += this.lookup[node.value.type].call(this, node.value);
-		}
+		var output;
 
-		var cache = this.scope.cache;
-		if(cache.preOutput) {
-			output = cache.preOutput + this.tabs + output;
-			cache.preOutput = "";
+		if(node.flags & this.flagType.SETTER) 
+		{
+			output = this.createSetterName(node) + "(" 
+				+ this.lookup[node.value.type].call(this, node.value) + ")";
+		}
+		else 
+		{
+			output = this.createName(node) + " = ";
+			if(node.value) {
+				output += this.lookup[node.value.type].call(this, node.value);
+			}
 		}
 
 		return output;
@@ -286,7 +301,7 @@ dopple.compiler.cpp =
 			genVarName = this.scope.genVar(node.templateCls);
 
 			var templateTypeName = this.createTemplateType(node);
-			var preOutput = templateTypeName;
+			var preOutput = this.tabs + templateTypeName;
 			if(templateTypeName[templateTypeName.length - 1] !== "*") {
 				preOutput += " ";
 			}
@@ -473,14 +488,8 @@ dopple.compiler.cpp =
 
 		var name = node.cls.alt;
 
-		if(node.cls.flags & this.flagType.TEMPLATE) 
-		{
-			// if(node.templateValue instanceof this.ast.Null) {
-			// 	name += "<void *>";
-			// }
-			// else {
-				name += "<" + this.createTemplateType(node) + ">";
-			//}
+		if(node.cls.flags & this.flagType.TEMPLATE) {
+			name += "<" + this.createTemplateType(node) + ">";
 		}			
 
 		if(node.flags & this.flagType.PTR) {
@@ -505,8 +514,8 @@ dopple.compiler.cpp =
 			name += " *";
 		}
 
-		if(node.templateValue.value.templateValue) {
-			name += "<" + this.createTemplateType(node.templateValue.value) + ">";
+		if(node.templateValue.templateValue) {
+			name += "<" + this.createTemplateType(node.templateValue) + ">";
 		}
 
 		return name;
@@ -528,7 +537,7 @@ dopple.compiler.cpp =
 		return "nullptr";
 	},
 
-	createName: function(node)
+	createNamePath: function(node)
 	{
 		var name = "";
 		var parents = node.parents;
@@ -555,7 +564,7 @@ dopple.compiler.cpp =
 				}
 				
 				name += parentName; 
-				if(parentNode.global) {
+				if(parentNode.flags & this.flagType.MEMORY_STACK || parentNode.global) {
 					name += "."
 				}
 				else {
@@ -566,9 +575,20 @@ dopple.compiler.cpp =
 			}
 		}
 
-		name += node.name;
-		return name;
+		return name;		
+	},
+
+	createName: function(node) {
+		return this.createNamePath(node) + node.name;
 	},	
+
+	createSetterName: function(node) {
+		return this.createNamePath(node) + "__setter__" + node.name;
+	},
+
+	createGetterName: function(node) {
+		return this.createNamePath(node) + "__getter__" + node.name + "()";
+	},
 
 	incTabs: function() {
 		this.tabs += "\t";

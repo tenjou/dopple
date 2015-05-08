@@ -93,7 +93,8 @@ dopple.Type = {
 	NULL: 17,
 	ARRAY: 18,
 	TEMPLATE: 19,
-	ARGS: 20
+	ARGS: 20,
+	MUTATOR: 21
 };
 
 dopple.Flag = {
@@ -105,7 +106,9 @@ dopple.Flag = {
 	EXTERN: 32,
 	MEMORY_STACK: 64,
 	MEMORY_HEAP: 128,
-	TEMPLATE: 256
+	TEMPLATE: 256,
+	SETTER: 512,
+	GETTER: 1024
 };
 
 dopple.acorn =  

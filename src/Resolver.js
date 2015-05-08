@@ -30,6 +30,7 @@ dopple.Resolver.prototype =
 		this.lookup[this.type.FUNCTION_CALL] = this.resolveFuncCall;
 		this.lookup[this.type.RETURN] = this.resolveReturn;
 		this.lookup[this.type.UNARY] = this.resolveUnary;
+		this.lookup[this.type.MUTATOR] = this.resolveMutator;
 	},
 
 	do: function() 
@@ -104,29 +105,18 @@ dopple.Resolver.prototype =
 		var expr = this.getRef(node);
 		this.checkTypes(expr, node);
 
+		if(expr instanceof this.ast.Mutator) 
+		{
+			if((expr.flags & this.flagType.SETTER) === 0) {
+				throw "Assign not possible - mutator \"" + node.name + "\" does not own a setter";
+			}
+			else {
+				node.flags |= this.flagType.SETTER;
+			}
+		}
+
 		return node;
 	},	
-
-	checkTypes: function(srcNode, targetNode)
-	{
-		if(srcNode.cls) 
-		{
-			if(srcNode.cls !== targetNode.cls) {
-				throw "Incompatible type for " + targetNode.name + " assignment: expected [" 
-						+ this.createType(srcNode) + "] but got [" 
-						+ this.createType(targetNode) + "]";	
-			}
-
-			if(srcNode.flags & this.flagType.TEMPLATE) 
-			{
-				if(srcNode.templateValue.cls !== targetNode.templateValue.cls) {
-					throw "Type does not match: expected [" 
-						+ this.createType(srcNode.templateValue) + "] but got [" 
-						+ this.createType(targetNode.templateValue) + "]";							
-				}
-			}
-		}	
-	},
 
 	resolveIf: function(node) {
 		node.value = this.resolveValue(node.value);
@@ -263,19 +253,10 @@ dopple.Resolver.prototype =
 		value = bufferNode;
 		cls = bufferNode.cls;
 
-		for(var n = 1; n < num; n++)
-		{
+		for(var n = 1; n < num; n++) {
 			bufferNode = elements[n];
 			bufferNode = this.resolveValue(bufferNode);
-			if(cls !== bufferNode.cls) 
-			{
-				if(!(bufferNode instanceof this.ast.Null) || 
-				     value.flags & this.flagType.PTR === 0) 
-				{
-					throw "Type does not match: expected [" 
-						+ this.createType(value) + "] but got [" + this.createType(bufferNode) + "]";					
-				}
-			}
+			this.checkTypes(value, bufferNode);
 		}
 
 		if(!(value instanceof this.ast.Null)) {
@@ -284,6 +265,33 @@ dopple.Resolver.prototype =
 
 		return node;
 	},
+
+	checkTypes: function(srcNode, targetNode)
+	{
+		if(srcNode.cls) 
+		{
+			if(srcNode.cls !== targetNode.cls) 
+			{
+				if(!(targetNode instanceof this.ast.Null) || 
+				     targetNode.flags & this.flagType.PTR === 0) 
+				{				
+					throw "Incompatible type for \"" + targetNode.name + "\" assignment: expected [" 
+							+ this.createType(srcNode) + "] but got [" 
+							+ this.createType(targetNode) + "]";
+				}	
+			}
+
+			if(srcNode.flags & this.flagType.TEMPLATE) 
+			{
+				if(srcNode.templateValue.cls !== targetNode.templateValue.cls) {
+					//node.templateValue = srcNode;
+					throw "Types does not match: expected [" 
+						+ this.createType(srcNode) + "] but got [" 
+						+ this.createType(targetNode) + "]";							
+				}
+			}
+		}		
+	},	
 
 	resolveRef: function(node) 
 	{
@@ -399,6 +407,18 @@ dopple.Resolver.prototype =
 		return node;
 	},
 
+	resolveMutator: function(node) 
+	{
+		var ref = this.getRef(node);
+		if(ref) {
+			throw "Redefinition: " + node.name + " is already defined in this scope";
+		}
+
+		this.scope.vars[node.name] = node;
+
+		return node;
+	},
+
 	convertToClass: function(node) 
 	{
 		var cls = new dopple.AST.Class(node.name, node.scope);
@@ -415,7 +435,7 @@ dopple.Resolver.prototype =
 			throw "ReferenceError: " + node.name + " is not defined";
 		}
 
-		if(expr.type === this.type.VAR) {
+		if(expr instanceof this.ast.Var) {
 			return expr.value;
 		}
 
@@ -438,6 +458,15 @@ dopple.Resolver.prototype =
 			else if(expr instanceof dopple.AST.Class) {
 				scope = expr.scope;
 			}
+			else if(expr instanceof this.ast.Mutator) 
+			{
+				if((expr.flags & this.flagType.GETTER) === 0) {
+					throw "Assign not possible - mutator \"" + node.name + "\" does not own a getter";
+				}
+				else {
+					node.flags |= this.flagType.GETTER;
+				}
+			}			
 
 			ref = scope.vars[node.name];
 
@@ -460,7 +489,7 @@ dopple.Resolver.prototype =
 			scope = scope.parent;
 		}
 
-		return ref;	
+		return null;	
 	},
 
 	createType: function(node)

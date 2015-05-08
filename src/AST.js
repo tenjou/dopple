@@ -262,3 +262,15 @@ meta.class("dopple.AST.Class", "dopple.AST.Base",
 	constrBuffer: null,
 	alt: "",
 });
+
+/* Mutator */
+meta.class("dopple.AST.Mutator", "dopple.AST.Base", 
+{
+	init: function(name) {
+		this.name = name;
+	},
+
+	//
+	type: dopple.Type.MUTATOR
+});
+
