@@ -87,14 +87,10 @@ dopple.Resolver.prototype =
 					this.scope.cache.decls.push(node);
 				}
 			}
-		}
-		else if(nodeValue)
-		{
-			var assignExpr = this.resolveAssignType(expr, node);
-			if(assignExpr) {
-				return assignExpr;
-			}	
-		}			
+		}	
+		else {
+			this.checkTypes(expr, node);	
+		}	
 
 		return node;
 	},
@@ -106,33 +102,30 @@ dopple.Resolver.prototype =
 		node.inheritFrom(nodeValue);
 
 		var expr = this.getRef(node);
-		var assignExpr = this.resolveAssignType(expr, node);
-		if(assignExpr) {
-			node = assignExpr;
-		}
-		else {
-			node.value = nodeValue;
-		}
+		this.checkTypes(expr, node);
 
 		return node;
 	},	
 
-	resolveAssignType: function(expr, node)
+	checkTypes: function(srcNode, targetNode)
 	{
-		var assignExpr = new dopple.AST.Assign(node.name, node.parents, node.value, "=");
-		assignExpr.inheritFrom(node.value);
-
-		if(expr.cls) 
+		if(srcNode.cls) 
 		{
-			if(expr.cls !== node.cls) {
-				throw "Incompatible type for " + node.name + " assignement";
+			if(srcNode.cls !== targetNode.cls) {
+				throw "Incompatible type for " + targetNode.name + " assignment: expected [" 
+						+ this.createType(srcNode) + "] but got [" 
+						+ this.createType(targetNode) + "]";	
 			}
-		}
-		else {
-			expr.inheritFrom(assignExpr);
-		}
 
-		return assignExpr;
+			if(srcNode.flags & this.flagType.TEMPLATE) 
+			{
+				if(srcNode.templateValue.cls !== targetNode.templateValue.cls) {
+					throw "Type does not match: expected [" 
+						+ this.createType(srcNode.templateValue) + "] but got [" 
+						+ this.createType(targetNode.templateValue) + "]";							
+				}
+			}
+		}	
 	},
 
 	resolveIf: function(node) {
@@ -285,7 +278,9 @@ dopple.Resolver.prototype =
 			}
 		}
 
-		node.templateValue = value;
+		if(!(value instanceof this.ast.Null)) {
+			node.templateValue = value;
+		}
 
 		return node;
 	},

@@ -3,9 +3,15 @@
 /* Base */
 meta.class("dopple.AST.Base", 
 {
-	inheritFrom: function(node) {
+	inheritFrom: function(node) 
+	{
 		this.cls = node.cls;
-		this.templateValue = node.templateValue;
+
+		if(node.flags & dopple.Flag.TEMPLATE) {
+			this.templateValue = node.templateValue;
+			this.flags |= dopple.Flag.TEMPLATE;
+		}
+		
 		this.flags |= (node.flags & dopple.Flag.PTR);
 		this.flags |= (node.flags & dopple.Flag.MEMORY_STACK);
 		this.flags |= dopple.Flag.RESOLVED;		
@@ -74,7 +80,7 @@ meta.class("dopple.AST.Array", "dopple.AST.Base",
 	elements: null
 });
 
-dopple.AST.Array.prototype.flags |= dopple.Flag.MEMORY_STACK;
+dopple.AST.Array.prototype.flags |= dopple.Flag.TEMPLATE | dopple.Flag.MEMORY_STACK;
 
 /* Null */
 meta.class("dopple.AST.Null", "dopple.AST.Base", {

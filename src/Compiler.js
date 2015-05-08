@@ -169,6 +169,8 @@ dopple.compiler.cpp =
 		{
 			this.scope.cache.declOutput += this.createName(node) + " = " + 
 				this.lookup[node.value.type].call(this, node.value);
+
+			node.flags |= this.flagType.HIDDEN;
 		}	
 		else 
 		{
