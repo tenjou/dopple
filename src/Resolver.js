@@ -198,18 +198,38 @@ dopple.Resolver.prototype =
 				node.name + ": passed " + numArgs + " but expected " + numParams;
 		}
 
+		var parent = null;
 		for(var n = 0; n < numArgs; n++) 
 		{
 			param = params[n];
 			arg = this.resolveValue(args[n]);
 
-			if(param.cls && param.cls !== arg.cls) 
+			if(param.cls) 
 			{
-				throw "TypeError: #" + (n + 1) + " argument can not be casted from " + 
-					arg.cls.name + " to " + param.cls.name + " type";
-			}
+				if(param.cls !== arg.cls)
+				{
+					if(param.cls.flags & this.flagType.TEMPLATE)
+					{
+						parent = node.parent;
 
-			param.cls = arg.cls;
+						if(!parent.templateValue) {
+							parent.templateValue = arg;
+						}
+						else if(parent.templateValue.type !== arg.type && arg.type !== this.type.NULL) 
+						{
+							throw "TypeError: #" + (n + 1) + " argument can not be casted from [" + 
+								this.createType(arg) + "] to [" + this.createType(parent.templateValue) + "] type";
+						}
+					}
+					else {
+						throw "TypeError: #" + (n + 1) + " argument can not be casted from [" + 
+							this.createType(arg) + "] to [" + this.createType(param) + "] type";
+					}					
+				}
+			}
+			else {
+				param.cls = arg.cls;
+			}
 		}
 
 		this.resolveFunc(node.value);
@@ -266,31 +286,42 @@ dopple.Resolver.prototype =
 		return node;
 	},
 
-	checkTypes: function(srcNode, targetNode)
+	checkTypes: function(leftNode, rigthNode)
 	{
-		if(srcNode.cls) 
+		var leftCls = leftNode.cls;
+		var rightCls = rigthNode.cls;
+
+		if(leftCls) 
 		{
-			if(srcNode.cls !== targetNode.cls) 
+			if(leftCls !== rigthCls) 
 			{
-				if(!(targetNode instanceof this.ast.Null) || 
-				     targetNode.flags & this.flagType.PTR === 0) 
+				if(leftCls === this.numCls && rightCls === this.strCls) {
+					node.cls = this.strCls;
+				}
+				else if(leftCls === this.strCls && rightCls === this.numCls) {
+					node.cls = this.strCls;
+				}
+				else if(!(rigthNode instanceof this.ast.Null) || 
+				     rigthNode.flags & this.flagType.PTR === 0) 
 				{				
-					throw "Incompatible type for \"" + targetNode.name + "\" assignment: expected [" 
-							+ this.createType(srcNode) + "] but got [" 
-							+ this.createType(targetNode) + "]";
+					throw "Incompatible type for \"" + leftNode.name + "\" assignment: expected [" 
+							+ this.createType(leftNode) + "] but got [" 
+							+ this.createType(rigthNode) + "]";
 				}	
 			}
 
-			if(srcNode.flags & this.flagType.TEMPLATE) 
+			if(leftNode.flags & this.flagType.TEMPLATE) 
 			{
-				if(srcNode.templateValue.cls !== targetNode.templateValue.cls) {
-					//node.templateValue = srcNode;
+				if(leftNode.templateValue.cls !== rigthNode.templateValue.cls) {
 					throw "Types does not match: expected [" 
-						+ this.createType(srcNode) + "] but got [" 
-						+ this.createType(targetNode) + "]";							
+						+ this.createType(leftNode) + "] but got [" 
+						+ this.createType(rigthNode) + "]";							
 				}
 			}
-		}		
+		}
+		else {
+			leftNode.cls = rightCls;
+		}			
 	},	
 
 	resolveRef: function(node) 
@@ -317,27 +348,11 @@ dopple.Resolver.prototype =
 
 	resolveValue: function(node)
 	{
-		if(node instanceof dopple.AST.Binary)
+		if(node instanceof dopple.AST.Binary) 
 		{
-			var leftCls = this.resolveValue(node.lhs).cls;
-			var rightCls = this.resolveValue(node.rhs).cls;
-
-			if(leftCls !== rightCls)
-			{
-				if(leftCls === this.numCls && rightCls === this.strCls) {
-					node.cls = this.strCls;
-				}
-				else if(leftCls === this.strCls && rightCls === this.numCls) {
-					node.cls = this.strCls;
-				}
-				else {
-					throw "TypeError: Can not cast value from " + 
-						leftCls.name + " to " + rightCls.name + " type";
-				}
-			}
-			else {
-				node.cls = leftCls;
-			}		
+			var lefValue = this.resolveValue(node.lhs);
+			var rightValue = this.resolveValue(node.rhs);
+			this.checkTypes(lefValue, rightValue);	
 		}
 		else if(node instanceof this.ast.Unary) {
 			node.value = this.resolveValue(node.value);
@@ -390,8 +405,8 @@ dopple.Resolver.prototype =
 
 				if(param.cls && param.cls !== arg.cls) 
 				{
-					throw "TypeError: #" + (n + 1) + " argument can not be casted from " + 
-						arg.cls.name + " to " + param.cls.name + " type";
+					throw "TypeError: #" + (n + 1) + " argument can not be casted from [" + 
+						this.createType(arg) + "] to [" + this.createType(param) + "] type";
 				}
 
 				param.cls = arg.cls;
@@ -469,6 +484,8 @@ dopple.Resolver.prototype =
 			}			
 
 			ref = scope.vars[node.name];
+
+			node.parent = expr;
 
 			return ref;
 		}

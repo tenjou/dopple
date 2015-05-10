@@ -12,6 +12,7 @@ meta.class("dopple.AST.Base",
 			this.flags |= dopple.Flag.TEMPLATE;
 		}
 		
+		this.flags |= (node.flags & dopple.Flag.KNOWN);
 		this.flags |= (node.flags & dopple.Flag.PTR);
 		this.flags |= (node.flags & dopple.Flag.MEMORY_STACK);
 		this.flags |= dopple.Flag.RESOLVED;		
@@ -22,6 +23,7 @@ meta.class("dopple.AST.Base",
 	parents: null,
 	type: dopple.Type.UNNOWN,
 	cls: null,
+	parent: null,
 	templateValue: null,
 	flags: 0
 });
@@ -30,7 +32,7 @@ meta.class("dopple.AST.Base",
 meta.class("dopple.AST.Number", "dopple.AST.Base", 
 {
 	init: function(num) {
-		this.value = num;
+		this.value = num || 0;
 	},
 
 	//
@@ -98,6 +100,8 @@ meta.class("dopple.AST.Args", "dopple.AST.Base", {
 meta.class("dopple.AST.Template", "dopple.AST.Base", {
 	type: dopple.Type.TEMPLATE
 });
+
+dopple.AST.Template.prototype.flags |= dopple.Flag.KNOWN
 
 /* Reference */
 meta.class("dopple.AST.Reference", "dopple.AST.Base", 
@@ -256,12 +260,23 @@ meta.class("dopple.AST.Class", "dopple.AST.Base",
 		this.scope = scope || null;
 	},
 
+	set ast(ast) {
+		this._ast = ast;
+		this._ast.prototype.cls = this;
+	},
+
+	get ast() { return this._ast; },	
+
 	//
 	type: dopple.Type.CLASS,
 	proto: null,
 	constrBuffer: null,
 	alt: "",
+
+	_ast: null
 });
+
+dopple.AST.Class.prototype.cls = dopple.AST.Class;
 
 /* Mutator */
 meta.class("dopple.AST.Mutator", "dopple.AST.Base", 
@@ -272,5 +287,19 @@ meta.class("dopple.AST.Mutator", "dopple.AST.Base",
 
 	//
 	type: dopple.Type.MUTATOR
+});
+
+/* Operator */
+meta.class("dopple.AST.Op", "dopple.AST.Base", 
+{
+	init: function(op, argCls) {
+		this.op = op;
+		this.argCls = argCls;
+	},
+
+	//
+	type: dopple.Type.OP,
+	op: "",
+	argCls: null
 });
 

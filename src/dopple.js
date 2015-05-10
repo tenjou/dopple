@@ -24,13 +24,14 @@ var dopple =
 	loadNativeVars: function()
 	{
 		this.nativeVars.Null = new dopple.AST.Class("Null");
-		dopple.AST.Null.prototype.cls = this.nativeVars.Null;
+		this.nativeVars.Null.ast = dopple.AST.Null;
 
 		this.nativeVars.Args = new dopple.AST.Class("Args");
-		dopple.AST.Args.prototype.cls = this.nativeVars.Args;		
+		this.nativeVars.Args.ast = dopple.AST.Args;	
 
 		this.nativeVars.Template = new dopple.AST.Class("Template");
-		dopple.AST.Template.prototype.cls = this.nativeVars.Template;		
+		this.nativeVars.Template.ast = dopple.AST.Template;	
+		this.nativeVars.Template.flags |= this.Flag.TEMPLATE | this.Flag.KNOWN;
 	},
 
 	resolve: function() {
@@ -94,7 +95,8 @@ dopple.Type = {
 	ARRAY: 18,
 	TEMPLATE: 19,
 	ARGS: 20,
-	MUTATOR: 21
+	MUTATOR: 21,
+	OP: 22
 };
 
 dopple.Flag = {

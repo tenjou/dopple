@@ -16,30 +16,35 @@ dopple.Extern.prototype =
 
 		var cls = extern.addClass("Number");
 		cls.cls.alt = "double";
-		ast.Number.prototype.cls = cls.cls;
+		cls.cls.ast = ast.Number;
+		cls.finish();
 
 		cls = extern.addClass("Boolean");
 		cls.cls.alt = "bool";
-		ast.Bool.prototype.cls = cls.cls;
+		cls.cls.ast = ast.Bool;
+		cls.finish();
 
 		cls = extern.addClass("String");
 		cls.cls.alt = "char";
-		ast.String.prototype.cls = cls.cls;
+		cls.cls.ast = ast.String;
+		cls.finish();
 
 		cls = extern.addClass("Function");
-		ast.Function.prototype.cls = cls.cls;
+		cls.cls.ast = ast.Function;
+		cls.finish();
 
 		cls = extern.addClass("Array");
 		cls.addConstr([ vars.Number ]);
 		cls.addConstr([ vars.Array ]);
 		cls.addConstr([ nativeVars.Args ]);
-		cls.addFunc("push", nativeVars.Template, vars.Number);
-		cls.addFunc("pop", nativeVars.Template, nativeVars.Template);
-		cls.addFunc("shift", nativeVars.Template, nativeVars.Template);
+		cls.addFunc("push", [ nativeVars.Template ], vars.Number, true);
+		cls.addFunc("pop", null, nativeVars.Template);
+		cls.addFunc("shift", null, nativeVars.Template);
 		cls.addMutator("length", vars.Number).flags |= dopple.Flag.SETTER | dopple.Flag.GETTER;
+		//cls.addOp("[", vars.Number, nativeVars.Template);
 		cls.cls.flags |= dopple.Flag.TEMPLATE;
+		cls.cls.ast = ast.Array;
 		cls.finish();
-		ast.Array.prototype.cls = cls.cls;
 
 		// cls = extern.addClass("console");
 		// cls.addFunc("log", [ vars.String ], null);
@@ -208,7 +213,7 @@ dopple.ExternClass.prototype =
 		this.cls.scope.body.push(varExpr);
 	},
 
-	addFunc: function(name, paramClasses, returnCls) 
+	addFunc: function(name, paramClasses, returnCls, returnAsType) 
 	{
 		var scope = new dopple.Scope(dopple.scope);
 		var params = null;
@@ -228,8 +233,28 @@ dopple.ExternClass.prototype =
 		var funcExpr = new dopple.AST.Function(name, null, scope, params);
 		this.cls.scope.vars[name] = funcExpr;
 
-		if(returnCls) {
-			var retExpr = new dopple.AST.Return(new dopple.AST.New(returnCls.name, null, null));
+		if(returnCls) 
+		{
+			var retExpr = null;
+
+			if(returnAsType) {
+				retExpr = new dopple.AST.Return(new returnCls.ast());
+			}
+			else 
+			{
+				var newExpr = null;
+				if(returnCls === dopple.nativeVars.Template) {
+					newExpr = new dopple.AST.New(null, null, null);
+					newExpr.cls = returnCls;
+					newExpr.flags |= dopple.Flag.KNOWN;
+				}
+				else {
+					newExpr = new dopple.AST.New(returnCls.name, null, null);
+				}
+
+				retExpr = new dopple.AST.Return(newExpr);
+			}
+			
 			scope.body.push(retExpr);			
 		}
 	},
@@ -263,6 +288,11 @@ dopple.ExternClass.prototype =
 		expr.cls = cls;
 		this.cls.scope.body.push(expr);
 		return expr;
+	},
+
+	addOp: function(op, argCls, retCls)
+	{
+		var expr = new dopple.AST.Op
 	},
 
 	finish: function() 
