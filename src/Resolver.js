@@ -37,6 +37,7 @@ dopple.Resolver.prototype =
 	{
 		this.numCls = this.global.vars.Number;
 		this.strCls = this.global.vars.String;
+		this.nativeVars = dopple.nativeVars;
 
 		this.resolveScope(this.global);
 	},
@@ -185,6 +186,8 @@ dopple.Resolver.prototype =
 		else {
 			node.value = expr;
 		}
+
+		var func = node.value;
 		 
 		var param, arg;
 		var params = node.value.params;
@@ -194,42 +197,34 @@ dopple.Resolver.prototype =
 
 		if(numArgs > numParams) 
 		{
-			throw "Passed too many arguments for " + 
-				node.name + ": passed " + numArgs + " but expected " + numParams;
+			if((func.flags & this.flagType.RESOLVED) === 0) 
+			{
+				var argCls = this.nativeVars.Args;
+				for(var n = 0; n < numParams; n++) {
+					if(params[n].cls === argCls) {
+						func.argsIndex = n;
+						break;
+					}
+				}				
+			}
+
+			if(func.argsIndex === -1)
+			{
+				throw "Passed too many arguments for " + 
+					node.name + ": passed " + numArgs + " but expected " + numParams;
+			}
+		}
+
+		if(func.argsIndex > -1) {
+			numParams = func.argsIndex;
 		}
 
 		var parent = null;
-		for(var n = 0; n < numArgs; n++) 
+		for(var n = 0; n < numParams; n++) 
 		{
 			param = params[n];
 			arg = this.resolveValue(args[n]);
-
-			if(param.cls) 
-			{
-				if(param.cls !== arg.cls)
-				{
-					if(param.cls.flags & this.flagType.TEMPLATE)
-					{
-						parent = node.parent;
-
-						if(!parent.templateValue) {
-							parent.templateValue = arg;
-						}
-						else if(parent.templateValue.type !== arg.type && arg.type !== this.type.NULL) 
-						{
-							throw "TypeError: #" + (n + 1) + " argument can not be casted from [" + 
-								this.createType(arg) + "] to [" + this.createType(parent.templateValue) + "] type";
-						}
-					}
-					else {
-						throw "TypeError: #" + (n + 1) + " argument can not be casted from [" + 
-							this.createType(arg) + "] to [" + this.createType(param) + "] type";
-					}					
-				}
-			}
-			else {
-				param.cls = arg.cls;
-			}
+			this.checkTypes(param, arg);
 		}
 
 		this.resolveFunc(node.value);
@@ -293,9 +288,12 @@ dopple.Resolver.prototype =
 
 		if(leftCls) 
 		{
-			if(leftCls !== rigthCls) 
+			if(leftCls !== rightCls) 
 			{
-				if(leftCls === this.numCls && rightCls === this.strCls) {
+				if(leftCls === this.nativeVars.Args) {
+					return;
+				}
+				else if(leftCls === this.numCls && rightCls === this.strCls) {
 					node.cls = this.strCls;
 				}
 				else if(leftCls === this.strCls && rightCls === this.numCls) {
@@ -304,7 +302,7 @@ dopple.Resolver.prototype =
 				else if(!(rigthNode instanceof this.ast.Null) || 
 				     rigthNode.flags & this.flagType.PTR === 0) 
 				{				
-					throw "Incompatible type for \"" + leftNode.name + "\" assignment: expected [" 
+					throw "Types does not match \"" + leftNode.name + "\" assignment: expected [" 
 							+ this.createType(leftNode) + "] but got [" 
 							+ this.createType(rigthNode) + "]";
 				}	
@@ -312,10 +310,11 @@ dopple.Resolver.prototype =
 
 			if(leftNode.flags & this.flagType.TEMPLATE) 
 			{
-				if(leftNode.templateValue.cls !== rigthNode.templateValue.cls) {
-					throw "Types does not match: expected [" 
-						+ this.createType(leftNode) + "] but got [" 
-						+ this.createType(rigthNode) + "]";							
+				if(leftNode.templateValue.cls !== rigthNode.templateValue.cls) 
+				{
+					throw "Types does not match \"" + leftNode.name + "\" assignment: expected [" 
+							+ this.createType(leftNode) + "] but got [" 
+							+ this.createType(rigthNode) + "]";						
 				}
 			}
 		}
@@ -398,18 +397,10 @@ dopple.Resolver.prototype =
 			if(numArgs > numParams) { continue; }
 
 			// Validate arguments:
-			for(i = 0; i < numArgs; i++)
-			{
+			for(i = 0; i < numArgs; i++) {
 				param = params[i];
 				arg = this.resolveValue(args[i]);
-
-				if(param.cls && param.cls !== arg.cls) 
-				{
-					throw "TypeError: #" + (n + 1) + " argument can not be casted from [" + 
-						this.createType(arg) + "] to [" + this.createType(param) + "] type";
-				}
-
-				param.cls = arg.cls;
+				this.checkTypes(param, arg);
 			}
 
 			node.func = constr;			
@@ -549,5 +540,6 @@ dopple.Resolver.prototype =
 
 	//
 	numCls: null,
-	strCls: null
+	strCls: null,
+	nativeVars: null
 };

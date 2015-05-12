@@ -220,7 +220,8 @@ meta.class("dopple.AST.Function", "dopple.AST.Base",
 	//
 	type: dopple.Type.FUNCTION,
 	value: null,
-	returnCls: null
+	returnCls: null,
+	argsIndex: -1
 });
 
 /* Function Call */

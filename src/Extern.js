@@ -46,12 +46,12 @@ dopple.Extern.prototype =
 		cls.cls.ast = ast.Array;
 		cls.finish();
 
-		// cls = extern.addClass("console");
-		// cls.addFunc("log", [ vars.String ], null);
-		// cls.addFunc("warn", [ vars.String ], null);
-		// cls.addFunc("error", [ vars.String ], null);
-		// cls.cls.global = true;
-		// cls.finish();
+		cls = extern.addClass("console");
+		cls.addFunc("log", [ nativeVars.Args ], null);
+		cls.addFunc("warn", [ vars.String ], null);
+		cls.addFunc("error", [ vars.String ], null);
+		cls.cls.global = true;
+		cls.finish();
 
 		// cls = extern.addClass("Math");
 		// cls.addFunc("abs", [ vars.Number ], vars.Number);
