@@ -62,9 +62,11 @@ dopple.Extern.prototype =
 		// cls.cls.global = true;
 		// cls.finish();		
 
-		// cls = extern.addClass("Float32Array");
-		// cls.addConstr([ vars.Number ]);
-		// cls.finish();		
+		cls = extern.addClass("Float32Array");
+		cls.addConstr([ nativeVars.Template ]);
+		cls.addConstr(null);
+		cls.cls.flags |= dopple.Flag.MEMORY_STACK;
+		cls.finish();		
 
 		// cls = extern.addClass("WebGLShader");
 		// cls.finish();	
@@ -261,16 +263,18 @@ dopple.ExternClass.prototype =
 
 	addConstr: function(paramClasses)
 	{
-		if(!paramClasses) { return; }
-
 		var params = null;
 		var refExpr = null;
-		var num = paramClasses.length;
-		params = new Array(num);
-		for(var n = 0; n < num; n++) {
-			refExpr = new dopple.AST.Reference("p" + n, null);
-			refExpr.cls = paramClasses[n];
-			params[n] = refExpr;
+
+		if(paramClasses)
+		{
+			var num = paramClasses.length;
+			params = new Array(num);
+			for(var n = 0; n < num; n++) {
+				refExpr = new dopple.AST.Reference("p" + n, null);
+				refExpr.cls = paramClasses[n];
+				params[n] = refExpr;
+			}
 		}
 
 		var funcExpr = new dopple.AST.Function(name, null, null, params);	

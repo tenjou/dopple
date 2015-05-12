@@ -281,41 +281,43 @@ dopple.Resolver.prototype =
 		return node;
 	},
 
-	checkTypes: function(leftNode, rigthNode)
+	checkTypes: function(leftNode, rightNode)
 	{
 		var leftCls = leftNode.cls;
-		var rightCls = rigthNode.cls;
+		var rightCls = rightNode.cls;
 
 		if(leftCls) 
 		{
-			if(leftCls !== rightCls) 
+			if(leftCls.flags & this.flagType.TEMPLATE) 
+			{
+				if(!leftNode.templateValue) {
+					leftNode.templateValue = rightNode.templateValue;
+				}
+				else if(leftNode.templateValue.cls !== rightNode.templateValue.cls) 
+				{
+					throw "Types does not match \"" + leftNode.name + "\" assignment: expected [" 
+							+ this.createType(leftNode) + "] but got [" 
+							+ this.createType(rightNode) + "]";						
+				}
+			}
+			else if(leftCls !== rightCls) 
 			{
 				if(leftCls === this.nativeVars.Args) {
 					return;
 				}
 				else if(leftCls === this.numCls && rightCls === this.strCls) {
-					node.cls = this.strCls;
+					leftNode.cls = this.strCls;
 				}
 				else if(leftCls === this.strCls && rightCls === this.numCls) {
-					node.cls = this.strCls;
+					leftNode.cls = this.strCls;
 				}
-				else if(!(rigthNode instanceof this.ast.Null) || 
-				     rigthNode.flags & this.flagType.PTR === 0) 
+				else if(!(rightNode instanceof this.ast.Null) || 
+				     rightNode.flags & this.flagType.PTR === 0) 
 				{				
 					throw "Types does not match \"" + leftNode.name + "\" assignment: expected [" 
 							+ this.createType(leftNode) + "] but got [" 
-							+ this.createType(rigthNode) + "]";
+							+ this.createType(rightNode) + "]";
 				}	
-			}
-
-			if(leftNode.flags & this.flagType.TEMPLATE) 
-			{
-				if(leftNode.templateValue.cls !== rigthNode.templateValue.cls) 
-				{
-					throw "Types does not match \"" + leftNode.name + "\" assignment: expected [" 
-							+ this.createType(leftNode) + "] but got [" 
-							+ this.createType(rigthNode) + "]";						
-				}
 			}
 		}
 		else {
@@ -349,9 +351,10 @@ dopple.Resolver.prototype =
 	{
 		if(node instanceof dopple.AST.Binary) 
 		{
-			var lefValue = this.resolveValue(node.lhs);
+			var leftValue = this.resolveValue(node.lhs);
 			var rightValue = this.resolveValue(node.rhs);
-			this.checkTypes(lefValue, rightValue);	
+			this.checkTypes(leftValue, rightValue);	
+			node.cls = leftValue.cls;
 		}
 		else if(node instanceof this.ast.Unary) {
 			node.value = this.resolveValue(node.value);
@@ -403,12 +406,14 @@ dopple.Resolver.prototype =
 				this.checkTypes(param, arg);
 			}
 
-			node.func = constr;			
+			node.func = constr;
 		}
 
 		if(!node.func) {
 			throw "Could not find matching constructor for: " + node.cls.name;		
 		}
+
+		node.flags |= node.cls.flags & this.flagType.MEMORY_STACK;
 
 		return node;
 	},
