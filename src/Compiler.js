@@ -53,9 +53,11 @@ dopple.compiler.cpp =
 		scopeOutput += this.parseScope(this.scope);
 		scopeOutput += "}\n";
 
+		// Write global scope declarations:
 		var cache = this.scope.cache;
 		if(cache.declOutput) {
 			output += cache.declOutput + "\n";
+			cache.declOutput = "";
 		}
 
 		var funcOutput = this.parseFuncs(this.scope.funcs);
@@ -96,11 +98,35 @@ dopple.compiler.cpp =
 				output += cache.preOutput;
 				cache.preOutput = "";
 			}
-			if(nodeOutput) {
-				output += this.tabs + nodeOutput + ";\n";
+			if(nodeOutput) 
+			{
+				output += this.tabs + nodeOutput;
+				if(node.type === this.type.IF) {
+					output += "\n";
+				}
+				else {
+					output += ";\n";
+				}
 			}
 		}
-		
+
+		// Write scope declarations:
+		if(this.scope !== this.global)
+		{
+			var cache = this.scope.cache;
+			if(cache.declOutput) 
+			{
+				if(output) {
+					output += cache.declOutput + "\n";
+				}
+				else {
+					output = cache.declOutput;
+				}
+
+				cache.declOutput = "";
+			}
+		}		
+
 		this.decTabs();	
 
 		this.scope = prevScope;
@@ -328,7 +354,7 @@ dopple.compiler.cpp =
 			if(templateTypeName[templateTypeName.length - 1] !== "*") {
 				preOutput += " ";
 			}
-			preOutput += genVarName + "[] = { " + elementOutput;
+			preOutput += genVarName + "[" + num + "] = { " + elementOutput;
 			preOutput += " };\n";
 			this.scope.cache.preOutput += preOutput;
 		}
@@ -535,6 +561,10 @@ dopple.compiler.cpp =
 	{
 		if(!node || !node.cls) {
 			return "void ";
+		}
+
+		if(node.cls.clsType === this.type.NULL) {
+			return "void *";
 		}
 
 		var name = node.cls.alt;

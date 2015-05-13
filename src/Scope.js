@@ -20,7 +20,8 @@ dopple.Scope = function(parent) {
 dopple.Scope.prototype = 
 {
 	createVirtual: function() {
-		var scope = new dopple.Scope(this.scope);
+		var scope = new dopple.Scope(this);
+		scope.vars = this.vars;
 		scope.cache = this.cache;
 		scope.virtual = true;
 		return scope;

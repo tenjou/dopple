@@ -68,58 +68,58 @@ dopple.Extern.prototype =
 		cls.cls.flags |= dopple.Flag.MEMORY_STACK;
 		cls.finish();		
 
-		// cls = extern.addClass("WebGLShader");
-		// cls.finish();	
+		cls = extern.addClass("WebGLShader");
+		cls.finish();	
 
-		// cls = extern.addClass("WebGLProgram");
-		// cls.finish();	
+		cls = extern.addClass("WebGLProgram");
+		cls.finish();	
 		// // cls.cls.alt = "GLuint";
 		// // cls.cls.flag = 0;
 
-		// cls = extern.addClass("WebGLRenderingContext");
-		// cls.addFunc("viewport", [ vars.Number, vars.Number, vars.Number, vars.Number ], null);
-		// cls.addFunc("clear", [ vars.Number ], null);
-		// cls.addFunc("clearColor", [ vars.Number, vars.Number, vars.Number, vars.Number ], null);
-		// cls.addFunc("createShader", [ vars.Number ], vars.WebGLShader);
-		// cls.addFunc("shaderSource", [ vars.WebGLShader, vars.String ], null);
-		// cls.addFunc("compileShader", [ vars.WebGLShader ]);
-		// cls.addFunc("createProgram", null, vars.WebGLProgram);
-		// cls.addFunc("attachShader", [ vars.WebGLProgram, vars.WebGLShader ], null);
-		// cls.addFunc("linkProgram", [ vars.WebGLProgram ], null);
-		// cls.addFunc("useProgram", [ vars.WebGLProgram ], null);
-		// cls.addFunc("getShaderParameter", [ vars.WebGLShader, vars.Number ], vars.Boolean);
-		// cls.addFunc("getProgramParameter", [ vars.WebGLProgram, vars.Number ], vars.Boolean);
-		// cls.addFunc("getShaderInfoLog", [ vars.WebGLShader ], vars.String);
-		// cls.addFunc("getProgramInfoLog", [ vars.WebGLProgram ], vars.String);
-		// cls.addVar("VERTEX_SHADER", vars.Number);
-		// cls.addVar("FRAGMENT_SHADER", vars.Number);	
-		// cls.addVar("COMPILE_STATUS", vars.Number);	
-		// cls.addVar("LINK_STATUS", vars.Number);	
-		// cls.addVar("COLOR_BUFFER_BIT", vars.Number);
-		// cls.addVar("DEPTH_BUFFER_BIT", vars.Number);
-		// cls.addVar("STENCIL_BUFFER_BIT", vars.Number);
-		// cls.finish();
+		cls = extern.addClass("WebGLRenderingContext");
+		cls.addFunc("viewport", [ vars.Number, vars.Number, vars.Number, vars.Number ], null);
+		cls.addFunc("clear", [ vars.Number ], null);
+		cls.addFunc("clearColor", [ vars.Number, vars.Number, vars.Number, vars.Number ], null);
+		cls.addFunc("createShader", [ vars.Number ], vars.WebGLShader);
+		cls.addFunc("shaderSource", [ vars.WebGLShader, vars.String ], null);
+		cls.addFunc("compileShader", [ vars.WebGLShader ]);
+		cls.addFunc("createProgram", null, vars.WebGLProgram);
+		cls.addFunc("attachShader", [ vars.WebGLProgram, vars.WebGLShader ], null);
+		cls.addFunc("linkProgram", [ vars.WebGLProgram ], null);
+		cls.addFunc("useProgram", [ vars.WebGLProgram ], null);
+		cls.addFunc("getShaderParameter", [ vars.WebGLShader, vars.Number ], vars.Boolean);
+		cls.addFunc("getProgramParameter", [ vars.WebGLProgram, vars.Number ], vars.Boolean);
+		cls.addFunc("getShaderInfoLog", [ vars.WebGLShader ], vars.String);
+		cls.addFunc("getProgramInfoLog", [ vars.WebGLProgram ], vars.String);
+		cls.addVar("VERTEX_SHADER", vars.Number);
+		cls.addVar("FRAGMENT_SHADER", vars.Number);	
+		cls.addVar("COMPILE_STATUS", vars.Number);	
+		cls.addVar("LINK_STATUS", vars.Number);	
+		cls.addVar("COLOR_BUFFER_BIT", vars.Number);
+		cls.addVar("DEPTH_BUFFER_BIT", vars.Number);
+		cls.addVar("STENCIL_BUFFER_BIT", vars.Number);
+		cls.finish();
 
-		// cls = extern.addClass("Element");
-		// cls.finish();
+		cls = extern.addClass("Element");
+		cls.finish();
 
-		// cls = extern.addClass("CanvasElement");
-		// cls.addFunc("getContext", [ vars.String ], vars.WebGLRenderingContext);
-		// cls.addVar("width", vars.Number);
-		// cls.addVar("height", vars.Number);
-		// cls.finish();		
+		cls = extern.addClass("CanvasElement");
+		cls.addFunc("getContext", [ vars.String ], vars.WebGLRenderingContext);
+		cls.addVar("width", vars.Number);
+		cls.addVar("height", vars.Number);
+		cls.finish();		
 
-		// cls = extern.addClass("Document");
-		// cls.addFunc("getElementById", [ vars.String ], vars.CanvasElement);
-		// cls.finish();
+		cls = extern.addClass("Document");
+		cls.addFunc("getElementById", [ vars.String ], vars.CanvasElement);
+		cls.finish();
 
 		cls = extern.addClass("Window");
-		//cls.addNew("document", "Document");
+		cls.addNew("document", "Document");
 		cls.addFunc("requestAnimationFrame", [ vars.Function ], null);
 		cls.finish();
 
-		// extern.addNew("window", "Window");
-		// extern.addRef("document", "window.document");
+		extern.addNew("window", "Window");
+		extern.addRef("document", "window.document");
 
 		extern.addFunc("__dopple__create", null, null);
 		extern.addFunc("__dopple__destroy", null, null);

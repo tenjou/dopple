@@ -89,7 +89,7 @@ meta.class("dopple.AST.Null", "dopple.AST.Base", {
 	type: dopple.Type.NULL
 });
 
-dopple.AST.Null.prototype.flags |= dopple.Flag.KNOWN;
+dopple.AST.Null.prototype.flags |= (dopple.Flag.PTR | dopple.Flag.KNOWN);
 
 /* Args */
 meta.class("dopple.AST.Args", "dopple.AST.Base", {
@@ -270,6 +270,7 @@ meta.class("dopple.AST.Class", "dopple.AST.Base",
 
 	//
 	type: dopple.Type.CLASS,
+	clsType: dopple.Type.UNKNOWN,
 	proto: null,
 	constrBuffer: null,
 	alt: "",

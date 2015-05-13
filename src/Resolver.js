@@ -305,6 +305,9 @@ dopple.Resolver.prototype =
 				if(leftCls === this.nativeVars.Args) {
 					return;
 				}
+				else if(leftCls === this.nativeVars.Null) {
+					leftNode.cls = rightCls;
+				}
 				else if(leftCls === this.numCls && rightCls === this.strCls) {
 					leftNode.cls = this.strCls;
 				}
@@ -455,14 +458,17 @@ dopple.Resolver.prototype =
 
 	getRef: function(node) 
 	{
-		var ref = null;
 		var name = node.name;
-		var scope = node.scope;
 		var parents = node.parents;
 
 		if(parents) 
 		{
+			var scope = null;
 			var expr = this.getRefName(node.parents[0]);
+			if(!expr) { 
+				return null;
+			}
+
 			if(expr instanceof dopple.AST.Var) {
 				scope = expr.cls.scope;
 			}
@@ -471,22 +477,25 @@ dopple.Resolver.prototype =
 			}
 			else if(expr instanceof this.ast.Mutator) 
 			{
+				scope = expr.scope;
+
 				if((expr.flags & this.flagType.GETTER) === 0) {
 					throw "Assign not possible - mutator \"" + node.name + "\" does not own a getter";
 				}
 				else {
 					node.flags |= this.flagType.GETTER;
 				}
+			}
+			else {
+				scope = expr.scope;
 			}			
-
-			ref = scope.vars[node.name];
 
 			node.parent = expr;
 
-			return ref;
+			return scope.vars[name];;
 		}
 		
-		return this.getRefName(node.name);
+		return this.getRefName(name);
 	},
 
 	getRefName: function(name)

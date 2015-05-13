@@ -23,15 +23,21 @@ var dopple =
 
 	loadNativeVars: function()
 	{
-		this.nativeVars.Null = new dopple.AST.Class("Null");
-		this.nativeVars.Null.ast = dopple.AST.Null;
+		var cls = new dopple.AST.Class("Null");
+		cls.ast = dopple.AST.Null;
+		cls.clsType = dopple.Type.NULL;
+		this.nativeVars.Null = cls;
 
-		this.nativeVars.Args = new dopple.AST.Class("Args");
-		this.nativeVars.Args.ast = dopple.AST.Args;	
+		var cls = new dopple.AST.Class("Args");
+		cls.ast = dopple.AST.Args;
+		cls.clsType = dopple.Type.ARGS;
+		this.nativeVars.Args = cls;		
 
-		this.nativeVars.Template = new dopple.AST.Class("Template");
-		this.nativeVars.Template.ast = dopple.AST.Template;	
-		this.nativeVars.Template.flags |= this.Flag.TEMPLATE | this.Flag.KNOWN;
+		var cls = new dopple.AST.Class("Template");
+		cls.ast = dopple.AST.Template;
+		cls.flags |= this.Flag.TEMPLATE | this.Flag.KNOWN;
+		cls.clsType = dopple.Type.TEMPLATE;
+		this.nativeVars.Template = cls;
 	},
 
 	resolve: function() {
@@ -273,13 +279,17 @@ dopple.acorn =
 
 	parseIf: function(node)
 	{
+		var prevScope = this.scope;
 		var scope = this.scope.createVirtual();
+
 		this.scope = scope;
 		this.parseBody(node.consequent.body);
-		this.scope = this.scope.parent;		
 
 		var ifExpr = new dopple.AST.If(scope);
 		ifExpr.value = this.lookup[node.test.type].call(this, node.test);
+
+		this.scope = prevScope;
+
 		return ifExpr;
 	},
 
