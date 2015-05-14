@@ -336,6 +336,21 @@ dopple.compiler.cpp =
 
 	parseVar: function(node) 
 	{
+		var output = "";
+
+		if(node.value) 
+		{
+			var valueOutput = this.lookup[node.value.type].call(this, node.value);
+			if(valueOutput) {
+				output = this.createName(node) + " = " + valueOutput;
+			}
+		}
+
+		return output;
+	},
+
+	parseAssign: function(node) 
+	{
 		var output;
 
 		if(node.flags & this.flagType.SETTER) 
@@ -349,16 +364,12 @@ dopple.compiler.cpp =
 			{
 				var valueOutput = this.lookup[node.value.type].call(this, node.value);
 				if(valueOutput) {
-					output = this.createName(node) + " = " + valueOutput;
+					output = this.createName(node) + " " + node.op + " " + valueOutput;
 				}
 			}
 		}
 
 		return output;
-	},
-
-	parseAssign: function(node) {
-		return this.parseVar(node);
 	},
 
 	parseUnary: function(node) {
