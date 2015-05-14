@@ -102,7 +102,8 @@ dopple.Type = {
 	TEMPLATE: 19,
 	ARGS: 20,
 	MUTATOR: 21,
-	OP: 22
+	OP: 22,
+	CONDITIONAL: 23
 };
 
 dopple.Flag = {
@@ -316,6 +317,15 @@ dopple.acorn =
 
 		return ifExpr;
 	},
+
+	parseConditionalExpr: function(node)
+	{
+		var condExpr = new dopple.AST.Conditional();
+		condExpr.test = this.lookup[node.test.type].call(this, node.test);
+		condExpr.value = this.lookup[node.consequent.type].call(this, node.consequent);
+		condExpr.valueFail = this.lookup[node.alternate.type].call(this, node.alternate);
+		return condExpr;
+	},	
 
 	parseAssignExpr: function(node)
 	{

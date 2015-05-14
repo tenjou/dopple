@@ -21,6 +21,7 @@ dopple.compiler.cpp =
 		this.lookup[this.type.NEW] = this.parseNew;
 		this.lookup[this.type.BINARY] = this.parseBinary;
 		this.lookup[this.type.IF] = this.parseIf;
+		this.lookup[this.type.CONDITIONAL] = this.parseConditional;
 		this.lookup[this.type.VAR] = this.parseVar;
 		this.lookup[this.type.ASSIGN] = this.parseAssign;
 		this.lookup[this.type.UNARY] = this.parseUnary;
@@ -320,6 +321,15 @@ dopple.compiler.cpp =
 			output += this.parseScope(branch.scope);
 			output += this.tabs + "}";				
 		}
+
+		return output;
+	},
+
+	parseConditional: function(node)
+	{
+		var output = "(" + this.lookup[node.test.type].call(this, node.test) + ") ? (";
+		output += this.lookup[node.value.type].call(this, node.value) + ") : (";
+		output += this.lookup[node.valueFail.type].call(this, node.valueFail) + ")";
 
 		return output;
 	},

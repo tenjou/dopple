@@ -209,6 +209,16 @@ meta.class("dopple.AST.If", "dopple.AST.Base",
 	branchElse: null
 });
 
+/* Conditional */
+meta.class("dopple.AST.Conditional", "dopple.AST.Base", 
+{
+	//
+	type: dopple.Type.CONDITIONAL,
+	value: null,
+	valueFail: null,
+	test: null
+});
+
 /* Function */
 meta.class("dopple.AST.Function", "dopple.AST.Base", 
 {

@@ -143,6 +143,18 @@ dopple.Resolver.prototype =
 		return node;
 	},
 
+	resolveConditional: function(node)
+	{
+		node.test = this.resolveValue(node.test);
+		node.value = this.resolveValue(node.value);
+		node.valueFail = this.resolveValue(node.valueFail);
+		
+		this.checkTypes(node.value, node.valueFail);
+		node.cls = node.value.cls;
+
+		return node;
+	},
+
 	resolveFuncDef: function(node)
 	{	
 		var ref = this.scope.vars[node.name];
@@ -329,9 +341,16 @@ dopple.Resolver.prototype =
 				}
 				else if(leftNode.templateValue.cls !== rightNode.templateValue.cls) 
 				{
-					throw "Types does not match \"" + leftNode.name + "\" assignment: expected [" 
-							+ this.createType(leftNode) + "] but got [" 
-							+ this.createType(rightNode) + "]";						
+					if(!leftNode.name) {
+						throw "Types do not match: expected [" 
+								+ this.createType(leftNode) + "] but got [" 
+								+ this.createType(rightNode) + "]";	
+					}
+					else {
+						throw "Types do not match for \"" + leftNode.name + "\" assignment: expected [" 
+								+ this.createType(leftNode) + "] but got [" 
+								+ this.createType(rightNode) + "]";	
+					}					
 				}
 			}
 			else if(leftCls !== rightCls) 
@@ -351,9 +370,16 @@ dopple.Resolver.prototype =
 				else if(!(rightNode instanceof this.ast.Null) || 
 				     rightNode.flags & this.flagType.PTR === 0) 
 				{				
-					throw "Types does not match \"" + leftNode.name + "\" assignment: expected [" 
-							+ this.createType(leftNode) + "] but got [" 
-							+ this.createType(rightNode) + "]";
+					if(!leftNode.name) {
+						throw "Types do not match: expected [" 
+								+ this.createType(leftNode) + "] but got [" 
+								+ this.createType(rightNode) + "]";	
+					}
+					else {
+						throw "Types do not match for \"" + leftNode.name + "\" assignment: expected [" 
+								+ this.createType(leftNode) + "] but got [" 
+								+ this.createType(rightNode) + "]";	
+					}
 				}	
 			}
 		}
@@ -403,6 +429,9 @@ dopple.Resolver.prototype =
 		else if(node instanceof this.ast.Array) {
 			this.resolveArray(node);
 		}		
+		else if(node instanceof this.ast.Conditional) {
+			this.resolveConditional(node);
+		}
 		else if((node.flags & this.flagType.KNOWN) === 0) {
 			this.resolveRef(node);
 		}			
