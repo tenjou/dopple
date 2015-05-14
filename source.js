@@ -1,5 +1,10 @@
 var canvas = null;
 var gl = null;
+var foobar = 0.5;
+var aspect;
+var program;
+var itemSize = 2;
+var adding = true;
 
 function init()
 {
@@ -15,7 +20,7 @@ function init()
 		return false;
 	}	
 
-	var aspect = canvas.width / canvas.height;
+	aspect = canvas.width / canvas.height;
 	gl.viewport(0, 0, canvas.width, canvas.height);
 
 	var vertexShaderSrc = 
@@ -25,8 +30,7 @@ function init()
 		}";
 
 	var fragmentShaderSrc = 
-		"precision mediump float; \
-		uniform vec4 color; \
+		"precision mediump float; uniform vec4 color; \
 		void main() { \
 		  gl_FragColor = color; \
 		}";
@@ -39,7 +43,7 @@ function init()
 	gl.shaderSource(fragmentShader, fragmentShaderSrc);
 	gl.compileShader(fragmentShader);
 
-	var program = gl.createProgram();
+	program = gl.createProgram();
 	gl.attachShader(program, vertexShader);
 	gl.attachShader(program, fragmentShader);
 	gl.linkProgram(program);
@@ -65,10 +69,39 @@ function init()
 
 function update() 
 {
-	gl.clearColor(Math.random(), Math.random(), Math.random(), 1);
+	var vertices = new Float32Array([
+			-foobar, foobar * aspect,
+			foobar, foobar * aspect,
+			foobar, -foobar * aspect
+		]);
+
+	gl.clearColor(0.9, 0.9, 0.9, 1);
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
+
+	gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+	gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+	var uniformColor = gl.getUniformLocation(program, "color");
+	gl.uniform4fv(uniformColor, new Float32Array([ foobar, foobar, 0, 1 ]))
+
+	var attribPos = gl.getAttribLocation(program, "position");
+	gl.enableVertexAttribArray(attribPos);
+	gl.vertexAttribPointer(attribPos, itemSize, gl.FLOAT, false, 0, 0);
+
+	gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+	foobar += (adding ? 1 : -1) * foobar / 100;
+
+	if(foobar > 0.9) {
+		adding = false;
+	}
+	else if(foobar < 0.2) {
+		adding = true;
+	}
+
 	window.requestAnimationFrame(update);
 }
 
-init();
-update();
+if(init()) {
+	update();
+}
