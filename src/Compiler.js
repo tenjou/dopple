@@ -308,7 +308,7 @@ dopple.compiler.cpp =
 			var num = branches.length;
 			for(var n = 0; n < num; n++) {
 				branch = branches[n];
-				output += "\n" + this.tabs + "elseif(" + this.lookup[branch.value.type].call(this, branch.value)+ ")\n";
+				output += "\n" + this.tabs + "else if(" + this.lookup[branch.value.type].call(this, branch.value)+ ")\n";
 				output += this.tabs + "{\n";
 				output += this.parseScope(branch.scope);
 				output += this.tabs + "}";				
@@ -327,8 +327,8 @@ dopple.compiler.cpp =
 
 	parseConditional: function(node)
 	{
-		var output = "(" + this.lookup[node.test.type].call(this, node.test) + ") ? (";
-		output += this.lookup[node.value.type].call(this, node.value) + ") : (";
+		var output = "(" + this.lookup[node.test.type].call(this, node.test) + " ? ";
+		output += this.lookup[node.value.type].call(this, node.value) + " : ";
 		output += this.lookup[node.valueFail.type].call(this, node.valueFail) + ")";
 
 		return output;
