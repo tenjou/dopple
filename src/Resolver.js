@@ -119,9 +119,27 @@ dopple.Resolver.prototype =
 		return node;
 	},	
 
-	resolveIf: function(node) {
-		node.value = this.resolveValue(node.value);
-		this.resolveScope(node.scope);
+	resolveIf: function(node) 
+	{
+		var branch = node.branchIf;
+		branch.value = this.resolveValue(branch.value);
+		this.resolveScope(branch.scope);
+
+		if(node.branchElseIf)
+		{
+			var branches = node.branchElseIf;
+			var num = branches.length;
+			for(var n = 0; n < num; n++) {
+				branch = branches[n];
+				branch.value = this.resolveValue(branch.value);
+				this.resolveScope(branch.scope);
+			}			
+		}
+		
+		if(node.branchElse) {
+			this.resolveScope(node.branchElse.scope);			
+		}
+		
 		return node;
 	},
 

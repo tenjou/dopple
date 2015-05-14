@@ -139,6 +139,7 @@ dopple.acorn =
 		this.lookup["AssignmentExpression"] = this.parseAssignExpr;
 		this.lookup["SequenceExpression"] = this.parseSequenceExpr;
 		this.lookup["BinaryExpression"] = this.parseBinaryExpr;
+		this.lookup["ConditionalExpression"] = this.parseConditionalExpr;
 		this.lookup["CallExpression"] = this.parseCallExpr;
 		this.lookup["ObjectExpression"] = this.parseObjExpr;
 		this.lookup["NewExpression"] = this.parseNewExpr;
@@ -280,13 +281,36 @@ dopple.acorn =
 	parseIf: function(node)
 	{
 		var prevScope = this.scope;
-		var scope = this.scope.createVirtual();
+		var ifExpr = new dopple.AST.If();
 
-		this.scope = scope;
+		this.scope = prevScope.createVirtual();
+		var value = this.lookup[node.test.type].call(this, node.test);
 		this.parseBody(node.consequent.body);
+		ifExpr.branchIf = new ifExpr.Branch(this.scope, value);
 
-		var ifExpr = new dopple.AST.If(scope);
-		ifExpr.value = this.lookup[node.test.type].call(this, node.test);
+		var altNode = node.alternate;
+		while(altNode) 
+		{
+			this.scope = prevScope.createVirtual();
+			
+			if(altNode.type === "BlockStatement") {
+				this.parseBody(altNode.body);
+				ifExpr.branchElse = new ifExpr.Branch(this.scope, null);
+			}
+			else 
+			{
+				this.parseBody(altNode.consequent.body);
+				value = this.lookup[altNode.test.type].call(this, altNode.test);
+				if(!ifExpr.branchElseIf) {
+					ifExpr.branchElseIf = [ new ifExpr.Branch(this.scope, value) ];
+				}
+				else {
+					ifExpr.branchElseIf.push(new ifExpr.Branch(this.scope, value));
+				}
+			}
+
+			altNode = altNode.alternate;
+		}
 
 		this.scope = prevScope;
 

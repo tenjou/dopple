@@ -197,14 +197,16 @@ meta.class("dopple.AST.Unary", "dopple.AST.Base",
 /* Function */
 meta.class("dopple.AST.If", "dopple.AST.Base", 
 {
-	init: function(scope) {
+	Branch: function(scope, value) {
 		this.scope = scope;
+		this.value = value;
 	},
 
 	//
 	type: dopple.Type.IF,
-	value: null,
-	scope: null
+	branchIf: null,
+	branchElseIf: null,
+	branchElse: null
 });
 
 /* Function */
