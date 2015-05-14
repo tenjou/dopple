@@ -53,21 +53,21 @@ dopple.Extern.prototype =
 		cls.cls.global = true;
 		cls.finish();
 
-		// cls = extern.addClass("Math");
-		// cls.addFunc("abs", [ vars.Number ], vars.Number);
-		// cls.addFunc("random", null, vars.Number);
-		// cls.addFunc("sin", null, vars.Number);
-		// cls.addFunc("cos", null, vars.Number);
-		// cls.addVar("PI", vars.Number);
-		// cls.cls.global = true;
-		// cls.finish();		
+		cls = extern.addClass("Math");
+		cls.addFunc("abs", [ vars.Number ], vars.Number);
+		cls.addFunc("random", null, vars.Number);
+		cls.addFunc("sin", null, vars.Number);
+		cls.addFunc("cos", null, vars.Number);
+		cls.addVar("PI", vars.Number);
+		cls.cls.global = true;
+		cls.finish();		
 
 		cls = extern.addClass("Float32Array");
 		cls.addConstr([ nativeVars.Template ]);
 		cls.addConstr(null);
 		cls.cls.flags |= dopple.Flag.MEMORY_STACK;
 		cls.finish();		
-
+		
 		cls = extern.addClass("WebGLShader");
 		cls.finish();	
 

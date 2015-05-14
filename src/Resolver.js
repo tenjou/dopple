@@ -103,7 +103,7 @@ dopple.Resolver.prototype =
 		nodeValue = this.resolveValue(nodeValue);
 		node.inheritFrom(nodeValue);
 
-		var expr = this.getRef(node);
+		var expr = this.getRefEx(node);
 		this.checkTypes(expr, node);
 
 		if(expr instanceof this.ast.Mutator) 
@@ -334,6 +334,9 @@ dopple.Resolver.prototype =
 	resolveRef: function(node) 
 	{
 		node.value = this.getRefEx(node);
+		// if(expr instanceof this.ast.Var) {
+		// 	node.value = node.value.value;
+		// }
 
 		if(node instanceof this.ast.New) {
 			this.resolveNew(node);
@@ -452,22 +455,19 @@ dopple.Resolver.prototype =
 			throw "ReferenceError: " + node.name + " is not defined";
 		}
 
-		if(expr instanceof this.ast.Var) {
-			return expr.value;
-		}
-
 		return expr;		
 	},
 
 	getRef: function(node) 
 	{
+		var expr = null;
 		var name = node.name;
 		var parents = node.parents;
 
 		if(parents) 
 		{
 			var scope = null;
-			var expr = this.getRefName(node.parents[0]);
+			expr = this.getRefName(node.parents[0]);
 			if(!expr) { 
 				throw "ReferenceError: " + node.parents[0] + " is not defined";
 			}
@@ -500,7 +500,7 @@ dopple.Resolver.prototype =
 
 			return scope.vars[name];
 		}
-		
+
 		return this.getRefName(name);
 	},
 
