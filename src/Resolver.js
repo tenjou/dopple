@@ -155,7 +155,8 @@ dopple.Resolver.prototype =
 
 		this.resolveScope(node.scope);
 
-		var returns = node.scope.returns;
+		// TODO: Check if all control paths returns a value.
+		var returns = node.scope.cache.returns;
 		if(returns)
 		{
 			var value = returns[0];
@@ -242,11 +243,12 @@ dopple.Resolver.prototype =
 	{
 		node.value = this.resolveValue(node.value);
 
-		if(!this.scope.returns) {
-			this.scope.returns = [ node.value ];
+		var cache = this.scope.cache;
+		if(!cache.returns) {
+			cache.returns = [ node.value ];
 		}
 		else {
-			this.scope.returns.push(node.value);
+			cache.returns.push(node.value);
 		}	
 
 		node.flags |= this.flagType.RESOLVED;

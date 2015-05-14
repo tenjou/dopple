@@ -7,6 +7,7 @@ dopple.ScopeCache.prototype = {
 	declGroups: null,
 	declOutput: "",
 	preOutput: "",
+	returns: null,
 	freeGens: null
 };
 
@@ -56,6 +57,5 @@ dopple.Scope.prototype =
 	//
 	virtual: false,
 	funcs: null,
-	returns: null,
 	classes: []
 };
