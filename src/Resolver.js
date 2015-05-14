@@ -325,6 +325,7 @@ dopple.Resolver.prototype =
 		}
 		else {
 			leftNode.cls = rightCls;
+			leftNode.flags |= (rightNode.flags & this.flagType.PTR);
 		}			
 	},	
 
@@ -466,7 +467,10 @@ dopple.Resolver.prototype =
 			var scope = null;
 			var expr = this.getRefName(node.parents[0]);
 			if(!expr) { 
-				return null;
+				throw "ReferenceError: " + node.parents[0] + " is not defined";
+			}
+			if(!expr.cls || expr.cls.clsType === this.type.NULL) {
+				throw "ReferenceError: " + node.parents[0] + " has unknown type";
 			}
 
 			if(expr instanceof dopple.AST.Var) {
@@ -492,7 +496,7 @@ dopple.Resolver.prototype =
 
 			node.parent = expr;
 
-			return scope.vars[name];;
+			return scope.vars[name];
 		}
 		
 		return this.getRefName(name);

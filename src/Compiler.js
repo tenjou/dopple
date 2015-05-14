@@ -77,13 +77,14 @@ dopple.compiler.cpp =
 
 		this.incTabs();
 
-		this.parseScopeDecls();	
-
-		var output = "";
-		var nodeOutput = "";
-		var cache = this.scope.cache;
+		if(!this.scope.virtual)	{
+			this.parseScopeDecls();			
+		}
 
 		// Output the rest of the scope:
+		var output = "";
+		var nodeOutput = "";
+		var cache = this.scope.cache;		
 		var node = null;
 		var body = scope.body;
 		var num = body.length;
@@ -108,16 +109,15 @@ dopple.compiler.cpp =
 					output += ";\n";
 				}
 			}
-		}
+		}	
 
-		// Write scope declarations:
-		if(this.scope !== this.global)
+		if(!this.scope.virtual && this.scope !== this.global)
 		{
 			var cache = this.scope.cache;
 			if(cache.declOutput) 
 			{
 				if(output) {
-					output += cache.declOutput + "\n";
+					output = cache.declOutput + "\n" + output;
 				}
 				else {
 					output = cache.declOutput;
@@ -125,7 +125,7 @@ dopple.compiler.cpp =
 
 				cache.declOutput = "";
 			}
-		}		
+		}
 
 		this.decTabs();	
 
@@ -167,13 +167,20 @@ dopple.compiler.cpp =
 			}
 		}
 
-		if(this.scope.virtual) { return; }
+		this.outputScopeDecls();				
+	},
 
+	outputScopeDecls: function()
+	{
 		// Output group by group all declerations:
 		var tabs = this.tabs;
 		if(this.scope === this.global) {
 			tabs = "";
 		}
+
+		var n, num, node, typeBuffer;
+		var cache = this.scope.cache;
+		var declGroups = cache.declGroups;
 
 		for(var key in declGroups)
 		{
@@ -195,7 +202,7 @@ dopple.compiler.cpp =
 
 			this._outputScopeNode(typeBuffer[n]);
 			cache.declOutput += ";\n";
-		}
+		}		
 	},
 
 	_outputScopeNode: function(node) 
@@ -307,7 +314,8 @@ dopple.compiler.cpp =
 		}
 		else 
 		{
-			if(node.value) {
+			if(node.value) 
+			{
 				var valueOutput = this.lookup[node.value.type].call(this, node.value);
 				if(valueOutput) {
 					output = this.createName(node) + " = " + valueOutput;
@@ -559,11 +567,11 @@ dopple.compiler.cpp =
 
 	createType: function(node)
 	{
-		if(!node || !node.cls) {
+		if(!node) {
 			return "void ";
 		}
 
-		if(node.cls.clsType === this.type.NULL) {
+		if(!node.cls || node.cls.clsType === this.type.NULL) {
 			return "void *";
 		}
 
