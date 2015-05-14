@@ -255,6 +255,20 @@ dopple.Resolver.prototype =
 		return node;	
 	},
 
+	resolveUnary: function(node)
+	{
+		node.value = this.resolveValue(node.value);
+
+		if(node.op === "!") {
+			node.cls = this.global.vars.Boolean;
+		}
+		else {
+			node.cls = this.global.vars.Number;
+		}
+
+		return node;
+	},
+
 	resolveArray: function(node)
 	{
 		var elements = node.elements;
@@ -366,8 +380,7 @@ dopple.Resolver.prototype =
 			node.cls = leftValue.cls;
 		}
 		else if(node instanceof this.ast.Unary) {
-			node.value = this.resolveValue(node.value);
-			node.cls = this.global.vars.Boolean;
+			this.resolveUnary(node);
 		}
 		else if(node instanceof this.ast.Array) {
 			this.resolveArray(node);
