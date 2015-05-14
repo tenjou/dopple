@@ -91,13 +91,13 @@ dopple.Extern.prototype =
 		cls.addFunc("attachShader", [ vars.WebGLProgram, vars.WebGLShader ], null);
 		cls.addFunc("linkProgram", [ vars.WebGLProgram ], null);
 		cls.addFunc("useProgram", [ vars.WebGLProgram ], null);
-		cls.addFunc("getShaderParameter", [ vars.WebGLShader, vars.Number ], vars.Boolean);
-		cls.addFunc("getProgramParameter", [ vars.WebGLProgram, vars.Number ], vars.Boolean);
+		cls.addFunc("getShaderParameter", [ vars.WebGLShader, vars.Number ], vars.Boolean, true);
+		cls.addFunc("getProgramParameter", [ vars.WebGLProgram, vars.Number ], vars.Boolean, true);
 		cls.addFunc("getShaderInfoLog", [ vars.WebGLShader ], vars.String);
 		cls.addFunc("getProgramInfoLog", [ vars.WebGLProgram ], vars.String);
 		cls.addFunc("getUniformLocation", [ vars.WebGLProgram, vars.String ], vars.WebGLUniformLocation);
 		cls.addFunc("uniform4fv", [ vars.WebGLUniformLocation, vars.Float32Array ]);
-		cls.addFunc("getAttribLocation", [ vars.WebGLProgram, vars.String ], vars.Number);
+		cls.addFunc("getAttribLocation", [ vars.WebGLProgram, vars.String ], vars.Number, true);
 		cls.addFunc("enableVertexAttribArray", [ vars.Number ], null);
 		cls.addFunc("vertexAttribPointer", [ vars.Number, vars.Number, vars.Number, vars.Boolean, vars.Number, vars.Number ], null);
 		cls.addFunc("drawArrays", [ vars.Number, vars.Number, vars.Number ], null);
