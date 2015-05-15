@@ -28,6 +28,12 @@ var dopple =
 		cls.clsType = dopple.Type.NULL;
 		this.nativeVars.Null = cls;
 
+		var cls = new dopple.AST.Class("Real32");
+		cls.ast = dopple.AST.Number;
+		cls.alt = "float";
+		cls.clsType = dopple.Type.REAL32;
+		this.nativeVars.Real32 = cls;		
+
 		var cls = new dopple.AST.Class("Args");
 		cls.ast = dopple.AST.Args;
 		cls.clsType = dopple.Type.ARGS;
@@ -103,7 +109,8 @@ dopple.Type = {
 	ARGS: 20,
 	MUTATOR: 21,
 	OP: 22,
-	CONDITIONAL: 23
+	CONDITIONAL: 23,
+	REAL32: 24
 };
 
 dopple.Flag = {

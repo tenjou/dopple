@@ -148,7 +148,7 @@ dopple.Resolver.prototype =
 		node.test = this.resolveValue(node.test);
 		node.value = this.resolveValue(node.value);
 		node.valueFail = this.resolveValue(node.valueFail);
-		
+
 		this.checkTypes(node.value, node.valueFail);
 		node.cls = node.value.cls;
 
@@ -386,6 +386,7 @@ dopple.Resolver.prototype =
 		else {
 			leftNode.cls = rightCls;
 			leftNode.flags |= (rightNode.flags & this.flagType.PTR);
+			leftNode.flags |= (rightNode.flags & this.flagType.MEMORY_STACK);
 		}			
 	},	
 

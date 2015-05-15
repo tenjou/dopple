@@ -55,7 +55,11 @@ dopple.Scope.prototype =
 		return this.genVar(dopple.nativeVars.I32);
 	},
 
-	genDouble: function() {
+	genReal32: function() {
+		return this.genVar(dopple.nativeVars.Real32);
+	},
+
+	genReal64: function() {
 		return this.genVar(dopple.scope.vars.Number);
 	},
 
