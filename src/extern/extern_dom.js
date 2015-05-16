@@ -6,18 +6,18 @@ dopple.extern("dom", function(extern)
 	cls.finish();
 
 	cls = extern.addClass("CanvasElement");
-	cls.addFunc("getContext", [ vars.String ], vars.WebGLRenderingContext);
-	cls.addVar("width", vars.Number);
-	cls.addVar("height", vars.Number);
+	cls.addFunc("getContext", [ extern.cachedVars.String ], extern.createParam(extern.vars.WebGLRenderingContext));
+	cls.addVar("width", extern.cachedVars.Number);
+	cls.addVar("height", extern.cachedVars.Number);
 	cls.finish();		
 
 	cls = extern.addClass("Document");
-	cls.addFunc("getElementById", [ vars.String ], vars.CanvasElement);
+	cls.addFunc("getElementById", [ extern.cachedVars.String ], extern.createParam(extern.vars.CanvasElement));
 	cls.finish();
 
 	cls = extern.addClass("Window");
 	cls.addNew("document", "Document");
-	cls.addFunc("requestAnimationFrame", [ vars.Function ], null);
+	cls.addFunc("requestAnimationFrame", [ extern.cachedVars.Function ], null);
 	cls.finish();
 
 	extern.addNew("window", "Window");

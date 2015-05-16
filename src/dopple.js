@@ -29,8 +29,8 @@ var dopple =
 
 		this.externInterface = new dopple.Extern(this.scope);
 		this.load("core");
-		// this.load("dom");
-		// this.load("webgl");
+		this.load("webgl");
+		this.load("dom");
 
 		var createCall = new dopple.AST.FunctionCall("__dopple__create", null, null, null);
 		this.scope.body.push(createCall);		

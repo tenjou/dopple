@@ -8,8 +8,8 @@ dopple.extern("core", function(extern)
 	extern.nativeVars.Null = cls;
 
 	cls = new extern.ast.Class("Real32");
-	cls.ast = extern.ast.Number;
 	cls.alt = "real32";
+	cls.ast = extern.ast.Number;
 	cls.clsType = extern.type.REAL32;
 	extern.nativeVars.Real32 = cls;	
 	extern.cachedVars.Real32 = extern.createParam(cls);
@@ -18,7 +18,7 @@ dopple.extern("core", function(extern)
 	cls.ast = extern.ast.Args;
 	cls.clsType = extern.type.ARGS;
 	extern.nativeVars.Args = cls;	
-	extern.cachedVars.Args = extern.createParam(cls);	
+	extern.cachedVars.Args = extern.createParam(cls);
 
 	cls = new extern.ast.Class("Template");
 	cls.ast = extern.ast.Template;
@@ -28,8 +28,9 @@ dopple.extern("core", function(extern)
 	extern.cachedVars.Template = extern.createParam(cls);
 
 	var externCls = extern.addClass("Number");
-	externCls.cls.ast = extern.ast.Number;
 	externCls.cls.alt = "real64";
+	externCls.cls.ast = extern.ast.Number;
+	externCls.cls.clsType = extern.type.NUMBER;
 	externCls.finish();
 	extern.nativeVars.Real64 = externCls.cls;
 	extern.cachedVars.Real64 = extern.createParam(externCls.cls);
@@ -37,6 +38,7 @@ dopple.extern("core", function(extern)
 	externCls = extern.addClass("Boolean");
 	externCls.cls.alt = "bool";
 	externCls.cls.ast = extern.ast.Bool;
+	externCls.cls.clsType = extern.type.BOOL;
 	externCls.finish();
 	extern.nativeVars.Bool = externCls.cls;
 	extern.cachedVars.Bool = extern.createParam(externCls.cls);
@@ -44,6 +46,7 @@ dopple.extern("core", function(extern)
 	externCls = extern.addClass("String");
 	externCls.cls.alt = "char";
 	externCls.cls.ast = extern.ast.String;
+	externCls.cls.clsType = extern.type.STRING;
 	externCls.finish();
 	extern.nativeVars.String = externCls.cls;
 	extern.cachedVars.String = extern.createParam(externCls.cls);
@@ -52,6 +55,7 @@ dopple.extern("core", function(extern)
 	externCls.cls.ast = extern.ast.Function;
 	externCls.finish();
 	extern.nativeVars.Function = externCls.cls;
+	extern.cachedVars.String = extern.createParam(externCls.cls);
 
 	externCls = extern.addClass("Array");
 	externCls.cls.flags |= extern.flagType.TEMPLATE;
