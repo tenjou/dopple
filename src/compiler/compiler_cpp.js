@@ -1,6 +1,5 @@
 "use strict";
 
-dopple.compiler = {};
 dopple.compiler.cpp = 
 {
 	prepare: function() 
@@ -667,15 +666,12 @@ dopple.compiler.cpp =
 	{
 		if(node.cls)
 		{
-			var type = node.cls.name;
-			if(type === "Number") {
-				return "0";
-			}
-			else if(type === "Boolean") {
-				return "false";
-			}
-			else if(type === "Args") {
-				return "";
+			var type = node.cls.clsType;
+			switch(type)
+			{
+				case this.type.NUMBER: return "0";
+				case this.type.BOOL: return "false";
+				case this.type.ARGS: return "\"\"";
 			}
 		}
 

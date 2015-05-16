@@ -251,7 +251,7 @@ dopple.Resolver.prototype =
 		}
 
 		var parent = null;
-		for(var n = 0; n < numParams; n++) 
+		for(var n = 0; n < numArgs; n++) 
 		{
 			param = params[n];
 			arg = this.resolveValue(args[n]);
@@ -355,17 +355,24 @@ dopple.Resolver.prototype =
 			}
 			else if(leftCls !== rightCls) 
 			{
-				if(leftCls === this.nativeVars.Args) {
-					return;
+				if(leftCls.varType === this.type.NUMBER)
+				{
+					if(rightCls.varType === this.type.STRING) {
+						leftNode.cls = this.strCls;
+					}
+					else if(rightCls.varType === this.type.NUMBER) 
+					{}
 				}
+				else if(leftCls.varType === this.type.STRING)
+				{
+					if(rightCls.varType === NUMBER) {
+						leftNode.cls = this.strCls;
+					}
+				}
+				if(leftCls === this.nativeVars.Args) 
+				{}
 				else if(leftCls === this.nativeVars.Null) {
 					leftNode.cls = rightCls;
-				}
-				else if(leftCls === this.numCls && rightCls === this.strCls) {
-					leftNode.cls = this.strCls;
-				}
-				else if(leftCls === this.strCls && rightCls === this.numCls) {
-					leftNode.cls = this.strCls;
 				}
 				else if(!(rightNode instanceof this.ast.Null) || 
 				     rightNode.flags & this.flagType.PTR === 0) 
