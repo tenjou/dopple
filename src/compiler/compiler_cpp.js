@@ -264,25 +264,32 @@ dopple.compiler.cpp =
 	parseNew: function(node, flags) 
 	{
 		if(!node.args) {
-			return null;
+			return "";
 		}
 
 		var output;
 
-		if(node instanceof dopple.AST.Var) {
-			output = node.cls.name + "(" + this.parseArgs(node) + ")";
+		if(node.flags & this.flagType.MEMORY_STACK) 
+		{
+			if(node.args.length === 0) { return "";}
+
+			if(flags & this.Flag.PARSING_ARGS) {
+				var name = this.scope.genVar(node.cls);
+				this.scope.cache.preOutput += this.tabs + this.createType(node) + name + " = " + output + ";\n";
+				return name;
+			}
+
+			output = "";
 		}
 		else {
-			output = node.name + "(" + this.parseArgs(node) + ")";
+			output = "new ";
 		}
 
-		if((node.flags & this.flagType.MEMORY_STACK) === 0) {
-			output += "new " + output;
+		if(node instanceof dopple.AST.Var) {
+			output += node.cls.name + "(" + this.parseArgs(node) + ")";
 		}
-		else if(flags & this.Flag.PARSING_ARGS) {
-			var name = this.scope.genVar(node.cls);
-			this.scope.cache.preOutput += this.tabs + this.createType(node) + name + " = " + output + ";\n";
-			output = name;
+		else {
+			output += node.name + "(" + this.parseArgs(node) + ")";
 		}
 
 		return output;
