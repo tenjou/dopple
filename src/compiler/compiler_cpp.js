@@ -271,25 +271,29 @@ dopple.compiler.cpp =
 
 		if(node.flags & this.flagType.MEMORY_STACK) 
 		{
-			if(node.args.length === 0) { return "";}
+			if(node.args.length === 0) { return ""; }
+
+			if(node instanceof dopple.AST.Var) {
+				output = node.cls.name + "(" + this.parseArgs(node) + ")";
+			}
+			else {
+				output = node.name + "(" + this.parseArgs(node) + ")";
+			}			
 
 			if(flags & this.Flag.PARSING_ARGS) {
 				var name = this.scope.genVar(node.cls);
 				this.scope.cache.preOutput += this.tabs + this.createType(node) + name + " = " + output + ";\n";
 				return name;
 			}
-
-			output = "";
 		}
-		else {
-			output = "new ";
-		}
-
-		if(node instanceof dopple.AST.Var) {
-			output += node.cls.name + "(" + this.parseArgs(node) + ")";
-		}
-		else {
-			output += node.name + "(" + this.parseArgs(node) + ")";
+		else 
+		{
+			if(node instanceof dopple.AST.Var) {
+				output = "new " + node.cls.name + "(" + this.parseArgs(node) + ")";
+			}
+			else {
+				output = "new " +node.name + "(" + this.parseArgs(node) + ")";
+			}
 		}
 
 		return output;
