@@ -12,20 +12,20 @@ dopple.extern("core", function(extern)
 	cls.ast = extern.ast.Number;
 	cls.clsType = extern.type.REAL32;
 	extern.nativeVars.Real32 = cls;	
-	extern.cachedVars.Real32 = extern.createParam(cls);
+	extern.cachedVars.Real32 = extern.create(cls);
 
 	cls = new extern.ast.Class("Args");
 	cls.ast = extern.ast.Args;
 	cls.clsType = extern.type.ARGS;
 	extern.nativeVars.Args = cls;	
-	extern.cachedVars.Args = extern.createParam(cls);
+	extern.cachedVars.Args = extern.create(cls);
 
 	cls = new extern.ast.Class("Template");
 	cls.ast = extern.ast.Template;
 	cls.flags |= extern.flagType.TEMPLATE | extern.flagType.KNOWN;
 	cls.clsType = extern.type.TEMPLATE;
 	extern.nativeVars.Template = cls;	
-	extern.cachedVars.Template = extern.createParam(cls);
+	extern.cachedVars.Template = extern.create(cls);
 
 	var externCls = extern.addClass("Number");
 	externCls.cls.alt = "real64";
@@ -33,15 +33,15 @@ dopple.extern("core", function(extern)
 	externCls.cls.clsType = extern.type.NUMBER;
 	externCls.finish();
 	extern.nativeVars.Real64 = externCls.cls;
-	extern.cachedVars.Real64 = extern.createParam(externCls.cls);
+	extern.cachedVars.Real64 = extern.create(externCls.cls);
 
 	externCls = extern.addClass("Boolean");
-	externCls.cls.alt = "bool";
+	externCls.cls.alt = "int8";
 	externCls.cls.ast = extern.ast.Bool;
 	externCls.cls.clsType = extern.type.BOOL;
 	externCls.finish();
 	extern.nativeVars.Bool = externCls.cls;
-	extern.cachedVars.Bool = extern.createParam(externCls.cls);
+	extern.cachedVars.Bool = extern.create(externCls.cls);
 
 	externCls = extern.addClass("String");
 	externCls.cls.alt = "char";
@@ -49,19 +49,19 @@ dopple.extern("core", function(extern)
 	externCls.cls.clsType = extern.type.STRING;
 	externCls.finish();
 	extern.nativeVars.String = externCls.cls;
-	extern.cachedVars.String = extern.createParam(externCls.cls);
+	extern.cachedVars.String = extern.create(externCls.cls);
 
 	externCls = extern.addClass("Function");
 	externCls.cls.ast = extern.ast.Function;
 	externCls.finish();
 	extern.nativeVars.Function = externCls.cls;
-	extern.cachedVars.String = extern.createParam(externCls.cls);
+	extern.cachedVars.String = extern.create(externCls.cls);
 
 	externCls = extern.addClass("Array");
 	externCls.cls.flags |= extern.flagType.TEMPLATE;
 	externCls.cls.ast = extern.ast.Array;
 	extern.nativeVars.Array = externCls.cls;
-	extern.cachedVars.Array = extern.createParam(externCls.cls);
+	extern.cachedVars.Array = extern.create(externCls.cls);
 	externCls.addConstr([ extern.cachedVars.Real64 ]);
 	externCls.addConstr([ extern.cachedVars.Array ]);
 	externCls.addConstr([ extern.cachedVars.Args ]);
@@ -89,8 +89,8 @@ dopple.extern("core", function(extern)
 	externCls.finish();		
 
 	externCls = extern.addClass("Float32Array");
-	//externCls.addConstr([ nativeVars. ]);
-	externCls.addConstr([ extern.cachedVars.Number ]);
+	externCls.addConstr([ extern.create(extern.nativeVars.Array, extern.nativeVars.Real32) ]);
+	externCls.addConstr([ extern.cachedVars.Real64 ]);
 	externCls.addConstr(null);
 	externCls.addMutator("length", extern.nativeVars.Number).flags |= dopple.Flag.GETTER;
 	externCls.cls.flags |= dopple.Flag.MEMORY_STACK;

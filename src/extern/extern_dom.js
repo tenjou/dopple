@@ -6,13 +6,13 @@ dopple.extern("dom", function(extern)
 	cls.finish();
 
 	cls = extern.addClass("CanvasElement");
-	cls.addFunc("getContext", [ extern.cachedVars.String ], extern.createParam(extern.vars.WebGLRenderingContext));
+	cls.addFunc("getContext", [ extern.cachedVars.String ], extern.create(extern.vars.WebGLRenderingContext));
 	cls.addVar("width", extern.cachedVars.Number);
 	cls.addVar("height", extern.cachedVars.Number);
 	cls.finish();		
 
 	cls = extern.addClass("Document");
-	cls.addFunc("getElementById", [ extern.cachedVars.String ], extern.createParam(extern.vars.CanvasElement));
+	cls.addFunc("getElementById", [ extern.cachedVars.String ], extern.create(extern.vars.CanvasElement));
 	cls.finish();
 
 	cls = extern.addClass("Window");

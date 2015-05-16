@@ -413,7 +413,7 @@ dopple.compiler.cpp =
 			elementNode = elements[n];
 			elementOutput += this.lookup[elementNode.type].call(this, elementNode, flags);
 
-			genVarName = this.scope.genVar(node.templateCls);
+			genVarName = this.scope.genVar(node.templateValue.cls);
 
 			var templateTypeName = this.createTemplateType(node);
 			var preOutput = this.tabs + templateTypeName;

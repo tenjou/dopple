@@ -90,8 +90,14 @@ dopple.Resolver.prototype =
 				}
 			}
 		}	
-		else {
-			this.checkTypes(expr, node);	
+		else 
+		{
+			if(!this.checkTypes(expr, node)) 
+			{
+				throw "Types do not match for \"" + expr.name + "\" assignment: expected [" 
+						+ this.createType(expr) + "] but got [" 
+						+ this.createType(node) + "]";	
+			}	
 		}	
 
 		return node;
@@ -104,7 +110,12 @@ dopple.Resolver.prototype =
 		node.inheritFrom(nodeValue);
 
 		var expr = this.getRefEx(node);
-		this.checkTypes(expr, node);
+		if(!this.checkTypes(expr, node)) 
+		{
+			throw "Types do not match for \"" + expr.name + "\" assignment: expected [" 
+					+ this.createType(expr) + "] but got [" 
+					+ this.createType(node) + "]";				
+		}
 
 		if(expr instanceof this.ast.Mutator) 
 		{
@@ -149,7 +160,12 @@ dopple.Resolver.prototype =
 		node.value = this.resolveValue(node.value);
 		node.valueFail = this.resolveValue(node.valueFail);
 
-		this.checkTypes(node.value, node.valueFail);
+		if(!this.checkTypes(node.value, node.valueFail)) {
+			throw "Types do not match for conditional assignment: expected [" 
+					+ this.createType(node.value) + "] but got [" 
+					+ this.createType(node.valueFail) + "]";				
+		}
+
 		node.cls = node.value.cls;
 
 		return node;
@@ -255,7 +271,12 @@ dopple.Resolver.prototype =
 		{
 			param = params[n];
 			arg = this.resolveValue(args[n]);
-			this.checkTypes(param, arg);
+			if(!this.checkTypes(param, arg)) 
+			{
+				throw "Types do not match for " + n + " argument: expected [" 
+						+ this.createType(param) + "] but got [" 
+						+ this.createType(arg) + "]";	
+			}
 		}
 
 		this.resolveFunc(node.value);
@@ -314,10 +335,15 @@ dopple.Resolver.prototype =
 		value = bufferNode;
 		cls = bufferNode.cls;
 
-		for(var n = 1; n < num; n++) {
+		for(var n = 1; n < num; n++) 
+		{
 			bufferNode = elements[n];
 			bufferNode = this.resolveValue(bufferNode);
-			this.checkTypes(value, bufferNode);
+			if(!this.checkTypes(value, bufferNode)) {
+				throw "Types do not match for array value: expected [" 
+						+ this.createType(value) + "] but got [" 
+						+ this.createType(bufferNode) + "]";					
+			}
 		}
 
 		if(!(value instanceof this.ast.Null)) {
@@ -339,18 +365,8 @@ dopple.Resolver.prototype =
 				if(!leftNode.templateValue) {
 					leftNode.templateValue = rightNode.templateValue;
 				}
-				else if(leftNode.templateValue.cls !== rightNode.templateValue.cls) 
-				{
-					if(!leftNode.name) {
-						throw "Types do not match: expected [" 
-								+ this.createType(leftNode) + "] but got [" 
-								+ this.createType(rightNode) + "]";	
-					}
-					else {
-						throw "Types do not match for \"" + leftNode.name + "\" assignment: expected [" 
-								+ this.createType(leftNode) + "] but got [" 
-								+ this.createType(rightNode) + "]";	
-					}					
+				else if(leftNode.templateValue.cls !== rightNode.templateValue.cls) {
+					return false;					
 				}
 			}
 			else if(leftCls !== rightCls) 
@@ -377,16 +393,17 @@ dopple.Resolver.prototype =
 				else if(!(rightNode instanceof this.ast.Null) || 
 				     rightNode.flags & this.flagType.PTR === 0) 
 				{				
-					if(!leftNode.name) {
-						throw "Types do not match: expected [" 
-								+ this.createType(leftNode) + "] but got [" 
-								+ this.createType(rightNode) + "]";	
-					}
-					else {
-						throw "Types do not match for \"" + leftNode.name + "\" assignment: expected [" 
-								+ this.createType(leftNode) + "] but got [" 
-								+ this.createType(rightNode) + "]";	
-					}
+					return false;
+					// if(!leftNode.name) {
+					// 	throw "Types do not match: expected [" 
+					// 			+ this.createType(leftNode) + "] but got [" 
+					// 			+ this.createType(rightNode) + "]";	
+					// }
+					// else {
+					// 	throw "Types do not match for \"" + leftNode.name + "\" assignment: expected [" 
+					// 			+ this.createType(leftNode) + "] but got [" 
+					// 			+ this.createType(rightNode) + "]";	
+					// }
 				}	
 			}
 		}
@@ -394,7 +411,9 @@ dopple.Resolver.prototype =
 			leftNode.cls = rightCls;
 			leftNode.flags |= (rightNode.flags & this.flagType.PTR);
 			leftNode.flags |= (rightNode.flags & this.flagType.MEMORY_STACK);
-		}			
+		}
+
+		return true;			
 	},	
 
 	resolveRef: function(node) 
@@ -428,7 +447,12 @@ dopple.Resolver.prototype =
 		{
 			var leftValue = this.resolveValue(node.lhs);
 			var rightValue = this.resolveValue(node.rhs);
-			this.checkTypes(leftValue, rightValue);	
+			if(!this.checkTypes(leftValue, rightValue)) 
+			{
+				throw "Types do not match for \"" + leftValue.name + "\" binary operation: expected [" 
+						+ this.createType(leftValue) + "] but got [" 
+						+ this.createType(rightValue) + "]";					
+			}
 			node.cls = leftValue.cls;
 		}
 		else if(node instanceof this.ast.Unary) {
@@ -467,6 +491,7 @@ dopple.Resolver.prototype =
 			throw "Could not find matching constructor for: " + node.cls.name;
 		}
 
+		var valid;
 		var num = constrBuffer.length;
 		for(var n = 0; n < num; n++) 
 		{
@@ -476,14 +501,22 @@ dopple.Resolver.prototype =
 
 			if(numArgs > numParams) { continue; }
 
+			valid = true;
+
 			// Validate arguments:
 			for(i = 0; i < numArgs; i++) {
 				param = params[i];
 				arg = this.resolveValue(args[i]);
-				this.checkTypes(param, arg);
+				if(!this.checkTypes(param, arg)) {
+					valid = false;
+					break;
+				}
 			}
 
-			node.func = constr;
+			if(valid) {
+				node.func = constr;
+				break;
+			}
 		}
 
 		if(!node.func) {
