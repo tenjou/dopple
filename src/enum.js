@@ -25,7 +25,8 @@ dopple.Type = {
 	MUTATOR: 21,
 	OP: 22,
 	CONDITIONAL: 23,
-	REAL32: 24
+	REAL32: 24,
+	REAL64: 25
 };
 
 dopple.Flag = {

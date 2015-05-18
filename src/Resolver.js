@@ -358,60 +358,92 @@ dopple.Resolver.prototype =
 		var leftCls = leftNode.cls;
 		var rightCls = rightNode.cls;
 
-		if(leftCls) 
+		if(leftCls)
 		{
-			if(leftCls.flags & this.flagType.TEMPLATE) 
+			if(leftCls !== rightCls)
 			{
-				if(!leftNode.templateValue) {
-					leftNode.templateValue = rightNode.templateValue;
+				var leftType = leftCls.varType;
+				var rightType = rightCls.varType;
+
+				if(leftType === this.type.STRING && rightType === this.type.NUMBER) {
+					leftNode.cls = rightNode.cls;
 				}
-				else if(leftNode.templateValue.cls !== rightNode.templateValue.cls) {
-					return false;					
+				else if(leftType === this.type.NUMBER && rightType === this.type.NUMBER) {
+					return true;
+				}
+				else {
+					return false;
 				}
 			}
-			else if(leftCls !== rightCls) 
+			else if((leftCls.flags & this.flagType.TEMPLATE) && 
+				    (rightCls.flags & this.flagType.TEMPLATE))
 			{
-				if(leftCls.varType === this.type.NUMBER)
-				{
-					if(rightCls.varType === this.type.STRING) {
-						leftNode.cls = this.strCls;
-					}
-					else if(rightCls.varType === this.type.NUMBER) 
-					{}
-				}
-				else if(leftCls.varType === this.type.STRING)
-				{
-					if(rightCls.varType === NUMBER) {
-						leftNode.cls = this.strCls;
-					}
-				}
-				if(leftCls === this.nativeVars.Args) 
-				{}
-				else if(leftCls === this.nativeVars.Null) {
-					leftNode.cls = rightCls;
-				}
-				else if(!(rightNode instanceof this.ast.Null) || 
-				     rightNode.flags & this.flagType.PTR === 0) 
-				{				
-					return false;
-					// if(!leftNode.name) {
-					// 	throw "Types do not match: expected [" 
-					// 			+ this.createType(leftNode) + "] but got [" 
-					// 			+ this.createType(rightNode) + "]";	
-					// }
-					// else {
-					// 	throw "Types do not match for \"" + leftNode.name + "\" assignment: expected [" 
-					// 			+ this.createType(leftNode) + "] but got [" 
-					// 			+ this.createType(rightNode) + "]";	
-					// }
-				}	
+				return this.checkTypes(leftNode.templateValue, rightNode.templateValue);
 			}
 		}
-		else {
+		else 
+		{
 			leftNode.cls = rightCls;
 			leftNode.flags |= (rightNode.flags & this.flagType.PTR);
-			leftNode.flags |= (rightNode.flags & this.flagType.MEMORY_STACK);
+			leftNode.flags |= (rightNode.flags & this.flagType.MEMORY_STACK);			
 		}
+
+		return true;
+
+		// if(leftCls) 
+		// {
+		// 	if(leftCls.flags & this.flagType.TEMPLATE) 
+		// 	{
+		// 		if(!leftNode.templateValue) {
+		// 			leftNode.templateValue = rightNode.templateValue;
+		// 		}
+		// 		else if(leftNode.templateValue.cls !== rightNode.templateValue.cls) {
+		// 			return false;					
+		// 		}
+		// 	}
+		// 	else if(leftCls !== rightCls) 
+		// 	{
+		// 		if(leftCls.varType === this.type.NUMBER)
+		// 		{
+		// 			if(rightCls.varType === this.type.STRING) {
+		// 				leftNode.cls = this.strCls;
+		// 			}
+		// 			else if(rightCls.varType === this.type.NUMBER) 
+		// 			{}
+		// 		}
+		// 		else if(leftCls.varType === this.type.STRING)
+		// 		{
+		// 			if(rightCls.varType === NUMBER) {
+		// 				leftNode.cls = this.strCls;
+		// 			}
+		// 		}
+		// 		if(leftCls === this.nativeVars.Args) 
+		// 		{}
+		// 		else if(leftCls === this.nativeVars.Null) {
+		// 			leftNode.cls = rightCls;
+		// 		}
+		// 		else if(!(rightNode instanceof this.ast.Null) || 
+		// 		     rightNode.flags & this.flagType.PTR === 0) 
+		// 		{				
+		// 			return false;
+		// 			// if(!leftNode.name) {
+		// 			// 	throw "Types do not match: expected [" 
+		// 			// 			+ this.createType(leftNode) + "] but got [" 
+		// 			// 			+ this.createType(rightNode) + "]";	
+		// 			// }
+		// 			// else {
+		// 			// 	throw "Types do not match for \"" + leftNode.name + "\" assignment: expected [" 
+		// 			// 			+ this.createType(leftNode) + "] but got [" 
+		// 			// 			+ this.createType(rightNode) + "]";	
+		// 			// }
+		// 		}	
+		// 	}
+		// }
+		// else {
+			// leftNode.cls = rightCls;
+			// leftNode.flags |= (rightNode.flags & this.flagType.PTR);
+			// leftNode.flags |= (rightNode.flags & this.flagType.MEMORY_STACK);
+		// }
 
 		return true;			
 	},	

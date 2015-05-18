@@ -22,14 +22,12 @@ meta.class("dopple.AST.Base",
 	name: "",
 	parents: null,
 	type: dopple.Type.UNNOWN,
-	varType: dopple.Type.UNKNOWN,
 	cls: null,
 	parent: null,
 	templateValue: null,
 	flags: 0
 });
 
-/* Number */
 meta.class("dopple.AST.Number", "dopple.AST.Base", 
 {
 	init: function(num) {
@@ -52,7 +50,6 @@ meta.class("dopple.AST.String", "dopple.AST.Base",
 
 	//
 	type: dopple.Type.STRING,
-	varType: dopple.Type.STRING,
 	value: ""
 });
 
@@ -67,7 +64,6 @@ meta.class("dopple.AST.Bool", "dopple.AST.Base",
 
 	//
 	type: dopple.Type.BOOL,
-	varType: dopple.Type.NUMBER,
 	value: false
 });
 
@@ -82,7 +78,6 @@ meta.class("dopple.AST.Array", "dopple.AST.Base",
 
 	//
 	type: dopple.Type.ARRAY,
-	varType: dopple.Type.ARRAY,
 	elements: null
 });
 
@@ -90,8 +85,7 @@ dopple.AST.Array.prototype.flags |= dopple.Flag.TEMPLATE | dopple.Flag.MEMORY_ST
 
 /* Null */
 meta.class("dopple.AST.Null", "dopple.AST.Base", {
-	type: dopple.Type.NULL,
-	varType: dopple.Type.CLASS
+	type: dopple.Type.NULL
 });
 
 dopple.AST.Null.prototype.flags |= (dopple.Flag.PTR | dopple.Flag.KNOWN);
@@ -134,7 +128,6 @@ meta.class("dopple.AST.New", "dopple.AST.Base",
 
 	//
 	type: dopple.Type.NEW,
-	varType: dopple.Type.CLASS,
 	func: null, 
 	args: null
 });
@@ -196,7 +189,6 @@ meta.class("dopple.AST.Unary", "dopple.AST.Base",
 
 	//
 	type: dopple.Type.UNARY,
-	varType: dopple.Type.NUMBER,
 	value: null, 
 	op: 0
 });
