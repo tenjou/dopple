@@ -322,9 +322,9 @@ dopple.compiler.cpp =
 	parseIf: function(node)
 	{
 		var branch = node.branchIf;
-		var output = "if(" + this.lookup[branch.value.type].call(this, branch.value, flags)+ ")\n";
+		var output = "if(" + this.lookup[branch.value.type].call(this, branch.value, null)+ ")\n";
 		output += this.tabs + "{\n";
-		output += this.parseScope(branch.scope, flags);
+		output += this.parseScope(branch.scope);
 		output += this.tabs + "}";
 
 		if(node.branchElseIf)
@@ -334,7 +334,7 @@ dopple.compiler.cpp =
 			for(var n = 0; n < num; n++) {
 				branch = branches[n];
 				output += "\n" + this.tabs + "else if(" + 
-					this.lookup[branch.value.type].call(this, branch.value, flags)+ ")\n";
+					this.lookup[branch.value.type].call(this, branch.value, null)+ ")\n";
 				output += this.tabs + "{\n";
 				output += this.parseScope(branch.scope, flags);
 				output += this.tabs + "}";				
