@@ -134,6 +134,9 @@ dopple.Resolver.prototype =
 	{
 		var branch = node.branchIf;
 		branch.value = this.resolveValue(branch.value);
+		if(!branch.value.cls) {
+			throw "Branch expression does not return any value."
+		}
 		this.resolveScope(branch.scope);
 
 		if(node.branchElseIf)
@@ -143,6 +146,9 @@ dopple.Resolver.prototype =
 			for(var n = 0; n < num; n++) {
 				branch = branches[n];
 				branch.value = this.resolveValue(branch.value);
+				if(!branch.value.cls) {
+					throw "Branch expression does not return any value."
+				}				
 				this.resolveScope(branch.scope);
 			}			
 		}
