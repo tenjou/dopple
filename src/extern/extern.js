@@ -81,12 +81,29 @@ dopple.ExternClass = function(cls) {
 
 dopple.ExternClass.prototype = 
 {
-	addVar: function(name, cls)
+	addVar: function(name, value)
 	{
 		var varExpr = new dopple.AST.Var(name, null, null);
-		varExpr.value = new dopple.AST.Number(0);
+		varExpr.value = value;
 		varExpr.flags |= dopple.Flag.Extern;
 		this.cls.scope.body.push(varExpr);
+	},
+
+	addVars: function(buffer, value, hook) 
+	{
+		var astVar = dopple.AST.Var;
+
+		var varExpr = null;
+		var body = this.cls.scope.body;
+		var num = buffer.length;
+		for(var n = 0; n < num; n++)
+		{ 
+			varExpr = new astVar(buffer[n], null, null);
+			varExpr.value = value;
+			varExpr.flags |= dopple.Flag.Extern;
+			varExpr.hook = hook;
+			body.push(varExpr);			
+		}
 	},
 
 	addNew: function(name, clsName) 
@@ -139,6 +156,8 @@ dopple.ExternClass.prototype =
 			
 			scope.body.push(retExpr);			
 		}
+
+		return funcExpr;
 	},
 
 	addConstr: function(params)

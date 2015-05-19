@@ -1,5 +1,6 @@
 #pragma once
 
+#include "dopple_sdl.h"
 #include "stb/stb_image.h"
 
 struct Image
@@ -37,3 +38,90 @@ struct Image
 	int8 loaded = 0;
 	void (*onload)() = nullptr;
 };
+
+struct Element {};
+
+// struct WebGLRenderingContext;
+
+struct CanvasElement: public Element
+{
+	CanvasElement() {}
+	
+	// WebGLRenderingContext *getContext(const char *str)
+	// {
+	// 	if(!this->ctx) {
+	// 		this->ctx = new WebGLRenderingContext(this);
+	// 	}
+	// 	return this->ctx;
+	// }
+	
+	//
+	//WebGLRenderingContext *ctx = nullptr;
+	double width = 300;
+	double height = 150;
+};
+
+struct Document
+{
+	Document() {
+		this->screenCanvas = new CanvasElement();
+	}
+	
+	CanvasElement *getElementById(const char *strID) {
+		return this->screenCanvas;
+	}
+	
+	//
+	CanvasElement *screenCanvas = nullptr;
+};
+
+struct Window
+{
+	Window() {
+		this->document = new Document();
+	}
+	
+	void requestAnimationFrame(void (*cb)()) {
+		//sdl_wnd->cb = cb;
+	}
+	
+	//
+	Document *document = nullptr;
+};
+
+// struct WebGLShader
+// {
+// 	WebGLShader(GLuint type) {
+// 		this->shaderID = glCreateShader(type);
+// 	}
+	
+// 	GLuint shaderID = 0;
+// };
+
+// struct WebGLProgram
+// {
+// 	WebGLProgram() {
+// 		this->programID = glCreateProgram();
+// 	}
+	
+// 	GLuint programID = 0;
+// };
+
+// struct WebGLUniformLocation
+// {
+// 	WebGLUniformLocation(WebGLProgram *program, char *name) {
+// 		this->location = glGetUniformLocation(program->programID, name);
+// 	}
+	
+// 	GLint location;
+// };
+
+// struct WebGLBuffer
+// {
+// 	WebGLBuffer() {
+// 		glGenBuffers(1, &this->bufferID);
+// 	}
+	
+// 	GLuint bufferID;
+// };
+

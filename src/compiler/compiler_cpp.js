@@ -266,8 +266,15 @@ dopple.compiler.cpp =
 
 	parseRef: function(node, flags) 
 	{
-		if(node.value && node.value.flags & this.flagType.GETTER) {
-			return this.createGetterName(node);
+		if(node.value) 
+		{
+			if(node.value.hook) {
+				return node.value.hook();
+			}
+
+			if(node.value.flags & this.flagType.GETTER) {
+				return this.createGetterName(node);
+			}
 		}
 
 		return this.createName(node);
@@ -372,6 +379,9 @@ dopple.compiler.cpp =
 
 		if(node.value) 
 		{
+			if(node.value.hook) {
+				console.log("hook");
+			}
 			var valueOutput = this.lookup[node.value.type].call(this, node.value, flags);
 			if(valueOutput) {
 				output = this.createName(node, flags) + " = " + valueOutput;
@@ -574,11 +584,17 @@ dopple.compiler.cpp =
 
 	parseFuncCall: function(node, parent, flags) 
 	{
+		var output;
+
 		if(node.value.hook) {
-			return node.value.hook();
+			output = node.value.hook();
 		}
+		else {
+			output = this.createName(node);
+		}
+
+		output += "(" + this.parseArgs(node, parent, flags) + ")";
 		
-		var output = this.createName(node) + "(" + this.parseArgs(node, parent, flags) + ")";
 		return output;
 	},
 

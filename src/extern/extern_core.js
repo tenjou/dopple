@@ -107,6 +107,6 @@ dopple.extern("core", function(extern)
 	externCls.finish();
 	extern.cachedVars.Float32Array = extern.create(externCls.cls);
 
-	extern.addFunc("__dopple__create", null, null);
-	extern.addFunc("__dopple__destroy", null, null);	
+	extern.addFunc("__dopple__create__", null, null).hook = function() { return "dopple::create"; };
+	extern.addFunc("__dopple__destroy__", null, null).hook = function() { return "dopple::destroy"; };
 });

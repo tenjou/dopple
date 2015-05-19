@@ -12,12 +12,23 @@
 typedef int8_t int8;
 typedef int16_t int16;
 typedef int32_t int32;
+typedef uint8_t	uint8;
+typedef uint16_t uint16;
+typedef uint32_t uint32;
 typedef float real32;
 typedef double real64;
 
 namespace dopple
 {
 	const int32 STR_HEADER_SIZE = 4;
+
+	inline void create() {
+		srand((uint32_t)time(nullptr));
+	}
+
+	inline void destroy() {
+		//sdl_wnd->start();
+	}	
 }
 
 struct
@@ -68,9 +79,9 @@ struct
 	double PI = 3.141592653589793;
 } Math;
 
-
 template <class T>
-struct Array {
+struct Array 
+{
 	Array() {
 		
 	}
@@ -98,6 +109,20 @@ struct Array {
 	inline void __get__length(double) { return this->length; }
 	
 	T *buffer = nullptr;
+};
+
+struct Float32Array
+{
+	Float32Array() {}
+	
+	Float32Array(float *buffer, int32_t size) {
+		this->buffer = buffer;
+		this->size = size;
+	}
+	
+	//
+	float *buffer = 0;
+	int32_t size = 0;
 };
 
 #include "dopple_dom.h"
