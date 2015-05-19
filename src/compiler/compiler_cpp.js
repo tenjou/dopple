@@ -240,7 +240,7 @@ dopple.compiler.cpp =
 	},
 
 	outputReal64: function(node, flags) {
-		return node.value;
+		return node.value + "";
 	},	
 
 	parseString: function(node, flags) 
@@ -260,7 +260,7 @@ dopple.compiler.cpp =
 	},
 
 	parseBool: function(node, flags) {
-		return node.value;
+		return node.value + "";
 	},
 
 	parseRef: function(node, flags) 
