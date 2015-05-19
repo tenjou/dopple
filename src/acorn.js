@@ -134,13 +134,7 @@ dopple.acorn =
 		func.type = this.type.FUNCTION_DEF;
 		this.scope = this.scope.parent;
 		this.scope.vars[name] = func;
-		
-		if(!this.scope.funcs) {
-			this.scope.funcs = [ func ];
-		}
-		else {
-			this.scope.funcs.push(func);
-		}
+		this.scope.funcs.push(func);
 
 		return func;
 	},

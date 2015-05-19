@@ -3,6 +3,7 @@
 dopple.ScopeCache = function() {}
 dopple.ScopeCache.prototype = {
 	id: 0,
+	dynID: 0,
 	decls: null,
 	declGroups: null,
 	declOutput: "",
@@ -67,8 +68,12 @@ dopple.Scope.prototype =
 		return this.genVar(dopple.scope.vars.String);
 	},
 
+	genFunc: function() {
+		return "__dynfunc__" + (this.cache.dynID++) + "__";
+	},
+
 	//
 	virtual: false,
-	funcs: null,
+	funcs: [],
 	classes: []
 };

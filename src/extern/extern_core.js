@@ -78,7 +78,7 @@ dopple.extern("core", function(extern)
 	externCls.addFunc("push", [ extern.cachedVars.Template ], extern.cachedVars.Number, true);
 	externCls.addFunc("pop", null, extern.cachedVars.Template);
 	externCls.addFunc("shift", null, extern.cachedVars.Template);
-	externCls.addMutator("length", extern.nativeVars.Number).flags |= dopple.Flag.SETTER | dopple.Flag.GETTER;
+	externCls.addMutator("length", extern.nativeVars.Real64).flags |= dopple.Flag.SETTER | dopple.Flag.GETTER;
 	//externCls.addOp("[", vars.Number, nativeVars.Template);
 	externCls.finish();
 

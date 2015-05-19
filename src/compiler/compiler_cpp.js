@@ -27,6 +27,7 @@ dopple.compiler.cpp =
 		this.lookup[this.type.UNARY] = this.parseUnary;
 		this.lookup[this.type.FUNCTION] = this.parseFunc;
 		this.lookup[this.type.FUNCTION_CALL] = this.parseFuncCall;
+		this.lookup[this.type.FUNCTION_DEF] = this.outputFuncDef;
 		this.lookup[this.type.RETURN] = this.parseReturn;
 		this.lookup[this.type.NULL] = this.parseNull;
 		this.lookup[this.type.ARRAY] = this.parseArray;
@@ -573,6 +574,11 @@ dopple.compiler.cpp =
 
 	parseFuncCall: function(node, parent, flags) {
 		var output = this.createName(node) + "(" + this.parseArgs(node, parent, flags) + ")";
+		return output;
+	},
+
+	outputFuncDef: function(node) {
+		var output = node.name;
 		return output;
 	},
 

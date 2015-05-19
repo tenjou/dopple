@@ -2,24 +2,28 @@
 
 dopple.extern("webgl", function(extern) 
 {
-	var cls = extern.addClass("WebGLShader");
-	cls.finish();	
+	var externCls = extern.addClass("WebGLShader");
+	//externCls.cls.flags |= dopple.Flag.MEMORY_STACK;
+	externCls.finish();	
 
-	cls = extern.addClass("WebGLProgram");
-	cls.finish();	
+	externCls = extern.addClass("WebGLProgram");
+	//externCls.cls.flags |= dopple.Flag.MEMORY_STACK;
+	externCls.finish();	
 
-	cls = extern.addClass("WebGLBuffer");
-	cls.finish();
+	externCls = extern.addClass("WebGLBuffer");
+	//externCls.cls.flags |= dopple.Flag.MEMORY_STACK;
+	externCls.finish();
 
-	cls = extern.addClass("WebGLUniformLocation");
-	cls.finish();		
+	externCls = extern.addClass("WebGLUniformLocation");
+	//externCls.cls.flags |= dopple.Flag.MEMORY_STACK;
+	externCls.finish();		
 
 	extern.cachedVars.WebGLShader = extern.create(extern.vars.WebGLShader);
 	extern.cachedVars.WebGLProgram = extern.create(extern.vars.WebGLProgram);
 	extern.cachedVars.WebGLBuffer = extern.create(extern.vars.WebGLBuffer);
 	extern.cachedVars.WebGLUniformLocation = extern.create(extern.vars.WebGLUniformLocation);
 
-	cls = extern.addClass("WebGLRenderingContext");
+	var cls = extern.addClass("WebGLRenderingContext");
 	cls.addFunc("viewport", 
 		[ extern.cachedVars.Real64, extern.cachedVars.Real64, extern.cachedVars.Real64, extern.cachedVars.Real64 ], null);
 	cls.addFunc("clear", [ extern.cachedVars.Real64 ], null);

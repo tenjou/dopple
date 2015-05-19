@@ -474,6 +474,16 @@ dopple.Resolver.prototype =
 		else if(node instanceof this.ast.Conditional) {
 			this.resolveConditional(node);
 		}
+		else if(node instanceof this.ast.Function) 
+		{
+			if(!node.name) {
+				node.name = this.global.genFunc();
+				this.resolveFunc(node);
+			}
+			else {
+				this.resolveRef(node);
+			}
+		}
 		else if((node.flags & this.flagType.KNOWN) === 0) {
 			this.resolveRef(node);
 		}			

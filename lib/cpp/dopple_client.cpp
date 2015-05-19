@@ -14,3 +14,6 @@ Window *window = new Window();
 Document *document = window->document;
 
 dopple::SDLWindow *sdl_wnd = nullptr;
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "/Volumes/Workspace/www/meta/dopple/lib/cpp/stb/stb_image.h"
