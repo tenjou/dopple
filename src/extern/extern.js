@@ -16,14 +16,14 @@ dopple.Extern.prototype =
 {
 	create: function(varCls)
 	{
-		var expr = new dopple.AST.Reference("internal:" + varCls.name, null);
+		var expr = new dopple.AST.Reference(varCls.name, null);
 		expr.cls = varCls;
 		return expr;
 	},
 
 	createTemplate: function(varCls, templateCls)
 	{
-		var expr = new dopple.AST.Reference("internal:" + varCls.name, null);
+		var expr = new dopple.AST.Reference(varCls.name, null);
 		expr.cls = varCls;
 		expr.templateValue = templateCls;
 		return expr;

@@ -74,6 +74,7 @@ dopple.Resolver.prototype =
 		}
 
 		node.flags |= this.flagType.RESOLVED;
+		//node.flags |= this.flagType.MEMORY_STACK;
 
 		var expr = this.scope.vars[node.name];
 		if(!expr) 
@@ -223,7 +224,7 @@ dopple.Resolver.prototype =
 
 			node.value = value;
 			node.returnCls = cls;
-			node.flags |= value.flags & this.flagType.PTR;
+			node.flags |= (value.flags & this.flagType.PTR);
 		}
 
 		node.flags |= this.flagType.RESOLVED;
@@ -247,8 +248,15 @@ dopple.Resolver.prototype =
 		var args = node.args;
 		var numParams = params ? params.length : 0;
 		var numArgs = args ? args.length : 0;
+		var numArgsResolve = numArgs;
 
-		if(numArgs > numParams) 
+		if(func.flags & this.flagType.RESOLVED) 
+		{	
+			if(func.argsIndex > -1) {
+				numArgsResolve = func.argsIndex;
+			}			
+		}
+		else
 		{
 			if((func.flags & this.flagType.RESOLVED) === 0) 
 			{
@@ -256,24 +264,20 @@ dopple.Resolver.prototype =
 				for(var n = 0; n < numParams; n++) {
 					if(params[n].cls === argCls) {
 						func.argsIndex = n;
+						numArgsResolve = n;
 						break;
 					}
-				}				
+				}
 			}
+		}	
 
-			if(func.argsIndex === -1)
-			{
-				throw "Passed too many arguments for " + 
-					node.name + ": passed " + numArgs + " but expected " + numParams;
-			}
-		}
-
-		if(func.argsIndex > -1) {
-			numParams = func.argsIndex;
+		if(numArgsResolve > numParams) {
+			throw "Passed too many arguments for " + 
+				node.name + ": passed " + numArgsResolve + " but expected " + numParams;				
 		}
 
 		var parent = null;
-		for(var n = 0; n < numArgs; n++) 
+		for(var n = 0; n < numArgsResolve; n++) 
 		{
 			param = params[n];
 			arg = this.resolveValue(args[n]);
@@ -285,12 +289,24 @@ dopple.Resolver.prototype =
 			}
 		}
 
+		for(; n < numArgs; n++) {
+			arg = this.resolveValue(args[n]);
+			if(!arg.cls) {
+				throw "Argument nr." + n + " should return a value";
+			}
+		}
+
 		this.resolveFunc(node.value);
 
 		node.func = node.value;
 		node.cls = node.value.returnCls;
-		if(node.cls === dopple.scope.vars.Function) {
-			node.cls = null;
+		if(node.cls) 
+		{
+			if(node.cls === dopple.scope.vars.Function) {
+				node.cls = null;
+			}
+
+			node.flags |= (node.cls.flags & this.flagType.MEMORY_STACK);
 		}
 
 		return node;
@@ -320,7 +336,7 @@ dopple.Resolver.prototype =
 			node.cls = this.global.vars.Boolean;
 		}
 		else {
-			node.cls = this.global.vars.Number;
+			node.cls = this.global.vars.Real64;
 		}
 
 		return node;
@@ -366,7 +382,17 @@ dopple.Resolver.prototype =
 
 		if(leftCls)
 		{
-			if(leftCls !== rightCls)
+			if(leftCls.clsType === this.type.ARGS) {}
+			else if(leftCls.clsType === this.type.NULL) 
+			{
+				if((leftNode.flags & this.flagType.PTR) === 0) {
+					return false;
+				}
+
+				leftNode.cls = rightCls;
+				leftNode.flags |= (rightNode.flags & this.flagType.MEMORY_STACK);					
+			}			
+			else if(leftCls !== rightCls)
 			{
 				var leftType = leftCls.varType;
 				var rightType = rightCls.varType;
@@ -394,72 +420,12 @@ dopple.Resolver.prototype =
 			leftNode.flags |= (rightNode.flags & this.flagType.MEMORY_STACK);			
 		}
 
-		return true;
-
-		// if(leftCls) 
-		// {
-		// 	if(leftCls.flags & this.flagType.TEMPLATE) 
-		// 	{
-		// 		if(!leftNode.templateValue) {
-		// 			leftNode.templateValue = rightNode.templateValue;
-		// 		}
-		// 		else if(leftNode.templateValue.cls !== rightNode.templateValue.cls) {
-		// 			return false;					
-		// 		}
-		// 	}
-		// 	else if(leftCls !== rightCls) 
-		// 	{
-		// 		if(leftCls.varType === this.type.NUMBER)
-		// 		{
-		// 			if(rightCls.varType === this.type.STRING) {
-		// 				leftNode.cls = this.strCls;
-		// 			}
-		// 			else if(rightCls.varType === this.type.NUMBER) 
-		// 			{}
-		// 		}
-		// 		else if(leftCls.varType === this.type.STRING)
-		// 		{
-		// 			if(rightCls.varType === NUMBER) {
-		// 				leftNode.cls = this.strCls;
-		// 			}
-		// 		}
-		// 		if(leftCls === this.nativeVars.Args) 
-		// 		{}
-		// 		else if(leftCls === this.nativeVars.Null) {
-		// 			leftNode.cls = rightCls;
-		// 		}
-		// 		else if(!(rightNode instanceof this.ast.Null) || 
-		// 		     rightNode.flags & this.flagType.PTR === 0) 
-		// 		{				
-		// 			return false;
-		// 			// if(!leftNode.name) {
-		// 			// 	throw "Types do not match: expected [" 
-		// 			// 			+ this.createType(leftNode) + "] but got [" 
-		// 			// 			+ this.createType(rightNode) + "]";	
-		// 			// }
-		// 			// else {
-		// 			// 	throw "Types do not match for \"" + leftNode.name + "\" assignment: expected [" 
-		// 			// 			+ this.createType(leftNode) + "] but got [" 
-		// 			// 			+ this.createType(rightNode) + "]";	
-		// 			// }
-		// 		}	
-		// 	}
-		// }
-		// else {
-			// leftNode.cls = rightCls;
-			// leftNode.flags |= (rightNode.flags & this.flagType.PTR);
-			// leftNode.flags |= (rightNode.flags & this.flagType.MEMORY_STACK);
-		// }
-
-		return true;			
+		return true;		
 	},	
 
 	resolveRef: function(node) 
 	{
 		node.value = this.getRefEx(node);
-		// if(expr instanceof this.ast.Var) {
-		// 	node.value = node.value.value;
-		// }
 
 		if(node instanceof this.ast.New) {
 			this.resolveNew(node);
@@ -472,10 +438,10 @@ dopple.Resolver.prototype =
 		}
 		else {
 			node.cls = node.value.cls;
+			node.flags |= (node.value.flags & this.flagType.PTR);
+			node.flags |= (node.value.flags & this.flagType.MEMORY_STACK);
 		}
-		
-		node.flags |= (node.value.flags & this.flagType.PTR);
-
+	
 		return node;
 	},	
 

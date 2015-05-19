@@ -64,7 +64,7 @@ dopple.extern("core", function(extern)
 	externCls.cls.varType = extern.type.FUNCTION;
 	externCls.finish();
 	extern.nativeVars.Function = externCls.cls;
-	extern.cachedVars.String = extern.create(externCls.cls);
+	extern.cachedVars.Function = extern.create(externCls.cls);
 
 	externCls = extern.addClass("Array");
 	externCls.cls.flags |= extern.flagType.TEMPLATE;
@@ -105,6 +105,7 @@ dopple.extern("core", function(extern)
 	externCls.addMutator("length", extern.nativeVars.Number).flags |= dopple.Flag.GETTER;
 	externCls.cls.flags |= dopple.Flag.MEMORY_STACK;
 	externCls.finish();
+	extern.cachedVars.Float32Array = extern.create(externCls.cls);
 
 	extern.addFunc("__dopple__create", null, null);
 	extern.addFunc("__dopple__destroy", null, null);	

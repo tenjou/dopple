@@ -32,10 +32,15 @@ dopple.compiler.cpp =
 		this.lookup[this.type.ARRAY] = this.parseArray;
 
 		this.argLookup = [];
-		this.argLookup[this.type.NUMBER] = this.parseArgNumber;
-		this.argLookup[this.type.STRING] = this.parseArgString;
-		this.argLookup[this.type.BOOL] = this.parseArgBool;
-		this.argLookup[this.type.REFERENCE] = this.parseArgRef;
+		this.argLookup[this.type.NUMBER] = this.outputArgNumber;
+		this.argLookup[this.type.STRING] = this.outputArgString;
+		this.argLookup[this.type.BOOL] = this.outputArgBool;
+		this.argLookup[this.type.REFERENCE] = this.outputArgRef;
+		this.argLookup[this.type.FUNCTION_CALL] = this.outputArgFuncCall;
+
+		this.argFormatByType = [];
+		this.argFormatByType[this.type.NUMBER] = "%g.17";
+		this.argFormatByType[this.type.STRING] = "%s";
 	},
 
 	compile: function()
@@ -254,12 +259,8 @@ dopple.compiler.cpp =
 		return "(char *)" + hex + "\"" + node.value + "\"";
 	},
 
-	parseBool: function(node, flags) 
-	{
-		if(node.value === 1) {
-			return "true";
-		}
-		return "false";
+	parseBool: function(node, flags) {
+		return node.value;
 	},
 
 	parseRef: function(node, flags) 
@@ -271,7 +272,7 @@ dopple.compiler.cpp =
 		return this.createName(node);
 	},
 
-	parseNew: function(node, flags) 
+	parseNew: function(node, parent, flags) 
 	{
 		if(!node.args) {
 			return "";
@@ -281,18 +282,22 @@ dopple.compiler.cpp =
 
 		if(node.flags & this.flagType.MEMORY_STACK) 
 		{
-			if(node.args.length === 0) { return ""; }
-
-			if(node instanceof dopple.AST.Var) {
-				output = node.cls.name + "(" + this.parseArgs(node) + ")";
+			if(node.args.length === 0) {
+				output = "";
 			}
-			else {
-				output = node.name + "(" + this.parseArgs(node) + ")";
-			}			
+			else 
+			{
+				if(node instanceof dopple.AST.Var) {
+					output = " = " + node.cls.name + "(" + this.parseArgs(node) + ")";
+				}
+				else {
+					output = " = " + node.name + "(" + this.parseArgs(node) + ")";
+				}				
+			}
 
 			if(flags & this.Flag.PARSING_ARGS) {
 				var name = this.scope.genVar(node.cls);
-				this.scope.cache.preOutput += this.tabs + this.createType(node) + name + " = " + output + ";\n";
+				this.scope.cache.preOutput += this.tabs + this.createType(node) + name + output + ";\n";
 				return name;
 			}
 		}
@@ -336,7 +341,7 @@ dopple.compiler.cpp =
 				output += "\n" + this.tabs + "else if(" + 
 					this.lookup[branch.value.type].call(this, branch.value, null)+ ")\n";
 				output += this.tabs + "{\n";
-				output += this.parseScope(branch.scope, flags);
+				output += this.parseScope(branch.scope);
 				output += this.tabs + "}";				
 			}
 		}
@@ -344,7 +349,7 @@ dopple.compiler.cpp =
 		if(node.branchElse) {
 			output += "\n" + this.tabs + "else\n";
 			output += this.tabs + "{\n";
-			output += this.parseScope(branch.scope, flags);
+			output += this.parseScope(branch.scope);
 			output += this.tabs + "}";				
 		}
 
@@ -651,19 +656,17 @@ dopple.compiler.cpp =
 			name += "<" + this.createTemplateType(node) + ">";
 		}			
 
-		if(node.flags & this.flagType.PTR && 
-	       (node.flags & this.flagType.MEMORY_STACK) === 0) 
+		if(node.flags & this.flagType.PTR)
 		{
-			name += " *";
-		}
-		else 
-		{
-			if(param) {
-				name += " &";
-			}
-			else {
+			if(node.flags & this.flagType.MEMORY_STACK)	{
 				name += " ";
 			}
+			else {
+				name += " *";
+			}
+		}
+		else {
+			name += " ";
 		}
 
 		return name;
@@ -771,12 +774,12 @@ dopple.compiler.cpp =
 			this.argLookup[arg.type].call(this, arg, cache, n);
 		}
 
-		var output = "\"" + cache.format + "\\n\"" + cache.args;
+		var output = "\"" + cache.format.slice(1) + "\\n\"" + cache.args;
 
 		return output;
 	},
 
-	parseArgNumber: function(node, cache, index) 
+	outputArgNumber: function(node, cache, index) 
 	{
 		if(index === 0) {
 			cache.format += "%.17g";	
@@ -793,26 +796,13 @@ dopple.compiler.cpp =
 		}
 	},
 
-	parseArgString: function(node, cache, index) 
-	{
-		if(index === 0) {
-			cache.format += "%s";
-		} 
-		else {
-			cache.format += " %s";
-		}
-
-		cache.args += ", \"" + node.value + "\"";
+	outputArgString: function(node, cache, index) {
+		cache.format += " " + node.value;
 	},
 
-	parseArgBool: function(node, cache, index) 
+	outputArgBool: function(node, cache, index) 
 	{
-		if(index === 0) {
-			cache.format += "%s";			
-		}
-		else {
-			cache.format += " %s";		
-		}
+		cache.format += " %s";		
 
 		if(node.value === 1) {
 			cache.args += ", \"true\"";
@@ -822,8 +812,30 @@ dopple.compiler.cpp =
 		}
 	},
 
-	parseArgRef: function(node, cache, index) {
-		return "";
+	outputArgRef: function(node, cache, index) 
+	{
+		var varType = node.cls.varType;
+		if(varType === this.type.NUMBER) {
+			cache.args += ", " + this.parseRef(node);
+			cache.format += " %.17g";
+		}
+		else if(varType === this.type.STRING) {
+			cache.args += ", " + this.parseRef(node) + " + dopple::STR_HEADER_SIZE";
+			cache.format += " %s";			
+		}
+	},
+
+	outputArgFuncCall: function(node, cache, index)
+	{
+		var varType = node.cls.varType;
+		if(varType === this.type.NUMBER) {
+			cache.args += ", " + this.parseFuncCall(node);
+			cache.format += " %.17g";
+		}
+		else if(varType === this.type.STRING) {
+			cache.args += ", " + this.parseFuncCall(node) + " + dopple::STR_HEADER_SIZE";
+			cache.format += " %s";			
+		}
 	},
 
 	incTabs: function() {
