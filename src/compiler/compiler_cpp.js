@@ -572,7 +572,12 @@ dopple.compiler.cpp =
 		return output;
 	},
 
-	parseFuncCall: function(node, parent, flags) {
+	parseFuncCall: function(node, parent, flags) 
+	{
+		if(node.value.hook) {
+			return node.value.hook();
+		}
+		
 		var output = this.createName(node) + "(" + this.parseArgs(node, parent, flags) + ")";
 		return output;
 	},

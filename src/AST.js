@@ -25,6 +25,7 @@ meta.class("dopple.AST.Base",
 	cls: null,
 	parent: null,
 	templateValue: null,
+	hook: null,
 	flags: 0
 });
 

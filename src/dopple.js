@@ -32,12 +32,12 @@ var dopple =
 		this.load("webgl");
 		this.load("dom");
 
-		var createCall = new dopple.AST.FunctionCall("__dopple__create", null, null, null);
+		var createCall = new dopple.AST.FunctionCall("__dopple__create__", null, null, null);
 		this.scope.body.push(createCall);		
 
 		dopple.acorn.parse(this.scope, ast);
 
-		var destroyCall = new dopple.AST.FunctionCall("__dopple__destroy", null, null, null);
+		var destroyCall = new dopple.AST.FunctionCall("__dopple__destroy__", null, null, null);
 		this.scope.body.push(destroyCall);			
 	},
 

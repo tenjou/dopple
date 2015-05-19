@@ -69,6 +69,8 @@ dopple.Extern.prototype =
 			var retExpr = new dopple.AST.Return(new dopple.AST.New(returnCls.name, null, null));
 			scope.body.push(retExpr);			
 		}
+
+		return funcExpr;
 	}	
 };
 
