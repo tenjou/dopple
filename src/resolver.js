@@ -380,6 +380,10 @@ dopple.Resolver.prototype =
 		var leftCls = leftNode.cls;
 		var rightCls = rightNode.cls;
 
+		if(!rightCls) {
+			throw "Trying to assign an undefined variable: \"" + rightNode.name + "\"";
+		}
+
 		if(leftCls)
 		{
 			if(leftCls.clsType === this.type.ARGS) {}

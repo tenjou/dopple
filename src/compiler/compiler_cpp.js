@@ -288,16 +288,16 @@ dopple.compiler.cpp =
 			else 
 			{
 				if(node instanceof dopple.AST.Var) {
-					output = " = " + node.cls.name + "(" + this.parseArgs(node) + ")";
+					output = node.cls.name + "(" + this.parseArgs(node) + ")";
 				}
 				else {
-					output = " = " + node.name + "(" + this.parseArgs(node) + ")";
+					output = node.name + "(" + this.parseArgs(node) + ")";
 				}				
 			}
 
 			if(flags & this.Flag.PARSING_ARGS) {
 				var name = this.scope.genVar(node.cls);
-				this.scope.cache.preOutput += this.tabs + this.createType(node) + name + output + ";\n";
+				this.scope.cache.preOutput += this.tabs + this.createType(node) + name + " = " + output + ";\n";
 				return name;
 			}
 		}
@@ -423,15 +423,15 @@ dopple.compiler.cpp =
 
 			var castingPrefix = "";
 			if(node.templateValue.cls.clsType !== parent.templateValue.cls.clsType) {
-				castingPrefix = "(" + parent.templateValue.cls.alt + ")";
+				castingPrefix = parent.templateValue.cls.alt + "(";
 			}
 
 			for(var n = 0; n < iterNum; n++) {
 				elementNode = elements[n];
-				elementOutput += castingPrefix + this.lookup[elementNode.type].call(this, elementNode, flags) + ", ";
+				elementOutput += castingPrefix + this.lookup[elementNode.type].call(this, elementNode, flags) + "), ";
 			}
 			elementNode = elements[n];
-			elementOutput += castingPrefix + this.lookup[elementNode.type].call(this, elementNode, flags);
+			elementOutput += castingPrefix + this.lookup[elementNode.type].call(this, elementNode, flags) + ")";
 
 			genVarName = this.scope.genVar(parent.templateValue.cls);
 
