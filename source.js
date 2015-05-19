@@ -1,115 +1,112 @@
-console.log();
+var canvas = null;
+var gl = null;
+var foobar = 0.5;
+var aspect;
+var program;
+var itemSize = 2;
+var adding = true;
 
-// function func(x) {
+function init()
+{
+	canvas = document.getElementById("canvas");
+	if(!canvas) {
+		console.error("no canvas");
+		return false;
+	}	
 
-// }
+	gl = canvas.getContext("experimental-webgl");
+	if(!gl) {
+		console.error("no webgl");
+		return false;
+	}	
 
-// func(new Float32Array(4));
+	aspect = canvas.width / canvas.height;
+	gl.viewport(0, 0, canvas.width, canvas.height);
 
-// var canvas = null;
-// var gl = null;
-// var foobar = 0.5;
-// var aspect;
-// var program;
-// var itemSize = 2;
-// var adding = true;
+	var vertexShaderSrc = 
+		"attribute vec2 position; \
+		void main() { \
+			gl_Position = vec4(position, 0, 1); \
+		}";
 
-// function init()
-// {
-// 	canvas = document.getElementById("canvas");
-// 	if(!canvas) {
-// 		console.error("no canvas");
-// 		return false;
-// 	}	
+	var fragmentShaderSrc = 
+		"precision mediump float; uniform vec4 color; \
+		void main() { \
+		  gl_FragColor = color; \
+		}";
 
-// 	gl = canvas.getContext("experimental-webgl");
-// 	if(!gl) {
-// 		console.error("no webgl");
-// 		return false;
-// 	}	
+	var vertexShader = gl.createShader(gl.VERTEX_SHADER);
+	gl.shaderSource(vertexShader, vertexShaderSrc);
+	gl.compileShader(vertexShader);
 
-// 	aspect = canvas.width / canvas.height;
-// 	gl.viewport(0, 0, canvas.width, canvas.height);
+	var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+	gl.shaderSource(fragmentShader, fragmentShaderSrc);
+	gl.compileShader(fragmentShader);
 
-// 	var vertexShaderSrc = 
-// 		"attribute vec2 position; \
-// 		void main() { \
-// 			gl_Position = vec4(position, 0, 1); \
-// 		}";
+	program = gl.createProgram();
+	gl.attachShader(program, vertexShader);
+	gl.attachShader(program, fragmentShader);
+	gl.linkProgram(program);
+	gl.useProgram(program);
 
-// 	var fragmentShaderSrc = 
-// 		"precision mediump float; uniform vec4 color; \
-// 		void main() { \
-// 		  gl_FragColor = color; \
-// 		}";
+	if(!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
+		console.error(gl.getShaderInfoLog(vertexShader));
+		return false;
+	}
 
-// 	var vertexShader = gl.createShader(gl.VERTEX_SHADER);
-// 	gl.shaderSource(vertexShader, vertexShaderSrc);
-// 	gl.compileShader(vertexShader);
+	if(!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
+		console.error(gl.getShaderInfoLog(fragmentShader));
+		return false;
+	}
 
-// 	var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
-// 	gl.shaderSource(fragmentShader, fragmentShaderSrc);
-// 	gl.compileShader(fragmentShader);
+	if(!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+		console.error(gl.getProgramInfoLog(program));
+		return false;
+	}	
 
-// 	program = gl.createProgram();
-// 	gl.attachShader(program, vertexShader);
-// 	gl.attachShader(program, fragmentShader);
-// 	gl.linkProgram(program);
-// 	gl.useProgram(program);
+	return true;
+}
 
-// 	if(!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
-// 		console.error(gl.getShaderInfoLog(vertexShader));
-// 		return false;
-// 	}
+function update() 
+{
+	var vertices = new Float32Array([
+			-foobar, foobar * aspect,
+			foobar, foobar * aspect,
+			foobar, -foobar * aspect
+		]);
 
-// 	if(!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
-// 		console.error(gl.getShaderInfoLog(fragmentShader));
-// 		return false;
-// 	}
+	gl.clearColor(0.9, 0.9, 0.9, 1);
+	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
 
-// 	if(!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-// 		console.error(gl.getProgramInfoLog(program));
-// 		return false;
-// 	}	
+	gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+	gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
 
-// 	return true;
-// }
+	var uniformColor = gl.getUniformLocation(program, "color");
+	gl.uniform4fv(uniformColor, new Float32Array([ foobar, 0, 0, 1 ]))
 
-// function update() 
-// {
-// 	var vertices = new Float32Array([
-// 			-foobar, foobar * aspect,
-// 			foobar, foobar * aspect,
-// 			foobar, -foobar * aspect
-// 		]);
+	var attribPos = gl.getAttribLocation(program, "position");
+	gl.enableVertexAttribArray(attribPos);
+	gl.vertexAttribPointer(attribPos, itemSize, gl.FLOAT, false, 0, 0);
 
-// 	gl.clearColor(0.9, 0.9, 0.9, 1);
-// 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
+	gl.drawArrays(gl.TRIANGLES, 0, 3);
 
-// 	gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
-// 	gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+	foobar += (adding ? 1 : -1) * foobar / 100;
 
-// 	var uniformColor = gl.getUniformLocation(program, "color");
-// 	gl.uniform4fv(uniformColor, new Float32Array([ foobar, foobar, 0, 1 ]))
+	if(foobar > 0.5) {
+		adding = false;
+	}
+	else if(foobar < 0.2) {
+		adding = true;
+	}
 
-// 	var attribPos = gl.getAttribLocation(program, "position");
-// 	gl.enableVertexAttribArray(attribPos);
-// 	gl.vertexAttribPointer(attribPos, itemSize, gl.FLOAT, false, 0, 0);
+	window.requestAnimationFrame(update);
+}
 
-// 	gl.drawArrays(gl.TRIANGLES, 0, 3);
+if(init()) {
+	update();
+}
 
-// 	foobar += (adding ? 1 : -1) * foobar / 100;
-
-// 	if(foobar > 0.5) {
-// 		adding = false;
-// 	}
-// 	else if(foobar < 0.2) {
-// 		adding = true;
-// 	}
-
-// 	window.requestAnimationFrame(update);
-// }
-
-// if(init()) {
-// 	update();
-// }
+// var canvas = document.getElementById("canvas");
+// var gl = canvas.getContext("experimental-webgl");
+// var program = gl.createProgram();
+// var uniformColor = gl.getUniformLocation(program, "color");

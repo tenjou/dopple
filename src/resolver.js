@@ -225,6 +225,7 @@ dopple.Resolver.prototype =
 			node.value = value;
 			node.returnCls = cls;
 			node.flags |= (value.flags & this.flagType.PTR);
+			node.flags |= (value.flags & this.flagType.MEMORY_STACK);
 		}
 
 		node.flags |= this.flagType.RESOLVED;
@@ -306,7 +307,8 @@ dopple.Resolver.prototype =
 				node.cls = null;
 			}
 
-			node.flags |= (node.cls.flags & this.flagType.MEMORY_STACK);
+			node.flags |= (node.value.flags & this.flagType.PTR);
+			node.flags |= (node.value.flags & this.flagType.MEMORY_STACK);
 		}
 
 		return node;
