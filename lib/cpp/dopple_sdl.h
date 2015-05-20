@@ -231,6 +231,10 @@ namespace dopple
 			SDL_Quit();
 		}
 		
+		void resize(int32 width, int32 height) {
+			SDL_SetWindowSize(this->window, width, height);
+		}
+		
 		//
 		SDL_Window *window = nullptr;
 		SDL_GLContext ctx = nullptr;

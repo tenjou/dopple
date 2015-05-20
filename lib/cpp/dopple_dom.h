@@ -47,14 +47,6 @@ struct WebGLRenderingContext
 	// 	glViewport(x, y, width, height);
 	// }
 	
-	// void clear(GLbitfield mask) {
-	// 	glClear(mask);
-	// }
-	
-	// void clearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha) {
-	// 	glClearColor(red, green, blue, alpha);
-	// }
-	
 	// WebGLShader *createShader(double type) {
 	// 	return new WebGLShader(type);
 	// }
@@ -197,19 +189,29 @@ struct CanvasElement: public Element
 		return this->ctx;
 	}
 
-	void __setter__width(real64 width) {
+	inline void __setter__width(real64 width) 
+	{
 		this->width = width;
+
+		if(dopple::platformWindow) {
+			dopple::platformWindow->resize(this->width, this->height);
+		}
 	}
 
-	real64 __getter__width() { 
+	inline real64 __getter__width() { 
 		return this->width;
 	}
 
-	void __setter__height(real64 height) {
+	inline void __setter__height(real64 height) 
+	{
 		this->height = height;
+		
+		if(dopple::platformWindow) {
+			dopple::platformWindow->resize(this->width, this->height);
+		}
 	}
 
-	real64 __getter__height() {
+	inline real64 __getter__height() {
 		return this->height;
 	}
 	
