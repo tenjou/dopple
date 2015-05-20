@@ -153,10 +153,17 @@ meta.class("dopple.AST.Binary", "dopple.AST.Base",
 /* Var */
 meta.class("dopple.AST.Var", "dopple.AST.Base", 
 {
-	init: function(name, parents, value) {
-		this.name = name;
-		this.parents = parents;
-		this.value = value;
+	init: function(name, parents, value) 
+	{
+		if(name) {
+			this.name = name;
+		}
+		if(parents) {
+			this.parents = parents;
+		}
+		if(value) {
+			this.value = value;
+		}
 	},
 
 	//

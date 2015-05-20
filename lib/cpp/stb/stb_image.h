@@ -988,26 +988,26 @@ static unsigned char *stbi__load_flip(stbi__context *s, int *x, int *y, int *com
    return result;
 }
 
-static void stbi__float_postprocess(float *result, int *x, int *y, int *comp, int req_comp)
-{
-   if (stbi__vertically_flip_on_load && result != NULL) {
-      int w = *x, h = *y;
-      int depth = req_comp ? req_comp : *comp;
-      int row,col,z;
-      float temp;
-
-      // @OPTIMIZE: use a bigger temp buffer and memcpy multiple pixels at once
-      for (row = 0; row < (h>>1); row++) {
-         for (col = 0; col < w; col++) {
-            for (z = 0; z < depth; z++) {
-               temp = result[(row * w + col) * depth + z];
-               result[(row * w + col) * depth + z] = result[((h - row - 1) * w + col) * depth + z];
-               result[((h - row - 1) * w + col) * depth + z] = temp;
-            }
-         }
-      }
-   }
-}
+//static void stbi__float_postprocess(float *result, int *x, int *y, int *comp, int req_comp)
+//{
+//   if (stbi__vertically_flip_on_load && result != NULL) {
+//      int w = *x, h = *y;
+//      int depth = req_comp ? req_comp : *comp;
+//      int row,col,z;
+//      float temp;
+//
+//      // @OPTIMIZE: use a bigger temp buffer and memcpy multiple pixels at once
+//      for (row = 0; row < (h>>1); row++) {
+//         for (col = 0; col < w; col++) {
+//            for (z = 0; z < depth; z++) {
+//               temp = result[(row * w + col) * depth + z];
+//               result[(row * w + col) * depth + z] = result[((h - row - 1) * w + col) * depth + z];
+//               result[((h - row - 1) * w + col) * depth + z] = temp;
+//            }
+//         }
+//      }
+//   }
+//}
 
 
 #ifndef STBI_NO_STDIO

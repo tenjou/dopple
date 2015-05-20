@@ -3,30 +3,38 @@
 dopple.extern("webgl", function(extern) 
 {
 	var externCls = extern.addClass("WebGLShader");
-	//externCls.cls.flags |= dopple.Flag.MEMORY_STACK;
+	externCls.cls.alt = "GLuint";
+	externCls.cls.flags |= dopple.Flag.MEMORY_STACK;
 	externCls.finish();	
+	extern.cachedVars.WebGLShader = extern.create(extern.vars.WebGLShader);
 
 	externCls = extern.addClass("WebGLProgram");
-	//externCls.cls.flags |= dopple.Flag.MEMORY_STACK;
+	externCls.cls.alt = "GLuint";
+	externCls.cls.flags |= dopple.Flag.MEMORY_STACK;
 	externCls.finish();	
+	extern.cachedVars.WebGLProgram = extern.create(extern.vars.WebGLProgram);
 
 	externCls = extern.addClass("WebGLBuffer");
-	//externCls.cls.flags |= dopple.Flag.MEMORY_STACK;
+	externCls.cls.alt = "GLuint";
+	externCls.cls.flags |= dopple.Flag.MEMORY_STACK;
 	externCls.finish();
+	extern.cachedVars.WebGLBuffer = extern.create(extern.vars.WebGLBuffer);
 
 	externCls = extern.addClass("WebGLUniformLocation");
-	//externCls.cls.flags |= dopple.Flag.MEMORY_STACK;
+	externCls.cls.alt = "GLuint";
+	externCls.cls.flags |= dopple.Flag.MEMORY_STACK;
 	externCls.finish();		
-
-	extern.cachedVars.WebGLShader = extern.create(extern.vars.WebGLShader);
-	extern.cachedVars.WebGLProgram = extern.create(extern.vars.WebGLProgram);
-	extern.cachedVars.WebGLBuffer = extern.create(extern.vars.WebGLBuffer);
 	extern.cachedVars.WebGLUniformLocation = extern.create(extern.vars.WebGLUniformLocation);
 
 	var cls = extern.addClass("WebGLRenderingContext");
+	//cls.addFunc("activeTexture", [ extern.cachedVars.])
 	cls.addFunc("viewport", 
 		[ extern.cachedVars.Real64, extern.cachedVars.Real64, extern.cachedVars.Real64, extern.cachedVars.Real64 ], null);
-	cls.addFunc("clear", [ extern.cachedVars.Real64 ], null);
+	
+	cls.addFunc("clear", [ extern.cachedVars.Real64 ], null).hook = function() {
+		return "glClear";
+	};
+	
 	cls.addFunc("clearColor", 
 		[ extern.cachedVars.Real64, extern.cachedVars.Real64, extern.cachedVars.Real64, extern.cachedVars.Real64 ], null);
 
@@ -35,7 +43,11 @@ dopple.extern("webgl", function(extern)
 	};
 
 	cls.addFunc("shaderSource", [ extern.cachedVars.WebGLShader, extern.cachedVars.String ], null);
-	cls.addFunc("compileShader", [ extern.cachedVars.WebGLShader ]);
+
+	cls.addFunc("compileShader", [ extern.cachedVars.WebGLShader ]).hook = function() {
+		return "glCompileShader";
+	};
+
 	cls.addFunc("createProgram", null, extern.cachedVars.WebGLProgram);
 	cls.addFunc("attachShader", [ extern.cachedVars.WebGLProgram, extern.cachedVars.WebGLShader ], null);
 	cls.addFunc("linkProgram", [ extern.cachedVars.WebGLProgram ], null);

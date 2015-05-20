@@ -9,7 +9,7 @@ dopple.extern("core", function(extern)
 	extern.nativeVars.Null = cls;
 
 	cls = new extern.ast.Class("Real32");
-	cls.cls = cls;
+	cls.cls = cls.cls;
 	cls.alt = "real32";
 	cls.ast = extern.ast.Number;
 	cls.clsType = extern.type.REAL32;
@@ -24,7 +24,7 @@ dopple.extern("core", function(extern)
 	externCls.cls.varType = extern.type.NUMBER;
 	externCls.finish();
 	extern.nativeVars.Real64 = externCls.cls;
-	extern.cachedVars.Real64 = extern.create(externCls.cls);	
+	extern.cachedVars.Real64 = extern.create(externCls.cls);
 
 	cls = new extern.ast.Class("Args");
 	cls.ast = extern.ast.Args;
@@ -90,11 +90,11 @@ dopple.extern("core", function(extern)
 	externCls.finish();
 
 	externCls = extern.addClass("Math");
-	externCls.addFunc("abs", [ extern.cachedVars.Number ], extern.cachedVars.Number);
-	externCls.addFunc("random", null, extern.cachedVars.Number);
-	externCls.addFunc("sin", null, extern.cachedVars.Number);
-	externCls.addFunc("cos", null, extern.cachedVars.Number);
-	externCls.addVar("PI", extern.nativeVars.Number);
+	externCls.addFunc("abs", [ extern.cachedVars.Real64 ], extern.cachedVars.Number);
+	externCls.addFunc("random", null, extern.cachedVars.Real64);
+	externCls.addFunc("sin", null, extern.cachedVars.Real64);
+	externCls.addFunc("cos", null, extern.cachedVars.Real64);
+	externCls.addVar("PI", extern.nativeVars.Real64);
 	externCls.cls.global = true;
 	externCls.finish();		
 
@@ -102,7 +102,7 @@ dopple.extern("core", function(extern)
 	externCls.addConstr([ extern.createTemplate(extern.nativeVars.Array, extern.nativeVars.Real32) ]);
 	externCls.addConstr([ extern.cachedVars.Real64 ]);
 	externCls.addConstr(null);
-	externCls.addMutator("length", extern.nativeVars.Number).flags |= dopple.Flag.GETTER;
+	externCls.addMutator("length", extern.nativeVars.Real64).flags |= dopple.Flag.GETTER;
 	externCls.cls.flags |= dopple.Flag.MEMORY_STACK;
 	externCls.finish();
 	extern.cachedVars.Float32Array = extern.create(externCls.cls);

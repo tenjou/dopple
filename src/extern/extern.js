@@ -91,18 +91,20 @@ dopple.ExternClass.prototype =
 
 	addVars: function(buffer, value, hook) 
 	{
-		var astVar = dopple.AST.Var;
+		var varExpr = new value.cls.ast();
+		varExpr.value = value;
+		varExpr.flags |= dopple.Flag.Extern;
+		varExpr.hook = hook;
 
-		var varExpr = null;
-		var body = this.cls.scope.body;
+		var vars = this.cls.scope.vars;
 		var num = buffer.length;
 		for(var n = 0; n < num; n++)
 		{ 
-			varExpr = new astVar(buffer[n], null, null);
-			varExpr.value = value;
-			varExpr.flags |= dopple.Flag.Extern;
-			varExpr.hook = hook;
-			body.push(varExpr);			
+			if(vars[buffer[n]]) {
+				throw "Already defined extern: " + buffer[n];
+			}
+
+			vars[buffer[n]] = varExpr;			
 		}
 	},
 

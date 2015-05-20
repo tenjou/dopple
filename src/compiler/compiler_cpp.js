@@ -38,10 +38,6 @@ dopple.compiler.cpp =
 		this.argLookup[this.type.BOOL] = this.outputArgBool;
 		this.argLookup[this.type.REFERENCE] = this.outputArgRef;
 		this.argLookup[this.type.FUNCTION_CALL] = this.outputArgFuncCall;
-
-		this.argFormatByType = [];
-		this.argFormatByType[this.type.NUMBER] = "%g.17";
-		this.argFormatByType[this.type.STRING] = "%s";
 	},
 
 	compile: function()

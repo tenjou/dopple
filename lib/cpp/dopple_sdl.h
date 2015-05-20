@@ -218,10 +218,14 @@ namespace dopple
 					}
 				}
 				
-				if(this->cb) {
-					SDL_GL_SwapWindow(this->window);
-					this->cb();
+				glClearColor(0.9, 0.9, 0.9, 1.0);
+				glClear(GL_COLOR_BUFFER_BIT);
+				
+				if(this->requestAnimFrame) {
+					this->requestAnimFrame();
 				}
+				
+				SDL_GL_SwapWindow(this->window);
 			}
 			
 			SDL_GL_DeleteContext(this->ctx);
@@ -233,6 +237,6 @@ namespace dopple
 		//
 		SDL_Window *window = nullptr;
 		SDL_GLContext ctx = nullptr;
-		void (*cb)() = nullptr;
+		void (*requestAnimFrame)() = nullptr;
 	};
 }
