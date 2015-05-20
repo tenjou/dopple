@@ -195,7 +195,7 @@ dopple.compiler.cpp =
 				node = typeBuffer[n];
 				this._outputScopeNode(node);
 
-				if(node.flags & this.flagType.PTR) { 
+				if((node.flags & this.flagType.PTR) && ((node.flags & this.flagType.MEMORY_STACK) === 0)) { 
 					cache.declOutput += ", *";
 				}	
 				else {

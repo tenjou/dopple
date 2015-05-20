@@ -29,7 +29,11 @@ dopple.extern("webgl", function(extern)
 	var cls = extern.addClass("WebGLRenderingContext");
 	//cls.addFunc("activeTexture", [ extern.cachedVars.])
 	cls.addFunc("viewport", 
-		[ extern.cachedVars.Real64, extern.cachedVars.Real64, extern.cachedVars.Real64, extern.cachedVars.Real64 ], null);
+		[ extern.cachedVars.Real64, extern.cachedVars.Real64, 
+		  extern.cachedVars.Real64, extern.cachedVars.Real64 ], null).hook = function() 
+	{
+		return "glViewport";
+	}
 	
 	cls.addFunc("clear", [ extern.cachedVars.Real64 ], null).hook = function() {
 		return "glClear";
