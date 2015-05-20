@@ -265,7 +265,7 @@ dopple.compiler.cpp =
 		if(node.value) 
 		{
 			if(node.value.hook) {
-				return node.value.hook();
+				return node.value.hook(node.name);
 			}
 
 			if(node.value.flags & this.flagType.GETTER) {

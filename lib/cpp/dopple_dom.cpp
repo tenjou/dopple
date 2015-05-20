@@ -10,6 +10,10 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb/stb_image.h"
 
+namespace dopple {
+	SDLWindow *platformWindow = nullptr;
+}
+
 void Image::load()
 {
 	unsigned char *data = 
@@ -34,8 +38,7 @@ WebGLRenderingContext::WebGLRenderingContext(CanvasElement *parent)
 	this->logBuffer = new char[this->logBufferSize];
 	memset(this->logBuffer, '\0', this->logBufferSize);
 	
-	this->platformWindow = new dopple::SDLWindow(parent->width, parent->height);
-	//platformWindow->start();
+	dopple::platformWindow = new dopple::SDLWindow(parent->width, parent->height);
 }
 
 Window *window = new Window();

@@ -36,7 +36,8 @@ dopple.extern("webgl", function(extern)
 	};
 	
 	cls.addFunc("clearColor", 
-		[ extern.cachedVars.Real64, extern.cachedVars.Real64, extern.cachedVars.Real64, extern.cachedVars.Real64 ], null);
+		[ extern.cachedVars.Real64, extern.cachedVars.Real64, 
+		  extern.cachedVars.Real64, extern.cachedVars.Real64 ], null).hook = function(name) { return "glClearColor"; }
 
 	cls.addFunc("createShader", [ extern.cachedVars.Real64 ], extern.cachedVars.WebGLShader).hook = function() {
 		return "glCreateShader";
@@ -370,8 +371,8 @@ dopple.extern("webgl", function(extern)
 		"RENDERBUFFER_BINDING",
 		"MAX_RENDERBUFFER_SIZE",
 		"INVALID_FRAMEBUFFER_OPERATION" ];
-	cls.addVars(glesEnums, extern.cachedVars.Real64, function() {
-		return "GL_" + this.name;
+	cls.addVars(glesEnums, extern.cachedVars.Real64, function(name) {
+		return "GL_" + name;
 	});
 	cls.finish();	
 });

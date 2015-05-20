@@ -3,6 +3,18 @@
 #include "dopple_core.h"
 #include "dopple_sdl.h"
 
+namespace dopple
+{
+	extern SDLWindow *platformWindow;
+	
+	void destroy()
+	{
+		if(platformWindow) {
+			platformWindow->start();
+		}
+	}
+}
+
 struct Image
 {
 	void load();
@@ -167,7 +179,6 @@ struct WebGLRenderingContext
 	
 	//
 	CanvasElement *parent = nullptr;
-	dopple::SDLWindow *platformWindow = nullptr;
 	
 	int logLength = 0;
 	int logBufferSize = 128;
@@ -228,8 +239,11 @@ struct Window
 		this->document = new Document();
 	}
 	
-	void requestAnimationFrame(void (*cb)()) {
-		//sdl_wnd->cb = cb;
+	void requestAnimationFrame(void (*cb)())
+	{
+		if(dopple::platformWindow) {
+			dopple::platformWindow->requestAnimFrame = cb;
+		}
 	}
 	
 	//
@@ -238,14 +252,3 @@ struct Window
 
 extern Window *window;
 extern Document *document;
-
-namespace dopple 
-{
-	void destroy() 
-	{
-		if(document->screenCanvas->ctx) {
-			document->screenCanvas->ctx->platformWindow->start();
-		}
-	}
-}
-

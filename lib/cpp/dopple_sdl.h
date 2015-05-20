@@ -218,12 +218,9 @@ namespace dopple
 					}
 				}
 				
-				glClearColor(0.9, 0.9, 0.9, 1.0);
-				glClear(GL_COLOR_BUFFER_BIT);
-				
-				if(this->requestAnimFrame) {
+				//if(this->requestAnimFrame) {
 					this->requestAnimFrame();
-				}
+				//}
 				
 				SDL_GL_SwapWindow(this->window);
 			}

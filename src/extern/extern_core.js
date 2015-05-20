@@ -94,7 +94,7 @@ dopple.extern("core", function(extern)
 	externCls.addFunc("random", null, extern.cachedVars.Real64);
 	externCls.addFunc("sin", null, extern.cachedVars.Real64);
 	externCls.addFunc("cos", null, extern.cachedVars.Real64);
-	externCls.addVar("PI", extern.nativeVars.Real64);
+	externCls.addVar("PI", extern.cachedVars.Real64);
 	externCls.cls.global = true;
 	externCls.finish();		
 
