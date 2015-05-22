@@ -26,37 +26,50 @@ dopple.extern("webgl", function(extern)
 	externCls.finish();		
 	extern.cachedVars.WebGLUniformLocation = extern.create(extern.vars.WebGLUniformLocation);
 
-	var cls = extern.addClass("WebGLRenderingContext");
-	//cls.addFunc("activeTexture", [ extern.cachedVars.])
-	cls.addFunc("viewport", 
-		[ extern.cachedVars.Real64, extern.cachedVars.Real64, 
-		  extern.cachedVars.Real64, extern.cachedVars.Real64 ], null).hook = function() 
-	{
-		return "glViewport";
-	}
-	
-	cls.addFunc("clear", [ extern.cachedVars.Real64 ], null).hook = function() {
-		return "glClear";
+	var genericGlHook = function(name) {
+		return "gl" + name[0].toUpperCase() + name.substr(1);
 	};
-	
+
+	var cls = extern.addClass("WebGLRenderingContext");
+
+	cls.addFunc("activeTexture", [ extern.cachedVars.Real64 ], null).hook = genericGlHook;
+	cls.addFunc("attachShader", [ extern.cachedVars.WebGLProgram, extern.cachedVars.WebGLShader ], null).hook = genericGlHook;
+	cls.addFunc("bindAttribLocation", [ extern.cachedVars.WebGLProgram, extern.cachedVars.Real64, 
+		extern.cachedVars.String ], null).hook = genericGlHook;
+	cls.addFunc("bindBuffer", [ extern.cachedVars.Real64, extern.cachedVars.WebGLBuffer ], null).hook = genericGlHook;
+	cls.addFunc("bindFramebuffer", [ extern.cachedVars.Real64, extern.cachedVars.Real64 ], null).hook = genericGlHook;
+	cls.addFunc("bindRenderbuffer", [ extern.cachedVars.Real64, extern.cachedVars.Real64 ], null).hook = genericGlHook;
+	cls.addFunc("bindTexture", [ extern.cachedVars.Real64, extern.cachedVars.Real64 ], null).hook = genericGlHook;
+	cls.addFunc("blendColor", [ extern.cachedVars.Real64, extern.cachedVars.Real64, 
+		extern.cachedVars.Real64, extern.cachedVars.Real64 ], null).hook = genericGlHook;
+	cls.addFunc("blendEquation", [ extern.cachedVars.Real64 ], null).hook = genericGlHook;
+	cls.addFunc("blendEquationSeparate", [ extern.cachedVars.Real64, extern.cachedVars.Real64 ], null).hook = genericGlHook;
+	cls.addFunc("blendFunc", [ extern.cachedVars.Real64, extern.cachedVars.Real64 ], null).hook = genericGlHook;
+	cls.addFunc("blendFuncSeparate", [ extern.cachedVars.Real64, extern.cachedVars.Real64,
+		extern.cachedVars.Real64, extern.cachedVars.Real64 ], null).hook = genericGlHook;
+	cls.addFunc("bufferData", [ extern.cachedVars.Real64, extern.cachedVars.Float32Array, extern.cachedVars.Real64 ], null);
+	cls.addFunc("bufferSubData", [ extern.cachedVars.Real64, extern.cachedVars.Real64, 
+		extern.cachedVars.Float32Array ], null);
+	cls.addFunc("clear", [ extern.cachedVars.Real64 ], null).hook = genericGlHook;
 	cls.addFunc("clearColor", 
 		[ extern.cachedVars.Real64, extern.cachedVars.Real64, 
-		  extern.cachedVars.Real64, extern.cachedVars.Real64 ], null).hook = function(name) { return "glClearColor"; }
+		  extern.cachedVars.Real64, extern.cachedVars.Real64 ], null).hook = genericGlHook;
+	cls.addFunc("clearDepth", [ extern.cachedVars.Real64 ], null).hook = genericGlHook; 
+	cls.addFunc("clearStencil", [ extern.cachedVars.Real64 ], null).hook = genericGlHook; 
+	cls.addFunc("colorMask", [ extern.cachedVars.Bool, extern.cachedVars.Bool, 
+		extern.cachedVars.Bool, extern.cachedVars.Bool ], null).hook = genericGlHook; 
+	cls.addFunc("compileShader", [ extern.cachedVars.WebGLShader ]).hook = genericGlHook;
+	
 
-	cls.addFunc("createShader", [ extern.cachedVars.Real64 ], extern.cachedVars.WebGLShader).hook = function() {
-		return "glCreateShader";
-	};
 
+	cls.addFunc("createShader", [ extern.cachedVars.Real64 ], extern.cachedVars.WebGLShader).hook = genericGlHook;
 	cls.addFunc("shaderSource", [ extern.cachedVars.WebGLShader, extern.cachedVars.String ], null);
+	
 
-	cls.addFunc("compileShader", [ extern.cachedVars.WebGLShader ]).hook = function() {
-		return "glCompileShader";
-	};
-
-	cls.addFunc("createProgram", null, extern.cachedVars.WebGLProgram);
-	cls.addFunc("attachShader", [ extern.cachedVars.WebGLProgram, extern.cachedVars.WebGLShader ], null);
-	cls.addFunc("linkProgram", [ extern.cachedVars.WebGLProgram ], null);
-	cls.addFunc("useProgram", [ extern.cachedVars.WebGLProgram ], null);
+	cls.addFunc("createProgram", null, extern.cachedVars.WebGLProgram).hook = genericGlHook;
+	
+	cls.addFunc("linkProgram", [ extern.cachedVars.WebGLProgram ], null).hook = genericGlHook;
+	cls.addFunc("useProgram", [ extern.cachedVars.WebGLProgram ], null).hook = genericGlHook;
 	cls.addFunc("getShaderParameter", [ extern.cachedVars.WebGLShader, extern.cachedVars.Real64 ], extern.cachedVars.Boolean, true);
 	cls.addFunc("getProgramParameter", [ extern.cachedVars.WebGLProgram, extern.cachedVars.Real64 ], extern.cachedVars.Boolean, true);
 	cls.addFunc("getShaderInfoLog", [ extern.cachedVars.WebGLShader ], extern.cachedVars.String);
@@ -70,8 +83,10 @@ dopple.extern("webgl", function(extern)
 		extern.cachedVars.Bool, extern.cachedVars.Real64, extern.cachedVars.Real64 ], null);
 	cls.addFunc("drawArrays", [ extern.cachedVars.Real64, extern.cachedVars.Real64, extern.cachedVars.Real64 ], null);
 	cls.addFunc("createBuffer", null, extern.cachedVars.WebGLBuffer);
-	cls.addFunc("bindBuffer", [ extern.cachedVars.Real64, extern.cachedVars.WebGLBuffer ], null);
-	cls.addFunc("bufferData", [ extern.cachedVars.Real64, extern.cachedVars.Float32Array, extern.cachedVars.Real64 ], null);
+
+	cls.addFunc("viewport", 
+		[ extern.cachedVars.Real64, extern.cachedVars.Real64, 
+		  extern.cachedVars.Real64, extern.cachedVars.Real64 ], null).hook = genericGlHook;	
 
 	var glesEnums = [ 
 		"DEPTH_BUFFER_BIT",

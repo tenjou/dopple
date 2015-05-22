@@ -6,6 +6,8 @@ dopple.Resolver = function(scope)
 
 	this.lookup = null;
 	this.type = dopple.Type;
+	this.types = dopple.types;
+	this.typesVars = dopple.typeVars;
 	this.flagType = dopple.Flag;
 	this.ast = dopple.AST;
 
@@ -37,7 +39,7 @@ dopple.Resolver.prototype =
 	{
 		this.numCls = this.global.vars.Number;
 		this.strCls = this.global.vars.String;
-		this.nativeVars = dopple.nativeVars;
+		this.typeVars = dopple.typeVars;
 
 		this.resolveScope(this.global);
 	},
@@ -55,7 +57,7 @@ dopple.Resolver.prototype =
 		var num = body.length;
 		for(var n = 0; n < num; n++) {
 			node = body[n];
-			body[n] = this.lookup[node.type].call(this, node);
+			body[n] = this.lookup[node.exprType].call(this, node);
 		}
 
 		this.scope = prevScope;
@@ -63,18 +65,13 @@ dopple.Resolver.prototype =
 
 	resolveVar: function(node) 
 	{
-		var nodeValue = node.value;
-		if(nodeValue) {
-			nodeValue = this.resolveValue(nodeValue);
-			node.value = nodeValue;
-			node.inheritFrom(nodeValue);
+		if(node.value) {
+			node.inheritFrom(this.resolveValue(node.value));
 		}
 		else {
+			node.inheritFrom(this.typeVars.VoidPtr);
 			node.flags |= this.flagType.HIDDEN;
 		}
-
-		node.flags |= this.flagType.RESOLVED;
-		//node.flags |= this.flagType.MEMORY_STACK;
 
 		var expr = this.scope.vars[node.name];
 		if(!expr) 
@@ -213,22 +210,24 @@ dopple.Resolver.prototype =
 		if(returns)
 		{
 			var value = returns[0];
-			var cls = value.cls;
+			var type = value.type;
 			var num = returns.length;
 			for(var n = 1; n < num; n++) 
 			{
-				if(cls !== returns[n].cls) {
-					throw "mismatch";
+				if(type.type !== returns[n].type.type) {
+					throw "Types do not match for function return values: expected [" 
+							+ this.createType(value) + "] but got [" 
+							+ this.createType(returns[n]) + "]";	
 				}
 			}
 
 			node.value = value;
-			node.returnCls = cls;
-			node.flags |= (value.flags & this.flagType.PTR);
-			node.flags |= (value.flags & this.flagType.MEMORY_STACK);
+		}
+		else {
+			node.value = this.typeVars.Void;
 		}
 
-		node.flags |= this.flagType.RESOLVED;
+		node.inheritFrom(node.value);
 	},
 
 	resolveFuncCall: function(node)
@@ -261,9 +260,9 @@ dopple.Resolver.prototype =
 		{
 			if((func.flags & this.flagType.RESOLVED) === 0) 
 			{
-				var argCls = this.nativeVars.Args;
+				var argType = this.types.Args;
 				for(var n = 0; n < numParams; n++) {
-					if(params[n].cls === argCls) {
+					if(params[n].type === argType) {
 						func.argsIndex = n;
 						numArgsResolve = n;
 						break;
@@ -284,7 +283,7 @@ dopple.Resolver.prototype =
 			arg = this.resolveValue(args[n]);
 			if(!this.checkTypes(param, arg)) 
 			{
-				throw "Types do not match for " + n + " argument: expected [" 
+				throw "Types do not match for #" + n + " argument: expected [" 
 						+ this.createType(param) + "] but got [" 
 						+ this.createType(arg) + "]";	
 			}
@@ -292,24 +291,14 @@ dopple.Resolver.prototype =
 
 		for(; n < numArgs; n++) {
 			arg = this.resolveValue(args[n]);
-			if(!arg.cls) {
-				throw "Argument nr." + n + " should return a value";
+			if(arg.type.type === 0) {
+				throw "Function call argument #" + n + " should return a value";
 			}
 		}
 
 		this.resolveFunc(node.value);
 
-		node.func = node.value;
-		node.cls = node.value.returnCls;
-		if(node.cls) 
-		{
-			if(node.cls === dopple.scope.vars.Function) {
-				node.cls = null;
-			}
-
-			node.flags |= (node.value.flags & this.flagType.PTR);
-			node.flags |= (node.value.flags & this.flagType.MEMORY_STACK);
-		}
+		node.inheritFrom(node.value);
 
 		return node;
 	},
@@ -379,32 +368,32 @@ dopple.Resolver.prototype =
 
 	checkTypes: function(leftNode, rightNode)
 	{
-		var leftCls = leftNode.cls;
-		var rightCls = rightNode.cls;
+		var leftTypeNode = leftNode.type;
+		var rightTypeNode = rightNode.type;
 
-		if(!rightCls) {
+		if(!rightTypeNode) {
 			throw "Trying to assign an undefined variable: \"" + rightNode.name + "\"";
 		}
 
-		if(leftCls)
+		if(leftTypeNode && leftTypeNode.type !== 0)
 		{
-			if(leftCls.clsType === this.type.ARGS) {}
-			else if(leftCls.clsType === this.type.NULL) 
+			var leftType = leftTypeNode.type;
+
+			if(leftTypeNode.type === this.type.ARGS) {}
+			else if(leftTypeNode.type === this.type.NULL) 
 			{
 				if((leftNode.flags & this.flagType.PTR) === 0) {
 					return false;
 				}
 
-				leftNode.cls = rightCls;
-				leftNode.flags |= (rightNode.flags & this.flagType.MEMORY_STACK);					
+				leftNode.inheritFrom(rightNode);
 			}			
-			else if(leftCls !== rightCls)
+			else if(leftTypeNode !== rightTypeNode)
 			{
-				var leftType = leftCls.varType;
-				var rightType = rightCls.varType;
+				var rightType = rightTypeNode.type;
 
 				if(leftType === this.type.STRING && rightType === this.type.NUMBER) {
-					leftNode.cls = rightNode.cls;
+					leftNode.inheritFrom(rightNode);
 				}
 				else if(leftType === this.type.NUMBER && rightType === this.type.NUMBER) {
 					return true;
@@ -413,17 +402,14 @@ dopple.Resolver.prototype =
 					return false;
 				}
 			}
-			else if((leftCls.flags & this.flagType.TEMPLATE) && 
-				    (rightCls.flags & this.flagType.TEMPLATE))
+			else if((leftTypeNode.flags & this.flagType.TEMPLATE) && 
+				    (rightTypeNode.flags & this.flagType.TEMPLATE))
 			{
 				return this.checkTypes(leftNode.templateValue, rightNode.templateValue);
 			}
 		}
-		else 
-		{
-			leftNode.cls = rightCls;
-			leftNode.flags |= (rightNode.flags & this.flagType.PTR);
-			leftNode.flags |= (rightNode.flags & this.flagType.MEMORY_STACK);			
+		else {
+			leftNode.inheritFrom(rightNode);			
 		}
 
 		return true;		
@@ -433,27 +419,27 @@ dopple.Resolver.prototype =
 	{
 		node.value = this.getRefEx(node);
 
-		if(node instanceof this.ast.New) {
+		if(node instanceof this.ast.Var) {}
+		else if(node instanceof this.ast.New) {
 			this.resolveNew(node);
 		}
-		else if(node instanceof this.ast.FunctionCall) {
-			this.resolveFuncCall(node);
-		}
-		else if(node instanceof this.ast.Array) {
-			this.resolveArray(node);
-		}
-		else {
-			node.cls = node.value.cls;
-			node.flags |= (node.value.flags & this.flagType.PTR);
-			node.flags |= (node.value.flags & this.flagType.MEMORY_STACK);
-		}
+
+		node.inheritFrom(node.value);
 	
 		return node;
 	},	
 
 	resolveValue: function(node)
 	{
-		if(node instanceof dopple.AST.Binary) 
+		if(node.flags & this.flagType.KNOWN) { return node; }
+
+		if(node instanceof this.ast.Reference) {
+			this.resolveRef(node);
+		}
+		if(node instanceof this.ast.FunctionCall) {
+			this.resolveFuncCall(node);
+		}
+		else if(node instanceof this.ast.Binary) 
 		{
 			var leftValue = this.resolveValue(node.lhs);
 			var rightValue = this.resolveValue(node.rhs);
@@ -463,7 +449,8 @@ dopple.Resolver.prototype =
 						+ this.createType(leftValue) + "] but got [" 
 						+ this.createType(rightValue) + "]";					
 			}
-			node.cls = leftValue.cls;
+
+			node.inheritFrom(leftValue);
 		}
 		else if(node instanceof this.ast.Unary) {
 			this.resolveUnary(node);
@@ -483,10 +470,7 @@ dopple.Resolver.prototype =
 			else {
 				this.resolveRef(node);
 			}
-		}
-		else if((node.flags & this.flagType.KNOWN) === 0) {
-			this.resolveRef(node);
-		}			
+		}		
 		
 		return node;		
 	},
@@ -592,17 +576,11 @@ dopple.Resolver.prototype =
 			if(!expr) { 
 				throw "ReferenceError: " + node.parents[0] + " is not defined";
 			}
-			if(!expr.cls || expr.cls.clsType === this.type.NULL) {
+			if(expr.type.exprType === this.type.NULL) {
 				throw "ReferenceError: " + node.parents[0] + " has unknown type";
 			}
 
-			if(expr instanceof dopple.AST.Var) {
-				scope = expr.cls.scope;
-			}
-			else if(expr instanceof dopple.AST.Class) {
-				scope = expr.scope;
-			}
-			else if(expr instanceof this.ast.Mutator) 
+			if(expr instanceof this.ast.Mutator) 
 			{
 				scope = expr.scope;
 
@@ -613,10 +591,8 @@ dopple.Resolver.prototype =
 					node.flags |= this.flagType.GETTER;
 				}
 			}
-			else {
-				scope = expr.scope;
-			}			
 
+			scope = expr.scope;
 			node.parent = expr;
 
 			return scope.vars[name];
@@ -643,13 +619,9 @@ dopple.Resolver.prototype =
 
 	createType: function(node)
 	{
-		if(!node || !node.cls) {
-			return "void *";
-		}
+		var name = node.type.name;
 
-		var name = node.cls.name;
-
-		if(node.cls.flags & this.flagType.TEMPLATE) {
+		if(node.type.flags & this.flagType.TEMPLATE) {
 			name += "<" + this.createTemplateType(node) + ">";
 		}			
 
@@ -680,7 +652,5 @@ dopple.Resolver.prototype =
 	},	
 
 	//
-	numCls: null,
-	strCls: null,
-	nativeVars: null
+	typeVars: null
 };

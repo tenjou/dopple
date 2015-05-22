@@ -1,28 +1,55 @@
 "use strict";
 
+/* Type */
+meta.class("dopple.AST.Type", 
+{
+	init: function(name, type, nativeType) {
+		this.name = name;
+		this.type = type;
+		this.nativeType = nativeType;
+	},
+
+	//
+	name: "",
+	type: dopple.Type.UNKNOWN,
+	nativeType: dopple.Type.UNKNOWN,
+	obj: null,
+	flags: 0
+});
+
 /* Base */
 meta.class("dopple.AST.Base", 
 {
 	inheritFrom: function(node) 
 	{
-		this.cls = node.cls;
+		var flagTypes = dopple.Flag;
 
-		if(node.flags & dopple.Flag.TEMPLATE) {
-			this.templateValue = node.templateValue;
-			this.flags |= dopple.Flag.TEMPLATE;
+		if(node) 
+		{
+			this.type = node.type;
+			this.flags = node.type.flags;
 		}
-		
-		this.flags |= (node.flags & dopple.Flag.KNOWN);
-		this.flags |= (node.flags & dopple.Flag.PTR);
-		this.flags |= (node.flags & dopple.Flag.MEMORY_STACK);
-		this.flags |= dopple.Flag.RESOLVED;		
+
+		this.flags |= flagTypes.RESOLVED;
 	},
+	// 	this.cls = node.cls;
+
+	// 	if(node.flags & dopple.Flag.TEMPLATE) {
+	// 		this.templateValue = node.templateValue;
+	// 		this.flags |= dopple.Flag.TEMPLATE;
+	// 	}
+		
+	// 	this.flags |= (node.flags & dopple.Flag.KNOWN);
+	// 	this.flags |= (node.flags & dopple.Flag.PTR);
+	// 	this.flags |= (node.flags & dopple.Flag.MEMORY_STACK);
+	// 	this.flags |= dopple.Flag.RESOLVED;		
+	// },
 
 	//
 	name: "",
 	parents: null,
-	type: dopple.Type.UNNOWN,
-	cls: null,
+	type: null,
+	exprType: dopple.Type.UNKNOWN,
 	parent: null,
 	templateValue: null,
 	hook: null,
@@ -31,44 +58,47 @@ meta.class("dopple.AST.Base",
 
 meta.class("dopple.AST.Number", "dopple.AST.Base", 
 {
-	init: function(num) {
-		this.value = num || 0;
+	init: function(value) 
+	{
+		if(value) {
+			this.value = value;
+		}
 	},
 
 	//
-	type: dopple.Type.NUMBER,
+	exprType: dopple.Type.NUMBER,
 	value: 0,
 });
-
-dopple.AST.Number.prototype.flags |= dopple.Flag.KNOWN;
 
 /* String */
 meta.class("dopple.AST.String", "dopple.AST.Base", 
 {
-	init: function(str) {
-		this.value = str;
+	init: function(value) 
+	{
+		if(value) {
+			this.value = value;
+		}
 	},
 
 	//
-	type: dopple.Type.STRING,
+	exprType: dopple.Type.STRING,
 	value: ""
 });
-
-dopple.AST.String.prototype.flags |= dopple.Flag.KNOWN | dopple.Flag.PTR;
 
 /* Bool */
 meta.class("dopple.AST.Bool", "dopple.AST.Base", 
 {
-	init: function(value) {
-		this.value = value;
+	init: function(value) 
+	{
+		if(value) {
+			this.value = value;
+		}
 	},
 
 	//
-	type: dopple.Type.BOOL,
+	exprType: dopple.Type.BOOL,
 	value: false
 });
-
-dopple.AST.Bool.prototype.flags |= dopple.Flag.KNOWN;
 
 /* Array */
 meta.class("dopple.AST.Array", "dopple.AST.Base", 
@@ -78,30 +108,24 @@ meta.class("dopple.AST.Array", "dopple.AST.Base",
 	},
 
 	//
-	type: dopple.Type.ARRAY,
+	exprType: dopple.Type.ARRAY,
 	elements: null
 });
 
-dopple.AST.Array.prototype.flags |= dopple.Flag.TEMPLATE | dopple.Flag.MEMORY_STACK;
-
 /* Null */
 meta.class("dopple.AST.Null", "dopple.AST.Base", {
-	type: dopple.Type.NULL
+	exprType: dopple.Type.NULL
 });
-
-dopple.AST.Null.prototype.flags |= (dopple.Flag.PTR | dopple.Flag.KNOWN);
 
 /* Args */
 meta.class("dopple.AST.Args", "dopple.AST.Base", {
-	type: dopple.Type.ARGS
+	exprType: dopple.Type.ARGS
 });
 
 /* Template */
 meta.class("dopple.AST.Template", "dopple.AST.Base", {
-	type: dopple.Type.TEMPLATE
+	exprType: dopple.Type.TEMPLATE
 });
-
-dopple.AST.Template.prototype.flags |= dopple.Flag.KNOWN
 
 /* Reference */
 meta.class("dopple.AST.Reference", "dopple.AST.Base", 
@@ -112,11 +136,9 @@ meta.class("dopple.AST.Reference", "dopple.AST.Base",
 	},
 
 	//
-	type: dopple.Type.REFERENCE,
+	exprType: dopple.Type.REFERENCE,
 	value: null
 });
-
-dopple.AST.Reference.prototype.flags |= dopple.Flag.HIDDEN;
 
 /* New */
 meta.class("dopple.AST.New", "dopple.AST.Base", 
@@ -128,12 +150,10 @@ meta.class("dopple.AST.New", "dopple.AST.Base",
 	},
 
 	//
-	type: dopple.Type.NEW,
+	exprType: dopple.Type.NEW,
 	func: null, 
 	args: null
 });
-
-dopple.AST.New.prototype.flags |= dopple.Flag.PTR;
 
 /* Binary */
 meta.class("dopple.AST.Binary", "dopple.AST.Base", 
@@ -145,7 +165,7 @@ meta.class("dopple.AST.Binary", "dopple.AST.Base",
 	},
 
 	//
-	type: dopple.Type.BINARY,
+	exprType: dopple.Type.BINARY,
 	value: null, 
 	op: 0
 });
@@ -167,7 +187,7 @@ meta.class("dopple.AST.Var", "dopple.AST.Base",
 	},
 
 	//
-	type: dopple.Type.VAR,
+	exprType: dopple.Type.VAR,
 	value: null
 });
 
@@ -182,7 +202,7 @@ meta.class("dopple.AST.Assign", "dopple.AST.Base",
 	},
 
 	//
-	type: dopple.Type.ASSIGN,
+	exprType: dopple.Type.ASSIGN,
 	value: null, 
 	op: 0
 });
@@ -196,7 +216,7 @@ meta.class("dopple.AST.Unary", "dopple.AST.Base",
 	},
 
 	//
-	type: dopple.Type.UNARY,
+	exprType: dopple.Type.UNARY,
 	value: null, 
 	op: 0
 });
@@ -210,7 +230,7 @@ meta.class("dopple.AST.If", "dopple.AST.Base",
 	},
 
 	//
-	type: dopple.Type.IF,
+	exprType: dopple.Type.IF,
 	branchIf: null,
 	branchElseIf: null,
 	branchElse: null
@@ -220,7 +240,7 @@ meta.class("dopple.AST.If", "dopple.AST.Base",
 meta.class("dopple.AST.Conditional", "dopple.AST.Base", 
 {
 	//
-	type: dopple.Type.CONDITIONAL,
+	exprType: dopple.Type.CONDITIONAL,
 	value: null,
 	valueFail: null,
 	test: null
@@ -229,17 +249,17 @@ meta.class("dopple.AST.Conditional", "dopple.AST.Base",
 /* Function */
 meta.class("dopple.AST.Function", "dopple.AST.Base", 
 {
-	init: function(name, parents, scope, params) {
-		this.name = name || "";
-		this.parents = parents || null;
-		this.scope = scope || null;
-		this.params = params || null;
+	init: function(name, parents, scope, params) 
+	{
+		if(name) { this.name = name; }
+		if(parents) { this.parents = parents; }
+		if(scope) { this.scope = scope; }
+		if(params) { this.params = params; }
 	},
 
 	//
-	type: dopple.Type.FUNCTION,
+	exprType: dopple.Type.FUNCTION,
 	value: null,
-	returnCls: null,
 	argsIndex: -1
 });
 
@@ -253,21 +273,23 @@ meta.class("dopple.AST.FunctionCall", "dopple.AST.Base",
 	},
 
 	//
-	type: dopple.Type.FUNCTION_CALL,
+	exprType: dopple.Type.FUNCTION_CALL,
 	value: null,
-	func: null,
 	args: null
 });
 
 /* Return */
 meta.class("dopple.AST.Return", "dopple.AST.Base", 
 {
-	init: function(value) {
-		this.value = value;
+	init: function(value) 
+	{
+		if(value) {
+			this.value = value;
+		}
 	},
 
 	//
-	type: dopple.Type.RETURN,
+	exprType: dopple.Type.RETURN,
 	value: null
 });
 
@@ -288,16 +310,11 @@ meta.class("dopple.AST.Class", "dopple.AST.Base",
 	get ast() { return this._ast; },	
 
 	//
-	type: dopple.Type.CLASS,
-	clsType: dopple.Type.UNKNOWN,
+	exprType: dopple.Type.CLASS,
 	proto: null,
 	constrBuffer: null,
 	alt: "",
-
-	_ast: null
 });
-
-dopple.AST.Class.prototype.cls = dopple.AST.Class;
 
 /* Mutator */
 meta.class("dopple.AST.Mutator", "dopple.AST.Base", 
@@ -307,7 +324,7 @@ meta.class("dopple.AST.Mutator", "dopple.AST.Base",
 	},
 
 	//
-	type: dopple.Type.MUTATOR
+	exprType: dopple.Type.MUTATOR
 });
 
 /* Operator */
@@ -319,7 +336,7 @@ meta.class("dopple.AST.Op", "dopple.AST.Base",
 	},
 
 	//
-	type: dopple.Type.OP,
+	exprType: dopple.Type.OP,
 	op: "",
 	argCls: null
 });

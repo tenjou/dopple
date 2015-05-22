@@ -29,8 +29,13 @@ dopple.acorn =
 		this.lookup["ArrayExpression"] = this.parseArrayExpr;
 	},
 
-	parse: function(scope, ast) {
+	parse: function(scope, ast) 
+	{
 		this.scope = scope;
+
+		this.nullExprCached = new dopple.AST.Null();
+		this.nullExprCached.inheritFrom(dopple.typeVars.VoidPtr);
+
 		this.parseBody(ast.body);
 		return this.scope;
 	},	
@@ -62,7 +67,7 @@ dopple.acorn =
 				return new dopple.AST.Bool(1);
 			}
 			else if(node.raw === "null") {
-				return new dopple.AST.Null();
+				return this.nullExprCached;
 			}
 
 			return new dopple.AST.Number(node.value);
@@ -327,6 +332,8 @@ dopple.acorn =
 
 	scope: null,
 	type: 0,
+
+	nullExprCached: null,
 
 	cache: {
 		name: "",

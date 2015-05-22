@@ -43,67 +43,27 @@ struct WebGLRenderingContext
 {
 	WebGLRenderingContext(CanvasElement *parent);
 	
-	// void viewport(double x, double y, double width, double height) {
-	// 	glViewport(x, y, width, height);
-	// }
+	 bool getShaderParameter(GLuint shader, GLenum type)
+	 {
+	 	glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &this->logLength);
 	
-	// WebGLShader *createShader(double type) {
-	// 	return new WebGLShader(type);
-	// }
+	 	if(this->logLength > 0) {
+	 		return false;
+	 	}
 	
-	// void shaderSource(WebGLShader *shader, char *src)
-	// {
-	// 	char *tmp = src + dopple::STR_HEADER_SIZE;
-	// 	const char *cmp = "precision mediump float; ";
-	// 	int8 num = strlen(cmp);
-	// 	if(strncmp(tmp, cmp, num) == 0) {
-	// 		tmp += num;
-	// 	}
+	 	return true;
+	 }
 	
-	// 	glShaderSource(shader->shaderID, 1, &tmp, nullptr);
-	// }
+	 bool getProgramParameter(GLuint program, GLenum type)
+	 {
+	 	glGetProgramiv(program, GL_INFO_LOG_LENGTH, &this->logLength);
 	
-	// void compileShader(WebGLShader *shader) {
-	// 	glCompileShader(shader->shaderID);
-	// }
+	 	if(this->logLength > 0) {
+	 		return false;
+	 	}
 	
-	// WebGLProgram *createProgram() {
-	// 	return new WebGLProgram();
-	// }
-	
-	// void attachShader(WebGLProgram *program, WebGLShader *shader) {
-	// 	glAttachShader(program->programID, shader->shaderID);
-	// }
-	
-	// void linkProgram(WebGLProgram *program) {
-	// 	glLinkProgram(program->programID);
-	// }
-	
-	// void useProgram(WebGLProgram *program) {
-	// 	glUseProgram(program->programID);
-	// }
-	
-	// bool getShaderParameter(WebGLShader *shader, GLenum type)
-	// {
-	// 	glGetShaderiv(shader->shaderID, GL_INFO_LOG_LENGTH, &this->logLength);
-	
-	// 	if(this->logLength > 0) {
-	// 		return false;
-	// 	}
-	
-	// 	return true;
-	// }
-	
-	// bool getProgramParameter(WebGLProgram *program, GLenum type)
-	// {
-	// 	glGetProgramiv(program->programID, GL_INFO_LOG_LENGTH, &this->logLength);
-	
-	// 	if(this->logLength > 0) {
-	// 		return false;
-	// 	}
-	
-	// 	return true;
-	// }
+	 	return true;
+	 }
 	
 	// WebGLUniformLocation *getUniformLocation(WebGLProgram *program, char *name) {
 	// 	return new WebGLUniformLocation(program, name + dopple::STR_HEADER_SIZE);
@@ -116,58 +76,52 @@ struct WebGLRenderingContext
 	// GLuint getAttribLocation(WebGLProgram *program, char *name) {
 	// 	return glGetAttribLocation(program->programID, name + dopple::STR_HEADER_SIZE);
 	// }
+
+	void bufferData(GLenum target, Float32Array &array, GLenum usage) {
+		glBufferData(target, array.size * sizeof(float), array.buffer, usage);
+	}	
+
+	void bufferSubData(GLenum target, GLintptr offset, Float32Array &array) {
+		glBufferSubData(target, offset, array.size * sizeof(float), array.buffer);
+	}		
 	
-	// const char *getShaderInfoLog(WebGLShader *shader)
-	// {
-	// 	if(this->logLength > this->logBufferSize - dopple::STR_HEADER_SIZE) {
-	// 		this->logBufferSize = this->logLength + dopple::STR_HEADER_SIZE;
-	// 		delete [] this->logBuffer;
-	// 		this->logBuffer = new char[this->logBufferSize];
-	// 		memset(this->logBuffer, '\0', this->logBufferSize);
-	// 	}
+	const char *getShaderInfoLog(GLuint shader)
+	{
+		if(this->logLength > this->logBufferSize - dopple::STR_HEADER_SIZE) {
+			this->logBufferSize = this->logLength + dopple::STR_HEADER_SIZE;
+			delete [] this->logBuffer;
+			this->logBuffer = new char[this->logBufferSize];
+			memset(this->logBuffer, '\0', this->logBufferSize);
+		}
 	
-	// 	glGetShaderInfoLog(shader->shaderID, this->logLength, nullptr, this->logBuffer + dopple::STR_HEADER_SIZE);
-	// 	return this->logBuffer;
-	// }
+		glGetShaderInfoLog(shader, this->logLength, nullptr, this->logBuffer + dopple::STR_HEADER_SIZE);
+		return this->logBuffer;
+	}
 	
-	// const char *getProgramInfoLog(WebGLProgram *program)
-	// {
-	// 	if(this->logLength > this->logBufferSize - dopple::STR_HEADER_SIZE) {
-	// 		this->logBufferSize = this->logLength + dopple::STR_HEADER_SIZE;
-	// 		delete [] this->logBuffer;
-	// 		this->logBuffer = new char[this->logBufferSize];
-	// 		memset(this->logBuffer, '\0', this->logBufferSize);
-	// 	}
+	const char *getProgramInfoLog(GLuint program)
+	{
+		if(this->logLength > this->logBufferSize - dopple::STR_HEADER_SIZE) {
+			this->logBufferSize = this->logLength + dopple::STR_HEADER_SIZE;
+			delete [] this->logBuffer;
+			this->logBuffer = new char[this->logBufferSize];
+			memset(this->logBuffer, '\0', this->logBufferSize);
+		}
 	
-	// 	glGetProgramInfoLog(program->programID, this->logLength, nullptr, this->logBuffer + dopple::STR_HEADER_SIZE);
-	// 	return this->logBuffer;
-	// }
+		glGetProgramInfoLog(program, this->logLength, nullptr, this->logBuffer + dopple::STR_HEADER_SIZE);
+		return this->logBuffer;
+	}
 	
-	// WebGLBuffer *createBuffer() {
-	// 	return new WebGLBuffer();
-	// }
-	
-	// void bindBuffer(GLenum type, WebGLBuffer *buffer) {
-	// 	glBindBuffer(type, buffer->bufferID);
-	// }
-	
-	// void bufferData(GLenum type, Float32Array &array, GLenum usage) {
-	// 	glBufferData(type, array.size * sizeof(float), array.buffer, usage);
-	// }
-	
-	// void enableVertexAttribArray(GLuint index) {
-	// 	glEnableVertexAttribArray(index);
-	// }
-	
-	// void vertexAttribPointer(GLuint index, GLint size, GLenum type,
-	// 						 GLboolean normalized, GLsizei stride, const GLvoid* pointer)
-	// {
-	// 	glVertexAttribPointer(index, size, type, normalized, stride, pointer);
-	// }
-	
-	// void drawArrays(GLenum mode, GLint first, GLsizei count) {
-	// 	glDrawArrays(mode, first, count);
-	// }
+	void shaderSource(GLuint shader, char *src)
+	{
+		char *tmp = src + dopple::STR_HEADER_SIZE;
+		const char *cmp = "precision mediump float; ";
+		int8 num = strlen(cmp);
+		if(strncmp(tmp, cmp, num) == 0) {
+			tmp += num;
+		}
+		
+		glShaderSource(shader, 1, &tmp, nullptr);
+	}
 	
 	//
 	CanvasElement *parent = nullptr;

@@ -4,7 +4,8 @@ dopple.Extern = function()
 {
 	this.scope = dopple.scope;
 	this.vars = this.scope.vars;
-	this.nativeVars = dopple.nativeVars;
+	this.types = dopple.types;
+	this.typeVars = dopple.typeVars;
 	this.ast = dopple.AST;
 	this.type = dopple.Type;
 	this.flagType = dopple.Flag;
@@ -14,6 +15,55 @@ dopple.Extern = function()
 
 dopple.Extern.prototype = 
 {
+	addType: function(name, typeEnum, nativeTypeEnum, flags)
+	{
+		if(this.types[name]) {
+			throw "There is already defined type with such name: " + name;	
+		}
+
+		flags = flags || 0;
+
+		var type = new this.ast.Type(name, typeEnum, nativeTypeEnum);
+		type.flags = flags;
+		this.types[name] = type;
+
+		var varExpr = new this.ast.Var(name);
+		varExpr.type = type;
+		varExpr.flags = type.flags;
+		this.typeVars[name] = varExpr;
+
+		return type;
+	},
+
+	addClass: function(name)
+	{
+		if(this.vars[name]) {
+			throw "There is already defined type with such name: " + name;	
+		}
+
+		var scope = new dopple.Scope();
+		var clsExpr = new this.ast.Class(name, scope);
+		clsExpr.type = this.types.Class;
+		this.vars[name] = clsExpr;
+
+		var cls = new dopple.ExternClass(clsExpr);
+		return cls;
+	},
+
+	addClassType: function(name, typeEnum)
+	{
+		var type = this.addType(name, typeEnum, typeEnum);
+		var cls = this.addClass(name);
+		return cls;
+	},
+
+	addNamespace: function(name)
+	{
+		//var cls = this.class(name, this.typeVars.Namepace);
+
+		return cls;		
+	},
+
 	create: function(varCls)
 	{
 		var expr = new dopple.AST.Reference(varCls.name, null);
@@ -24,18 +74,10 @@ dopple.Extern.prototype =
 	createTemplate: function(varCls, templateCls)
 	{
 		var expr = new dopple.AST.Reference(varCls.name, null);
-		expr.cls = varCls;
+		expr.ttpe = varCls;
 		expr.templateValue = templateCls;
 		return expr;
 	},	
-
-	addClass: function(name) 
-	{
-		var cls = new dopple.AST.Class(name, new dopple.Scope(this.scope));
-		this.scope.vars[name] = cls;
-
-		return new dopple.ExternClass(cls);
-	},
 
 	addNew: function(name, clsName) 
 	{
@@ -81,18 +123,13 @@ dopple.ExternClass = function(cls) {
 
 dopple.ExternClass.prototype = 
 {
-	addVar: function(name, value)
-	{
-		var varExpr = new value.cls.ast();
-		varExpr.name = name;
-		varExpr.value = value;
-		varExpr.flags |= dopple.Flag.Extern;
-		
+	addVar: function(name, typeVar)
+	{		
 		if(this.cls.scope.vars[name]) {
 			throw "Already defined extern: " + name;
 		}
 
-		this.cls.scope.vars[name] = varExpr;	
+		this.cls.scope.vars[name] = typeVar;	
 	},
 
 	addVars: function(buffer, value, hook) 
@@ -133,34 +170,36 @@ dopple.ExternClass.prototype =
 		this.cls.scope.body.push(varExpr);
 	},
 
-	addFunc: function(name, params, returnCls, returnAsType) 
+	addFunc: function(name, params, returnType, returnAsType) 
 	{
 		var scope = new dopple.Scope(dopple.scope);
 
 		var funcExpr = new dopple.AST.Function(name, null, scope, params);
 		this.cls.scope.vars[name] = funcExpr;
 
-		if(returnCls) 
+		if(returnType) 
 		{
-			var retExpr = null;
+			var valueExpr = new returnType.ast();
+			var retExpr = new dopple.AST.Return(valueExpr);
 
-			if(returnAsType) {
-				retExpr = new dopple.AST.Return(new returnCls.ast());
-			}
-			else 
-			{
-				var newExpr = null;
-				if(returnCls === dopple.nativeVars.Template) {
-					newExpr = new dopple.AST.New(null, null, null);
-					newExpr.cls = returnCls;
-					newExpr.flags |= dopple.Flag.KNOWN;
-				}
-				else {
-					newExpr = new dopple.AST.New(returnCls.name, null, null);
-				}
+			// if(returnAsType) {
+			// 	retExpr = new dopple.AST.Return();
+			// 	retExpr.type = returnType;
+			// }
+			// else 
+			// {
+			// 	var newExpr = null;
+			// 	if(returnCls === dopple.nativeVars.Template) {
+			// 		newExpr = new dopple.AST.New(null, null, null);
+			// 		newExpr.cls = returnCls;
+			// 		newExpr.flags |= dopple.Flag.KNOWN;
+			// 	}
+			// 	else {
+			// 		newExpr = new dopple.AST.New(returnCls.name, null, null);
+			// 	}
 
-				retExpr = new dopple.AST.Return(newExpr);
-			}
+			// 	retExpr = new dopple.AST.Return(newExpr);
+			// }
 			
 			scope.body.push(retExpr);			
 		}
@@ -192,12 +231,7 @@ dopple.ExternClass.prototype =
 		var expr = new dopple.AST.Op
 	},
 
-	finish: function() 
-	{
-		if(!this.cls.constrBuffer) {
-			this.cls.constrBuffer = [ new dopple.AST.Function() ];
-		}
-
+	finish: function() {
 		dopple.resolver.resolveClass(this.cls);
 	}
 };
