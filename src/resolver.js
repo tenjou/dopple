@@ -22,10 +22,7 @@ dopple.Resolver.prototype =
 	init: function() 
 	{
 		this.lookup = [];
-		this.lookup[this.type.NUMBER] = this.parseNumber;
-		this.lookup[this.type.STRING] = this.parseString;
 		this.lookup[this.type.REFERENCE] = this.resolveRef;
-		this.lookup[this.type.BINARY] = this.parseBinary;
 		this.lookup[this.type.VAR] = this.resolveVar;
 		this.lookup[this.type.IF] = this.resolveIf;
 		this.lookup[this.type.ASSIGN] = this.resolveAssign;
@@ -336,7 +333,7 @@ dopple.Resolver.prototype =
 	resolveArray: function(node)
 	{
 		var elements = node.elements;
-		if(!node.elements) { return null; }
+		if(!node.elements) { return node; }
 
 		var bufferNode = null;
 		var cls = null;
@@ -359,9 +356,13 @@ dopple.Resolver.prototype =
 			}
 		}
 
-		if(!(value instanceof this.ast.Null)) {
-			node.templateValue = value;
-		}
+		console.log(node.flags & this.flagType.TEMPLATE);
+
+		//node.type.createmTemplate(value.type);
+
+		// if(!(value instanceof this.ast.Null)) {
+		// 	node.templateValue = value;
+		// }
 
 		return node;
 	},
@@ -405,6 +406,9 @@ dopple.Resolver.prototype =
 			else if((leftTypeNode.flags & this.flagType.TEMPLATE) && 
 				    (rightTypeNode.flags & this.flagType.TEMPLATE))
 			{
+				if(!leftNode.templateValue && !rightNode.templateValue) {
+					return true;
+				}
 				return this.checkTypes(leftNode.templateValue, rightNode.templateValue);
 			}
 		}
@@ -413,28 +417,18 @@ dopple.Resolver.prototype =
 		}
 
 		return true;		
-	},	
-
-	resolveRef: function(node) 
-	{
-		node.value = this.getRefEx(node);
-
-		if(node instanceof this.ast.Var) {}
-		else if(node instanceof this.ast.New) {
-			this.resolveNew(node);
-		}
-
-		node.inheritFrom(node.value);
-	
-		return node;
-	},	
+	},
 
 	resolveValue: function(node)
 	{
 		if(node.flags & this.flagType.KNOWN) { return node; }
 
 		if(node instanceof this.ast.Reference) {
-			this.resolveRef(node);
+			node.value = this.getRefEx(node);
+		}
+		else if(node instanceof this.ast.New) {
+			node.value = this.getRefEx(node);
+			this.resolveNew(node);
 		}
 		if(node instanceof this.ast.FunctionCall) {
 			this.resolveFuncCall(node);
@@ -481,8 +475,6 @@ dopple.Resolver.prototype =
 
 	resolveNew: function(node)
 	{
-		node.cls = node.value;
-
 		var args = node.args;
 		var numArgs = args ? args.length : 0;
 
@@ -492,8 +484,10 @@ dopple.Resolver.prototype =
 		var param, arg, constr, i;
 		var constrBuffer = node.value.constrBuffer;
 		if(!constrBuffer) {
-			throw "Could not find matching constructor for: " + node.cls.name;
+			throw "TypeError: object is not a function: " + node.name;
 		}
+
+		node.inheritFrom(node.value);
 
 		var valid;
 		var num = constrBuffer.length;
@@ -501,8 +495,9 @@ dopple.Resolver.prototype =
 		{
 			constr = constrBuffer[n];
 			params = constr.params;
-			numParams = params ? params.length : 0;
+			if(numArgs < params.minParams) { continue; } 
 
+			numParams = params ? params.length : 0;
 			if(numArgs > numParams) { continue; }
 
 			valid = true;
@@ -524,10 +519,8 @@ dopple.Resolver.prototype =
 		}
 
 		if(!node.func) {
-			throw "Could not find matching constructor for: " + node.cls.name;		
+			throw "Could not find matching constructor for: " + node.type.name;
 		}
-
-		node.flags |= node.cls.flags & this.flagType.MEMORY_STACK;
 
 		return node;
 	},

@@ -5,15 +5,26 @@ meta.class("dopple.AST.Type",
 {
 	init: function(name, type, nativeType) {
 		this.name = name;
+		this.alt = name;
 		this.type = type;
 		this.nativeType = nativeType;
 	},
 
+	set ast(ast) {
+		this._ast = ast;
+		ast.prototype.type = this;
+		ast.prototype.flags = this.flags;			
+	},
+
+	get ast() { return this._ast; },
+
 	//
 	name: "",
+	alt: "",
 	type: dopple.Type.UNKNOWN,
 	nativeType: dopple.Type.UNKNOWN,
-	obj: null,
+	cls: null,
+	_ast: null,
 	flags: 0
 });
 
@@ -38,15 +49,8 @@ meta.class("dopple.AST.Base",
 	// 		this.templateValue = node.templateValue;
 	// 		this.flags |= dopple.Flag.TEMPLATE;
 	// 	}
-		
-	// 	this.flags |= (node.flags & dopple.Flag.KNOWN);
-	// 	this.flags |= (node.flags & dopple.Flag.PTR);
-	// 	this.flags |= (node.flags & dopple.Flag.MEMORY_STACK);
-	// 	this.flags |= dopple.Flag.RESOLVED;		
-	// },
 
 	//
-	name: "",
 	parents: null,
 	type: null,
 	exprType: dopple.Type.UNKNOWN,
@@ -56,6 +60,10 @@ meta.class("dopple.AST.Base",
 	flags: 0
 });
 
+/* Void */
+meta.class("dopple.AST.Void", "dopple.AST.Base", {});
+
+/* Number */
 meta.class("dopple.AST.Number", "dopple.AST.Base", 
 {
 	init: function(value) 
@@ -130,14 +138,30 @@ meta.class("dopple.AST.Template", "dopple.AST.Base", {
 /* Reference */
 meta.class("dopple.AST.Reference", "dopple.AST.Base", 
 {
-	init: function(name, parents) {
-		this.name = name;
-		this.parents = parents;
+	init: function(name, parents) 
+	{
+		if(name) { this.name = name; }
+		if(parents) { this.parents = parents; }
 	},
 
 	//
 	exprType: dopple.Type.REFERENCE,
 	value: null
+});
+
+/* Param */
+meta.class("dopple.AST.Param", "dopple.AST.Base", 
+{
+	init: function(name, parents)
+	{
+		if(name) { this.name = name; }
+		if(parents) { this.parents = parents; }
+	},
+
+	//
+	exprType: dopple.Type.PARAM,
+	value: null,
+	defaultValue: null
 });
 
 /* New */
@@ -254,13 +278,27 @@ meta.class("dopple.AST.Function", "dopple.AST.Base",
 		if(name) { this.name = name; }
 		if(parents) { this.parents = parents; }
 		if(scope) { this.scope = scope; }
-		if(params) { this.params = params; }
+		if(params) 
+		{ 
+			this.params = params;
+
+			var num = params.length; 
+			this.minParams = num;
+
+			for(var n = 0; n < num; n++) {
+				if(params[n].value) {
+					this.minParams = n;
+					break;
+				}
+			}
+		}
 	},
 
 	//
 	exprType: dopple.Type.FUNCTION,
 	value: null,
-	argsIndex: -1
+	argsIndex: -1,
+	minParams: 0
 });
 
 /* Function Call */

@@ -6,6 +6,8 @@ dopple.Extern = function()
 	this.vars = this.scope.vars;
 	this.types = dopple.types;
 	this.typeVars = dopple.typeVars;
+	this.typeParams = dopple.typeParams;
+	this.typeDefaultParams = dopple.typeDefaultParams;
 	this.ast = dopple.AST;
 	this.type = dopple.Type;
 	this.flagType = dopple.Flag;
@@ -27,15 +29,32 @@ dopple.Extern.prototype =
 		type.flags = flags;
 		this.types[name] = type;
 
-		var varExpr = new this.ast.Var(name);
-		varExpr.type = type;
-		varExpr.flags = type.flags;
-		this.typeVars[name] = varExpr;
+		var paramExpr = new this.ast.Param(name);
+		paramExpr.type = type;
+		paramExpr.flags = type.flags;
+		this.typeParams[name] = paramExpr;
 
 		return type;
 	},
 
-	addClass: function(name)
+	addDefaultParam: function(type)
+	{		
+		var paramExpr = new this.ast.Param();
+		paramExpr.type = type;
+		paramExpr.flags = type.flags;
+		paramExpr.value = new type.ast();
+		this.typeDefaultParams[type.name] = paramExpr;
+	},
+
+	addVar: function(type) 
+	{
+		var varExpr = new this.ast.Var();
+		varExpr.type = type;
+		varExpr.flags = type.flags;
+		this.typeVars[type.name] = varExpr;
+	},
+
+	addClass: function(name, type) 
 	{
 		if(this.vars[name]) {
 			throw "There is already defined type with such name: " + name;	
@@ -43,17 +62,18 @@ dopple.Extern.prototype =
 
 		var scope = new dopple.Scope();
 		var clsExpr = new this.ast.Class(name, scope);
-		clsExpr.type = this.types.Class;
-		this.vars[name] = clsExpr;
+		clsExpr.type = type;
+		this.vars[name] = clsExpr;	
 
 		var cls = new dopple.ExternClass(clsExpr);
-		return cls;
+		return cls;				
 	},
 
-	addClassType: function(name, typeEnum)
+	addNativeClass: function(name, type)
 	{
-		var type = this.addType(name, typeEnum, typeEnum);
-		var cls = this.addClass(name);
+		var cls = this.addClass(name, type);
+		type.cls = cls.cls;
+
 		return cls;
 	},
 

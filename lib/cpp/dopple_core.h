@@ -80,33 +80,61 @@ struct
 template <class T>
 struct Array 
 {
-	Array() {
-		
+	Array(int32 length = 0) {
+		this->buffer = new T[length];
+		this->length = length;
 	}
 	
 	Array(T *buffer) {
 		this->buffer= buffer;
 	}
+
+	~Array() 
+	{
+		if(this->capacity > 0) {
+			delete [] this->buffer;
+		}
+	}
 	
-	double push(T *element) {
+	int32 push(T *element) {
 		return this->length;
 	}
 	
-	T *pop() {
+	T pop() 
+	{
+		T *element = this->buffer[this->length - 1];
+		this->buffer[this->length] = nullptr;
+
+		return (*element);
+	}
+	
+	T shift() {
 		return nullptr;
 	}
 	
-	T *shift() {
-		return nullptr;
+	inline void __set__length(int32 length)
+	{
+		if(length > this->capacity) 
+		{
+			if(this->capacity > 0) {
+				delete [] this->buffer;
+			}
+
+			this->buffer = new T[length];
+			this->capacity = length;
+		}
+
+		this->length = length;
 	}
 	
-	inline void __set__length(double length) {
-		
+	inline int32 __get__length(real64) { 
+		return this->length; 
 	}
 	
-	inline void __get__length(double) { return this->length; }
-	
+	//
 	T *buffer = nullptr;
+	int32 capacity = 0;
+	int32 length = 0;
 };
 
 struct Float32Array

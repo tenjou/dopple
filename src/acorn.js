@@ -34,7 +34,6 @@ dopple.acorn =
 		this.scope = scope;
 
 		this.nullExprCached = new dopple.AST.Null();
-		this.nullExprCached.inheritFrom(dopple.typeVars.VoidPtr);
 
 		this.parseBody(ast.body);
 		return this.scope;

@@ -26,7 +26,9 @@ dopple.Type = {
 	OP: 22,
 	CONDITIONAL: 23,
 	REAL32: 24,
-	REAL64: 25
+	REAL64: 25,
+	PARAM: 26,
+	ARRAY_ARGS: 27
 };
 
 dopple.Flag = {

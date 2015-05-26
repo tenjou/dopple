@@ -79,5 +79,7 @@ var dopple =
 
 	types: {},
 	typeVars: {},
+	typeParams: {},
+	typeDefaultParams: {},
 	loaders: {}
 };
