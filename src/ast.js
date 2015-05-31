@@ -10,8 +10,16 @@ meta.class("dopple.AST.Type",
 		this.nativeType = nativeType;
 	},
 
-	createTemplate: function(node) {
-		var templateType = new dopple.AST.TemplateType(node.type, node.templateType);
+	createTemplate: function(node) 
+	{
+		var templateType;
+		if(node) {
+			templateType = new dopple.AST.TemplateType(node.type, node.templateType);
+		}
+		else {
+			templateType = new dopple.AST.TemplateType(null, null);
+		}
+
 		return templateType;
 	},
 

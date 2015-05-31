@@ -403,9 +403,10 @@ dopple.Resolver.prototype =
 		}
 		else if(node instanceof this.ast.New) {
 			node.value = this.getRefEx(node);
+			node.inheritFrom(node.value);
 			this.resolveNew(node);
 		}
-		if(node instanceof this.ast.FunctionCall) {
+		else if(node instanceof this.ast.FunctionCall) {
 			this.resolveFuncCall(node);
 		}
 		else if(node instanceof this.ast.Binary) 
@@ -462,8 +463,6 @@ dopple.Resolver.prototype =
 			throw "TypeError: object is not a function: " + node.name;
 		}
 
-		node.inheritFrom(node.value);
-
 		var valid = false;
 		var num = constrBuffer.length;
 		for(var n = 0; n < num; n++) 
@@ -504,6 +503,16 @@ dopple.Resolver.prototype =
 
 		if(!node.func) {
 			throw "Could not find matching constructor for: " + node.type.name;
+		}
+
+		if(node.flags & this.flagType.TEMPLATE) 
+		{
+			if(numArgs > 0) {
+				node.templateType = node.type.createTemplate(args[0]);
+			}
+			else {
+				node.templateType = node.type.createTemplate(null);
+			}
 		}
 
 		return node;

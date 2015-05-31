@@ -229,7 +229,7 @@ dopple.ExternClass.prototype =
 
 	addConstr: function(params)
 	{
-		var funcExpr = new dopple.AST.Function(name, null, null, params);	
+		var funcExpr = new dopple.AST.Function("constructor", null, null, params);	
 
 		if(!this.cls.constrBuffer) {
 			this.cls.constrBuffer = [ funcExpr ];
