@@ -347,16 +347,16 @@ dopple.compiler.cpp =
 		return output;
 	},
 
-	parseVar: function(node, flags) 
+	parseVar: function(node) 
 	{
 		var output = "";
 		var nodeValue = node.value;
 
 		if(nodeValue) 
 		{
-			var valueOutput = this.lookup[nodeValue.exprType].call(this, nodeValue, flags);
+			var valueOutput = this.lookup[nodeValue.exprType].call(this, nodeValue);
 			if(valueOutput) {
-				output = this.createName(node, flags) + " = " + valueOutput;
+				output = this.createName(node) + " = " + valueOutput;
 			}
 		}
 
@@ -392,12 +392,12 @@ dopple.compiler.cpp =
 		return output;
 	},
 
-	parseArray: function(node, parent, flags) 
+	parseArray: function(node, flags) 
 	{
 		var genVarName = "";
 
 		var elements = node.elements;
-		var num = 0;
+		var num = 0, n = 0;
 		if(elements)
 		{
 			var elementOutput = "";
@@ -405,27 +405,43 @@ dopple.compiler.cpp =
 			var num = elements.length;
 			var iterNum = num - 1;
 
-			var castingPrefix = "";
-			if(node.templateValue.cls.clsType !== parent.templateValue.cls.clsType) {
-				castingPrefix = parent.templateValue.cls.alt + "(";
-			}
+			// if(node.type !== parent.type) 
+			// {
+			// 	var castingPrefix = parent.type.alt + "(";
 
-			for(var n = 0; n < iterNum; n++) {
+			// 	for(; n < iterNum; n++) {
+			// 		elementNode = elements[n];
+			// 		elementOutput += castingPrefix + this.lookup[elementNode.exprType].call(this, elementNode, flags) + "), ";
+			// 	}
+			// 	elementNode = elements[n];
+			// 	elementOutput += castingPrefix + this.lookup[elementNode.exprType].call(this, elementNode, flags) + ")";					
+			// }
+			// else 
+			// {
+				for(; n < iterNum; n++) {
+					elementNode = elements[n];
+					elementOutput += this.lookup[elementNode.exprType].call(this, elementNode) + ", ";
+				}
 				elementNode = elements[n];
-				elementOutput += castingPrefix + this.lookup[elementNode.exprType].call(this, elementNode, flags) + "), ";
-			}
-			elementNode = elements[n];
-			elementOutput += castingPrefix + this.lookup[elementNode.exprType].call(this, elementNode, flags) + ")";
+				elementOutput += this.lookup[elementNode.exprType].call(this, elementNode);
+			//}
 
-			genVarName = this.scope.genVar(parent.templateValue.cls);
+			genVarName = this.scope.genVar(node.templateType.type);
 
-			var templateTypeName = this.createTemplateType(parent);
+			// Stack array:
+			var templateTypeName = this.createTemplateType(node.templateType);
 			var preOutput = this.tabs + templateTypeName;
 			if(templateTypeName[templateTypeName.length - 1] !== "*") {
 				preOutput += " ";
 			}
 			preOutput += genVarName + "[" + num + "] = { " + elementOutput;
 			preOutput += " };\n";
+
+			// // New array:
+			// var templateTypeName = this.createType(node);
+			// var genVarName2 = this.scope.genVar(node.type);
+			// preOutput += this.tabs + templateTypeName + genVarName2 + "(" + genVarName + ");\n";
+
 			this.scope.cache.preOutput += preOutput;
 		}
 		else {
@@ -435,10 +451,11 @@ dopple.compiler.cpp =
 		var output;
 
 		if(flags & this.Flag.PARSING_ARGS) {
-			output = genVarName + ", " + num;
+			//output = genVarName + ", " + num;
+			output = "&" + genVarName2;
 		}
 		else {
-			output = "Array<" + this.createTemplateType(node) + ">(" + genVarName + ")";
+			output = this.createType(node, true) + "(" + genVarName + ", " + num + ")";
 		}
 		
 		return output;
@@ -524,7 +541,10 @@ dopple.compiler.cpp =
 			{
 				if(param.type === this.types.Args) {
 					output = this.createStrArgs(args, 0);
-				}				
+				}	
+				else if(param.type === this.types.TypeArgs) {
+					output = this.createTypeArgs(args, 0);
+				}			
 			}
 			else 
 			{
@@ -652,28 +672,33 @@ dopple.compiler.cpp =
 		return output;
 	},
 
-	createType: function(node, isAssign)
+	createType: function(node, isConstr)
 	{
-		var name = node.type.alt;
+		if(!node || !node.type) {
+			return "void *";
+		}	
 
-		if(node.type.flags & this.flagType.TEMPLATE) {
-			name += "<" + this.createTemplateType(node) + ">";
-		}			
+		var typeNode = node.type;
+		var name = typeNode.alt;
 
-		if(node.flags & this.flagType.PTR)
+		if(node.templateType) 
 		{
-			if(node.flags & this.flagType.MEMORY_STACK)	
-			{
-				if(isAssign) { return name; }
-				name += " ";
+			if((typeNode.flags & this.flagType.PTR) && (typeNode.flags & this.flagType.MEMORY_STACK) === 0) {
+				name += " *<" + this.createTemplateType(node.templateType) + ">";
 			}
 			else {
-				name += " *";
+				name += "<" + this.createTemplateType(node.templateType) + ">";
 			}
-		}
+		} 
 		else 
 		{
-			if(isAssign) { return name; }
+			if((typeNode.flags & this.flagType.PTR) && (typeNode.flags & this.flagType.MEMORY_STACK) === 0) {
+				name += " *";
+				return name;
+			}
+		}
+
+		if(!isConstr) {
 			name += " ";
 		}
 
@@ -682,18 +707,19 @@ dopple.compiler.cpp =
 
 	createTemplateType: function(node)
 	{
-		if(!node || !node.templateValue) {
+		if(!node || !node.type) {
 			return "void *";
 		}
 
-		var name = node.templateValue.cls.alt;		
+		var typeNode = node.type;
+		var name = typeNode.alt;
 
-		if(node.templateValue.flags & this.flagType.PTR) {
+		if((typeNode.flags & this.flagType.PTR) && (typeNode.flags & this.flagType.MEMORY_STACK) === 0) {
 			name += " *";
 		}
 
-		if(node.templateValue.templateValue) {
-			name += "<" + this.createTemplateType(node.templateValue) + ">";
+		if(node.templateType) {
+			name += "<" + this.createTemplateType(node.templateType) + ">";
 		}
 
 		return name;
@@ -845,6 +871,30 @@ dopple.compiler.cpp =
 			cache.args += ", " + this.parseFuncCall(node) + " ? \"true\" : \"false\"";
 			cache.format += " %s";
 		}	
+	},
+
+	createTypeArgs: function(args, index)
+	{
+		var mainArg = args[index];
+		var numArgs = args.length;
+
+		var output = this.tabs + this.createType(mainArg);
+		var genVarName = this.scope.genVar(args[index]);
+
+		var arg;
+		var argOutput = "";
+		for(var n = 0; n < numArgs - 1; n++) {
+			arg = args[n];
+			argOutput += this.lookup[arg.exprType].call(this, arg) + ", ";
+		}
+		arg = args[n];
+		argOutput += this.lookup[arg.exprType].call(this, arg);
+
+		var numItems = numArgs - index;
+		output += genVarName + "[" + numItems + "] = { " + argOutput + " };\n";
+		this.scope.cache.preOutput += output;
+	
+		return genVarName + ", " + numItems;
 	},
 
 	incTabs: function() {

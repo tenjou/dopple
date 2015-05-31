@@ -10,22 +10,41 @@ meta.class("dopple.AST.Type",
 		this.nativeType = nativeType;
 	},
 
+	createTemplate: function(node) {
+		var templateType = new dopple.AST.TemplateType(node.type, node.templateType);
+		return templateType;
+	},
+
 	set ast(ast) {
 		this._ast = ast;
 		ast.prototype.type = this;
-		ast.prototype.flags = this.flags;			
+		ast.prototype.flags = this.flags;
 	},
 
-	get ast() { return this._ast; },
+	get ast() { 
+		return this._ast; 
+	},
 
 	//
 	name: "",
 	alt: "",
 	type: dopple.Type.UNKNOWN,
 	nativeType: dopple.Type.UNKNOWN,
-	cls: null,
 	_ast: null,
 	flags: 0
+});
+
+/* Template Type */
+meta.class("dopple.AST.TemplateType", 
+{
+	init: function(type, templateType) {
+		this.type = type;
+		this.templateType = templateType;
+	},
+
+	//
+	type: null,
+	templateType: null
 });
 
 /* Base */
@@ -35,27 +54,25 @@ meta.class("dopple.AST.Base",
 	{
 		var flagTypes = dopple.Flag;
 
-		if(node) 
-		{
+		if(node) {
 			this.type = node.type;
 			this.flags = node.type.flags;
 		}
 
+		if(node.templateType) {
+			this.templateType = node.templateType;
+			this.flags |= flagTypes.TEMPLATE;
+		}		
+
 		this.flags |= flagTypes.RESOLVED;
 	},
-	// 	this.cls = node.cls;
-
-	// 	if(node.flags & dopple.Flag.TEMPLATE) {
-	// 		this.templateValue = node.templateValue;
-	// 		this.flags |= dopple.Flag.TEMPLATE;
-	// 	}
 
 	//
 	parents: null,
 	type: null,
+	templateType: null,
 	exprType: dopple.Type.UNKNOWN,
 	parent: null,
-	templateValue: null,
 	hook: null,
 	flags: 0
 });
@@ -128,6 +145,11 @@ meta.class("dopple.AST.Null", "dopple.AST.Base", {
 /* Args */
 meta.class("dopple.AST.Args", "dopple.AST.Base", {
 	exprType: dopple.Type.ARGS
+});
+
+/* Array Args */
+meta.class("dopple.AST.ArrayArgs", "dopple.AST.Base", {
+	exprType: dopple.Type.ARRAY_ARGS
 });
 
 /* Template */
@@ -285,8 +307,15 @@ meta.class("dopple.AST.Function", "dopple.AST.Base",
 			var num = params.length; 
 			this.minParams = num;
 
-			for(var n = 0; n < num; n++) {
-				if(params[n].value) {
+			var param;
+			for(var n = 0; n < num; n++) 
+			{
+				param = params[n];
+				if(param.flags & dopple.Flag.ARGS) { 
+					this.minParams = n;
+					this.argsIndex = n;
+				}
+				if(param.value) {
 					this.minParams = n;
 					break;
 				}
@@ -298,7 +327,7 @@ meta.class("dopple.AST.Function", "dopple.AST.Base",
 	exprType: dopple.Type.FUNCTION,
 	value: null,
 	argsIndex: -1,
-	minParams: 0
+	minParams: -1
 });
 
 /* Function Call */
@@ -334,31 +363,31 @@ meta.class("dopple.AST.Return", "dopple.AST.Base",
 /* Class */
 meta.class("dopple.AST.Class", "dopple.AST.Base", 
 {
-	init: function(name, scope) {
-		this.name = name;
-		this.alt = name;
-		this.scope = scope || null;
+	init: function(name, scope) 
+	{
+		if(name) {
+			this.name = name;		
+		}
+		if(scope) {
+			this.scope = scope;
+		}
 	},
-
-	set ast(ast) {
-		this._ast = ast;
-		this._ast.prototype.cls = this;
-	},
-
-	get ast() { return this._ast; },	
 
 	//
 	exprType: dopple.Type.CLASS,
+	scope: null,
 	proto: null,
-	constrBuffer: null,
-	alt: "",
+	constrBuffer: null
 });
 
 /* Mutator */
 meta.class("dopple.AST.Mutator", "dopple.AST.Base", 
 {
-	init: function(name) {
-		this.name = name;
+	init: function(name) 
+	{
+		if(name) {
+			this.name = name;
+		}
 	},
 
 	//

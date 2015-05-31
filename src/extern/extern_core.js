@@ -45,10 +45,12 @@ dopple.extern("core", function(extern)
 	type = extern.addType("Null", extern.type.CLASS, extern.type.NULL);
 	type.ast = extern.ast.Null;
 
-	type = extern.addType("Args", extern.type.ARGS, extern.type.ARGS);
+	type = extern.addType("Args", extern.type.ARGS, extern.type.ARGS, extern.flagType.ARGS);
 	type.ast = extern.ast.Args;	
 
-	// type = extern.addType("ArrayArgs", extern.type.ARRAY_ARGS, extern.type.ARRAY_ARGS);
+	type = extern.addType("TypeArgs", extern.type.TYPE_ARGS, extern.type.TYPE_ARGS, extern.flagType.ARGS);
+
+	type = extern.addType("ArrayArgs", extern.type.ARRAY_ARGS, extern.type.ARRAY_ARGS, extern.flagType.ARGS);
 	// type.ast = extern.ast.ArrayArgs;		
 
 	type = extern.addType("Template", extern.type.TEMPLATE, extern.type.TEMPLATE);
@@ -56,10 +58,11 @@ dopple.extern("core", function(extern)
 
 	type = extern.addType("Array", extern.type.ARRAY, extern.type.ARRAY, 
 		extern.flagType.PTR | extern.flagType.MEMORY_STACK | extern.flagType.TEMPLATE);
+	type.ast = extern.ast.Array;
 	externCls = extern.addNativeClass("Array", type);
-	externCls.addConstr([ extern.typeDefaultParams.Real64 ]);
-	// externCls.addConstr([ extern.typeParams.Array ]);
-	// externCls.addConstr([ extern.typeParams.ArrayArgs ]);
+	//externCls.addConstr([ extern.typeDefaultParams.Real64 ]);
+	externCls.addConstr([ extern.typeParams.Array ]);
+	externCls.addConstr([ extern.typeParams.TypeArgs ]);
 	externCls.addFunc("push", [ extern.typeParams.Template ], extern.types.Number);
 	externCls.addFunc("pop", null, extern.types.Template);
 	externCls.addFunc("shift", null, extern.types.Template);

@@ -28,7 +28,8 @@ dopple.Type = {
 	REAL32: 24,
 	REAL64: 25,
 	PARAM: 26,
-	ARRAY_ARGS: 27
+	TYPE_ARGS: 27,
+	ARRAY_ARGS: 28
 };
 
 dopple.Flag = {
@@ -42,5 +43,6 @@ dopple.Flag = {
 	MEMORY_HEAP: 128,
 	TEMPLATE: 256,
 	SETTER: 512,
-	GETTER: 1024
+	GETTER: 1024,
+	ARGS: 2048
 };

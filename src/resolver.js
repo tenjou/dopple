@@ -245,28 +245,14 @@ dopple.Resolver.prototype =
 		var args = node.args;
 		var numParams = params ? params.length : 0;
 		var numArgs = args ? args.length : 0;
-		var numArgsResolve = numArgs;
-
-		if(func.flags & this.flagType.RESOLVED) 
-		{	
-			if(func.argsIndex > -1) {
-				numArgsResolve = func.argsIndex;
-			}			
-		}
-		else
-		{
-			if((func.flags & this.flagType.RESOLVED) === 0) 
-			{
-				var argType = this.types.Args;
-				for(var n = 0; n < numParams; n++) {
-					if(params[n].type === argType) {
-						func.argsIndex = n;
-						numArgsResolve = n;
-						break;
-					}
-				}
-			}
+		
+		var numArgsResolve;
+		if(func.argsIndex > -1) {
+			numArgsResolve = func.argsIndex;
 		}	
+		else {
+			numArgsResolve = numArgs;
+		}
 
 		if(numArgsResolve > numParams) {
 			throw "Passed too many arguments for " + 
@@ -335,15 +321,11 @@ dopple.Resolver.prototype =
 		var elements = node.elements;
 		if(!node.elements) { return node; }
 
-		var bufferNode = null;
-		var cls = null;
-		var value = null;
 		var num = elements.length;
 
-		bufferNode = elements[0];
-		bufferNode = this.resolveValue(bufferNode);
-		value = bufferNode;
-		cls = bufferNode.cls;
+		var bufferNode = this.resolveValue(elements[0]);
+		var value = bufferNode;
+		var type = bufferNode.type;
 
 		for(var n = 1; n < num; n++) 
 		{
@@ -356,13 +338,7 @@ dopple.Resolver.prototype =
 			}
 		}
 
-		console.log(node.flags & this.flagType.TEMPLATE);
-
-		//node.type.createmTemplate(value.type);
-
-		// if(!(value instanceof this.ast.Null)) {
-		// 	node.templateValue = value;
-		// }
+		node.templateType = node.type.createTemplate(value);
 
 		return node;
 	},
@@ -380,7 +356,7 @@ dopple.Resolver.prototype =
 		{
 			var leftType = leftTypeNode.type;
 
-			if(leftTypeNode.type === this.type.ARGS) {}
+			if(leftTypeNode.flags & this.flagType.ARGS) {}
 			else if(leftTypeNode.type === this.type.NULL) 
 			{
 				if((leftNode.flags & this.flagType.PTR) === 0) {
@@ -406,10 +382,8 @@ dopple.Resolver.prototype =
 			else if((leftTypeNode.flags & this.flagType.TEMPLATE) && 
 				    (rightTypeNode.flags & this.flagType.TEMPLATE))
 			{
-				if(!leftNode.templateValue && !rightNode.templateValue) {
-					return true;
-				}
-				return this.checkTypes(leftNode.templateValue, rightNode.templateValue);
+				//leftNode.templateType = rightNode.templateType;
+				return this.checkTypes(leftNode.templateType.type, rightNode.templateType.type);
 			}
 		}
 		else {
@@ -425,6 +399,7 @@ dopple.Resolver.prototype =
 
 		if(node instanceof this.ast.Reference) {
 			node.value = this.getRefEx(node);
+			node.inheritFrom(node.value);
 		}
 		else if(node instanceof this.ast.New) {
 			node.value = this.getRefEx(node);
@@ -489,20 +464,24 @@ dopple.Resolver.prototype =
 
 		node.inheritFrom(node.value);
 
-		var valid;
+		var valid = false;
 		var num = constrBuffer.length;
 		for(var n = 0; n < num; n++) 
 		{
 			constr = constrBuffer[n];
+
+			if(constr.minParams > -1 && numArgs < constr.minParams) { continue; }
+
 			params = constr.params;
-			if(numArgs < params.minParams) { continue; } 
-
 			numParams = params ? params.length : 0;
+			
+			if(constr.argsIndex > -1) {
+				numArgs = constr.argsIndex;
+			}	
+
 			if(numArgs > numParams) { continue; }
-
+	
 			valid = true;
-
-			// Validate arguments:
 			for(i = 0; i < numArgs; i++) {
 				param = params[i];
 				arg = this.resolveValue(args[i]);
@@ -512,7 +491,12 @@ dopple.Resolver.prototype =
 				}
 			}
 
-			if(valid) {
+			if(valid) 
+			{
+				// if(params[i].type.type === this.type.TYPE_ARGS) {
+				// 	this.resolveTypeArgs(args, i);
+				// }
+
 				node.func = constr;
 				break;
 			}
@@ -523,6 +507,23 @@ dopple.Resolver.prototype =
 		}
 
 		return node;
+	},
+
+	resolveTypeArgs: function(args, index)
+	{
+		var arg;
+		var mainArg = args[index];
+		var num = args.length;
+		for(var i = index + 1; i < num; i++)
+		{
+			arg = args[i];
+			if(arg.type !== mainArg.type) 
+			{
+				throw "Types do not match for arguments: expected [" 
+						+ this.createType(mainArg) + "] but got [" 
+						+ this.createType(arg) + "]";					
+			}
+		}
 	},
 
 	resolveMutator: function(node) 

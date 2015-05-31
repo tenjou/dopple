@@ -80,13 +80,11 @@ struct
 template <class T>
 struct Array 
 {
-	Array(int32 length = 0) {
-		this->buffer = new T[length];
-		this->length = length;
-	}
+	Array(int32 length = 0) {}
 	
-	Array(T *buffer) {
-		this->buffer= buffer;
+	Array(T *buffer, int32 length) {
+		this->buffer = buffer;
+		this->length = length;
 	}
 
 	~Array() 
