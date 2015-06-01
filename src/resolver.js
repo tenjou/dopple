@@ -492,6 +492,14 @@ dopple.Resolver.prototype =
 
 			if(valid) 
 			{
+				if(numParams > 0)
+				{
+					var paramType = params[i].type.type;
+					if(paramType === this.type.TYPE_ARGS) {
+						this.resolveTypeArgs(args, i);
+					}
+				}
+
 				// if(params[i].type.type === this.type.TYPE_ARGS) {
 				// 	this.resolveTypeArgs(args, i);
 				// }
@@ -507,12 +515,12 @@ dopple.Resolver.prototype =
 
 		if(node.flags & this.flagType.TEMPLATE) 
 		{
-			if(numArgs > 0) {
+			// if(numArgs > 0) {
 				node.templateType = node.type.createTemplate(args[0]);
-			}
-			else {
-				node.templateType = node.type.createTemplate(null);
-			}
+			// }
+			// else {
+			// 	node.templateType = node.type.createTemplate(null);
+			// }
 		}
 
 		return node;
@@ -620,39 +628,37 @@ dopple.Resolver.prototype =
 		return null;	
 	},
 
-	createType: function(node)
+	createType: function(node, isConstr)
 	{
-		var name = node.type.name;
+		if(!node || !node.type) {
+			return "void *";
+		}	
 
-		if(node.type.flags & this.flagType.TEMPLATE) {
-			name += "<" + this.createTemplateType(node) + ">";
-		}			
+		var typeNode = node.type;
+		var name = typeNode.name;
 
-		if(node.flags & this.flagType.PTR) {
-			name += " *";
-		}
+		if(node.templateType) {
+			name += "<" + this.createTemplateType(node.templateType) + ">";
+		} 
 
 		return name;
-	},	
+	},
 
 	createTemplateType: function(node)
 	{
-		if(!node || !node.templateValue) {
+		if(!node || !node.type) {
 			return "void *";
 		}
 
-		var name = node.templateValue.cls.name;		
+		var typeNode = node.type;
+		var name = typeNode.name;
 
-		if(node.templateValue.flags & this.flagType.PTR) {
-			name += " *";
-		}
-
-		if(node.templateValue.value.templateValue) {
-			name += "<" + this.createTemplateType(node.templateValue.value) + ">";
+		if(node.templateType) {
+			name += "<" + this.createTemplateType(node.templateType) + ">";
 		}
 
 		return name;
-	},	
+	},
 
 	//
 	typeVars: null
