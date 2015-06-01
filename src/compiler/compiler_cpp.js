@@ -738,7 +738,7 @@ dopple.compiler.cpp =
 		}
 
 		if(node.templateType) {
-			name += "<" + this.createTemplateType(node.value.templateType) + ">";
+			name += "<" + this.createTemplateType(node.templateType) + ">";
 		}
 
 		return name;
