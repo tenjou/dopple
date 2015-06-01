@@ -61,7 +61,7 @@ dopple.extern("core", function(extern)
 		extern.flagType.PTR | extern.flagType.MEMORY_STACK | extern.flagType.TEMPLATE);
 	type.ast = extern.ast.Array;
 	externCls = extern.addNativeClass("Array", type);
-	//externCls.addConstr([ extern.typeDefaultParams.Real64 ]);
+	externCls.addConstr([ extern.typeDefaultParams.Real64 ]);
 	externCls.addConstr([ extern.typeParams.Array ]);
 	externCls.addConstr([ extern.typeParams.TypeArgs ]);
 	externCls.addFunc("push", [ extern.typeParams.Template ], extern.types.Number);

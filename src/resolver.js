@@ -463,25 +463,27 @@ dopple.Resolver.prototype =
 			throw "TypeError: object is not a function: " + node.name;
 		}
 
+		var currNumArgs;
 		var valid = false;
 		var num = constrBuffer.length;
 		for(var n = 0; n < num; n++) 
 		{
 			constr = constrBuffer[n];
+			currNumArgs = numArgs;
 
-			if(constr.minParams > -1 && numArgs < constr.minParams) { continue; }
+			if(constr.minParams > -1 && currNumArgs < constr.minParams) { continue; }
 
 			params = constr.params;
 			numParams = params ? params.length : 0;
 			
 			if(constr.argsIndex > -1) {
-				numArgs = constr.argsIndex;
+				currNumArgs = constr.argsIndex;
 			}	
 
-			if(numArgs > numParams) { continue; }
+			if(currNumArgs > numParams) { continue; }
 	
 			valid = true;
-			for(i = 0; i < numArgs; i++) {
+			for(i = 0; i < currNumArgs; i++) {
 				param = params[i];
 				arg = this.resolveValue(args[i]);
 				if(!this.checkTypes(param, arg)) {
@@ -494,15 +496,11 @@ dopple.Resolver.prototype =
 			{
 				if(numParams > 0)
 				{
-					var paramType = params[i].type.type;
+					var paramType = params[0].type.type;
 					if(paramType === this.type.TYPE_ARGS) {
 						this.resolveTypeArgs(args, i);
 					}
 				}
-
-				// if(params[i].type.type === this.type.TYPE_ARGS) {
-				// 	this.resolveTypeArgs(args, i);
-				// }
 
 				node.func = constr;
 				break;
@@ -515,12 +513,12 @@ dopple.Resolver.prototype =
 
 		if(node.flags & this.flagType.TEMPLATE) 
 		{
-			// if(numArgs > 0) {
+			if(numArgs > 0) {
 				node.templateType = node.type.createTemplate(args[0]);
-			// }
-			// else {
-			// 	node.templateType = node.type.createTemplate(null);
-			// }
+			}
+			else {
+				node.templateType = node.type.createTemplate(null);
+			}
 		}
 
 		return node;
