@@ -382,11 +382,26 @@ dopple.Resolver.prototype =
 			else if((leftTypeNode.flags & this.flagType.TEMPLATE) && 
 				    (rightTypeNode.flags & this.flagType.TEMPLATE))
 			{
-				if(!leftNode.templateType) {
+				var leftTemplate = leftNode.value.templateType;
+				var rightTemplate = rightNode.value.templateType;
+
+				if(!leftTemplate) {
+					leftNode.value.templateType = rightTemplate;
 					return true;
 				}
-				
-				return this.checkTypes(leftNode.templateType.type, rightNode.templateType.type);
+				else if(!leftTemplate.type) 
+				{
+					if(!rightTemplate.type) {
+						rightNode.value.templateType = leftTemplate;
+						return true;
+					}
+
+					leftTemplate.type = rightTemplate.type;
+					leftTemplate.templateType = rightTemplate.templateType;
+					return true;
+				}
+
+				return this.checkTypes(leftTemplate.type, rightTemplate.type);
 			}
 		}
 		else {

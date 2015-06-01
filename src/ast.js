@@ -1,5 +1,6 @@
 "use strict";
 
+var uid = 0;
 /* Type */
 meta.class("dopple.AST.Type", 
 {
@@ -46,6 +47,7 @@ meta.class("dopple.AST.Type",
 meta.class("dopple.AST.TemplateType", 
 {
 	init: function(type, templateType) {
+		this.uid = uid++;
 		this.type = type;
 		this.templateType = templateType;
 	},
@@ -68,7 +70,6 @@ meta.class("dopple.AST.Base",
 		}
 
 		if(node.templateType) {
-			this.templateType = node.templateType;
 			this.flags |= flagTypes.TEMPLATE;
 		}		
 

@@ -160,7 +160,7 @@ dopple.compiler.cpp =
 		{
 			node = decls[n];
 
-			strType = this.createType(node);
+			strType = this.createType(node.value);
 			typeBuffer = declGroups[strType];
 			if(!typeBuffer) {
 				typeBuffer = [ node ];
@@ -738,7 +738,7 @@ dopple.compiler.cpp =
 		}
 
 		if(node.templateType) {
-			name += "<" + this.createTemplateType(node.templateType) + ">";
+			name += "<" + this.createTemplateType(node.value.templateType) + ">";
 		}
 
 		return name;
