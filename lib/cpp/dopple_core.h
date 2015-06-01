@@ -129,6 +129,18 @@ struct Array
 		return this->length; 
 	}
 	
+	T operator [](int32 index)
+	{
+		if(index >= this->length) {
+			return 0;
+		}
+		if(index < 0) {
+			return 0;
+		}
+		
+		return this->buffer[index];
+	}
+	
 	//
 	T *buffer = nullptr;
 	int32 capacity = 0;

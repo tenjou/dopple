@@ -382,7 +382,10 @@ dopple.Resolver.prototype =
 			else if((leftTypeNode.flags & this.flagType.TEMPLATE) && 
 				    (rightTypeNode.flags & this.flagType.TEMPLATE))
 			{
-				//leftNode.templateType = rightNode.templateType;
+				if(!leftNode.templateType) {
+					return true;
+				}
+				
 				return this.checkTypes(leftNode.templateType.type, rightNode.templateType.type);
 			}
 		}
@@ -463,10 +466,14 @@ dopple.Resolver.prototype =
 			throw "TypeError: object is not a function: " + node.name;
 		}
 
+		for(var n = 0; n < numArgs; n++) {
+			args[n] = this.resolveValue(args[n]);
+		}
+
 		var currNumArgs;
 		var valid = false;
 		var num = constrBuffer.length;
-		for(var n = 0; n < num; n++) 
+		for(n = 0; n < num; n++) 
 		{
 			constr = constrBuffer[n];
 			currNumArgs = numArgs;
@@ -485,7 +492,7 @@ dopple.Resolver.prototype =
 			valid = true;
 			for(i = 0; i < currNumArgs; i++) {
 				param = params[i];
-				arg = this.resolveValue(args[i]);
+				arg = args[i];
 				if(!this.checkTypes(param, arg)) {
 					valid = false;
 					break;

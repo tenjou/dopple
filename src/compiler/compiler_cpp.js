@@ -451,12 +451,32 @@ dopple.compiler.cpp =
 		var output;
 
 		if(flags & this.Flag.PARSING_ARGS) {
-			//output = genVarName + ", " + num;
-			output = "&" + genVarName2;
+			var strType = this.createType(node, true);
+			var genVarName2 = this.scope.genVar();
+			this.scope.cache.preOutput += this.tabs + strType + " " + genVarName2 + 
+				"[1] = { " + strType + "(" + genVarName + ", " + num + ") };\n";
+			output = genVarName2 + ", 1";
 		}
 		else {
 			output = this.createType(node, true) + "(" + genVarName + ", " + num + ")";
 		}
+			
+		// var tmpOutput = this.lookup[arg.exprType].call(this, arg, flags);
+		// var genName = this.scope.genVar();
+
+		// this.scope.cache.preOutput += this.tabs + this.createType(arg) + genName + "[1] = { " + tmpOutput + " };\n";
+		// output = genName;
+
+
+		
+
+		// if(flags & this.Flag.PARSING_ARGS) {
+		// 	//output = genVarName + ", " + num;
+		// 	output = "&" + genVarName;
+		// }
+		// else {
+			
+	//	}
 		
 		return output;
 	},
@@ -534,25 +554,24 @@ dopple.compiler.cpp =
 		if(numArgs > 0)
 		{
 			arg = args[0];
-			param = params[0];
 
 			var argsIndex = func.argsIndex;
 			if(argsIndex > -1)
 			{
-				if(param.type === this.types.Args) {
+				if(param.type === this.types.Args ||
+				   param.type === this.types.TypeArgs) 
+				{
 					output = this.createStrArgs(args, 0);
-				}	
-				else if(param.type === this.types.TypeArgs) {
-					output = this.createTypeArgs(args, 0);
-				}			
+				}		
 			}
 			else 
 			{
-				output = this.lookup[arg.exprType].call(this, arg, param, flags);
+				param = params[0];
+				output = this.lookup[arg.exprType].call(this, arg, flags);
 
 				for(n = 1; n < numArgs; n++) {
 					arg = args[n];
-					output += ", " + this.lookup[arg.exprType].call(this, arg, param, flags);
+					output += ", " + this.lookup[arg.exprType].call(this, arg, flags);
 				}				
 			}
 		}
