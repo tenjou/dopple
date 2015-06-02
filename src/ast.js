@@ -76,11 +76,20 @@ meta.class("dopple.AST.Base",
 		this.flags |= flagTypes.RESOLVED;
 	},
 
+	setTemplate: function(template) {
+		this.templateType = template;
+	},
+
+	getTemplate: function() { 
+		return this.templateType; 
+	},
+
 	//
 	parents: null,
 	type: null,
 	templateType: null,
 	exprType: dopple.Type.UNKNOWN,
+	value: null,
 	parent: null,
 	hook: null,
 	flags: 0
@@ -95,13 +104,13 @@ meta.class("dopple.AST.Number", "dopple.AST.Base",
 	init: function(value) 
 	{
 		if(value) {
-			this.value = value;
+			this.outputValue = value;
 		}
 	},
 
 	//
 	exprType: dopple.Type.NUMBER,
-	value: 0,
+	outputValue: 0,
 });
 
 /* String */
@@ -110,13 +119,13 @@ meta.class("dopple.AST.String", "dopple.AST.Base",
 	init: function(value) 
 	{
 		if(value) {
-			this.value = value;
+			this.outputValue = value;
 		}
 	},
 
 	//
 	exprType: dopple.Type.STRING,
-	value: ""
+	outputValue: ""
 });
 
 /* Bool */
@@ -125,13 +134,13 @@ meta.class("dopple.AST.Bool", "dopple.AST.Base",
 	init: function(value) 
 	{
 		if(value) {
-			this.value = value;
+			this.outputValue = value;
 		}
 	},
 
 	//
 	exprType: dopple.Type.BOOL,
-	value: false
+	outputValue: false
 });
 
 /* Array */
@@ -175,9 +184,16 @@ meta.class("dopple.AST.Reference", "dopple.AST.Base",
 		if(parents) { this.parents = parents; }
 	},
 
+	setTemplate: function(template) {
+		this.value.templateType = template;
+	},
+
+	getTemplate: function() { 
+		return this.value.templateType; 
+	},	
+
 	//
-	exprType: dopple.Type.REFERENCE,
-	value: null
+	exprType: dopple.Type.REFERENCE
 });
 
 /* Param */
@@ -187,11 +203,10 @@ meta.class("dopple.AST.Param", "dopple.AST.Base",
 	{
 		if(name) { this.name = name; }
 		if(parents) { this.parents = parents; }
-	},
+	},	
 
 	//
 	exprType: dopple.Type.PARAM,
-	value: null,
 	defaultValue: null
 });
 
@@ -202,7 +217,7 @@ meta.class("dopple.AST.New", "dopple.AST.Base",
 		this.name = name;
 		this.parents = parents || null;
 		this.args = args || null;
-	},
+	},	
 
 	//
 	exprType: dopple.Type.NEW,
@@ -221,7 +236,6 @@ meta.class("dopple.AST.Binary", "dopple.AST.Base",
 
 	//
 	exprType: dopple.Type.BINARY,
-	value: null, 
 	op: 0
 });
 
@@ -241,9 +255,16 @@ meta.class("dopple.AST.Var", "dopple.AST.Base",
 		}
 	},
 
+	setTemplate: function(template) {
+		this.value.templateType = template;
+	},
+
+	getTemplate: function() { 
+		return this.value.templateType; 
+	},	
+
 	//
-	exprType: dopple.Type.VAR,
-	value: null
+	exprType: dopple.Type.VAR
 });
 
 /* Assign */
@@ -256,9 +277,16 @@ meta.class("dopple.AST.Assign", "dopple.AST.Base",
 		this.op = op;
 	},
 
+	setTemplate: function(template) {
+		this.value.templateType = template;
+	},
+
+	getTemplate: function() { 
+		return this.value.templateType; 
+	},	
+
 	//
 	exprType: dopple.Type.ASSIGN,
-	value: null, 
 	op: 0
 });
 
@@ -272,7 +300,6 @@ meta.class("dopple.AST.Unary", "dopple.AST.Base",
 
 	//
 	exprType: dopple.Type.UNARY,
-	value: null, 
 	op: 0
 });
 
@@ -334,7 +361,6 @@ meta.class("dopple.AST.Function", "dopple.AST.Base",
 
 	//
 	exprType: dopple.Type.FUNCTION,
-	value: null,
 	argsIndex: -1,
 	minParams: -1
 });
@@ -350,7 +376,6 @@ meta.class("dopple.AST.FunctionCall", "dopple.AST.Base",
 
 	//
 	exprType: dopple.Type.FUNCTION_CALL,
-	value: null,
 	args: null
 });
 
@@ -365,8 +390,7 @@ meta.class("dopple.AST.Return", "dopple.AST.Base",
 	},
 
 	//
-	exprType: dopple.Type.RETURN,
-	value: null
+	exprType: dopple.Type.RETURN
 });
 
 /* Class */

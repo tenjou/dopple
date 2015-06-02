@@ -236,12 +236,12 @@ dopple.compiler.cpp =
 	},
 
 	outputNumber: function(node) {
-		return node.value + "";
+		return node.outputValue + "";
 	},
 
 	parseString: function(node, flags) 
 	{
-		var length = node.value.length;
+		var length = node.outputValue.length;
 		var hex = "\"\\x" + (length & 0x000000FF).toString(16);
 		
 		if(length > 255) {
@@ -252,11 +252,11 @@ dopple.compiler.cpp =
 		else {
 			hex += "\\x0\\x0\\x0\"";
 		}
-		return "(char *)" + hex + "\"" + node.value + "\"";
+		return "(char *)" + hex + "\"" + node.outputValue + "\"";
 	},
 
 	parseBool: function(node, flags) {
-		return node.value + "";
+		return node.outputValue + "";
 	},
 
 	parseRef: function(node, flags) 
@@ -835,23 +835,23 @@ dopple.compiler.cpp =
 	{
 		cache.format += " %.17g";
 
-		if(node.value === Math.floor(node.value)) {
-			cache.args += ", " + node.value + ".0";
+		if(node.outputValue === Math.floor(node.outputValue)) {
+			cache.args += ", " + node.outputValue + ".0";
 		}
 		else {
-			cache.args += ", " + node.value;
+			cache.args += ", " + node.outputValue;
 		}
 	},
 
 	outputArgString: function(node, cache) {
-		cache.format += " " + node.value;
+		cache.format += " " + node.outputValue;
 	},
 
 	outputArgBool: function(node, cache) 
 	{
 		cache.format += " %s";		
 
-		if(node.value === 1) {
+		if(node.outputValue === 1) {
 			cache.args += ", \"true\"";
 		}
 		else {

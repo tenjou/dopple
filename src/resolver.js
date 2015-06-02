@@ -380,24 +380,29 @@ dopple.Resolver.prototype =
 					if(rightType === this.type.NULL && (leftNode.flags & this.flagType.PTR)) {
 						return true;
 					}
-					
+
 					return false;
 				}
 			}
 			else if((leftTypeNode.flags & this.flagType.TEMPLATE) && 
 				    (rightTypeNode.flags & this.flagType.TEMPLATE))
 			{
-				var leftTemplate = leftNode.value.templateType;
-				var rightTemplate = rightNode.value.templateType;
+				var leftTemplate = leftNode.getTemplate();
+				var rightTemplate = rightNode.getTemplate();
 
-				if(!leftTemplate) {
-					leftNode.value.templateType = rightTemplate;
+				if(!leftTemplate) 
+				{
+					if(leftType.flags & this.flagType.CLASS) {
+						return true;
+					}
+					
+					leftNode.setTemplate(rightTemplate);
 					return true;
 				}
 				else if(!leftTemplate.type) 
 				{
 					if(!rightTemplate.type) {
-						rightNode.value.templateType = leftTemplate;
+						rightNode.setTemplate(leftTemplate);
 						return true;
 					}
 
