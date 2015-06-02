@@ -375,7 +375,12 @@ dopple.Resolver.prototype =
 				else if(leftType === this.type.NUMBER && rightType === this.type.NUMBER) {
 					return true;
 				}
-				else {
+				else 
+				{
+					if(rightType === this.type.NULL && (leftNode.flags & this.flagType.PTR)) {
+						return true;
+					}
+					
 					return false;
 				}
 			}

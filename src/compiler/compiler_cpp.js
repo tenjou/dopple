@@ -354,7 +354,7 @@ dopple.compiler.cpp =
 
 		if(nodeValue) 
 		{
-			var valueOutput = this.lookup[nodeValue.exprType].call(this, nodeValue);
+			var valueOutput = this.lookup[nodeValue.exprType].call(this, nodeValue, 0);
 			if(valueOutput) {
 				output = this.createName(node) + " = " + valueOutput;
 			}
@@ -554,19 +554,20 @@ dopple.compiler.cpp =
 		if(numArgs > 0)
 		{
 			arg = args[0];
+			param = params[0];
 
 			var argsIndex = func.argsIndex;
 			if(argsIndex > -1)
 			{
-				if(param.type === this.types.Args ||
-				   param.type === this.types.TypeArgs) 
-				{
+				if(param.type === this.types.Args) {
 					output = this.createStrArgs(args, 0);
-				}		
+				}	
+				else if(param.type === this.types.TypeArgs) {
+					output = this.createTypeArgs(args, 0);
+				}	
 			}
 			else 
 			{
-				param = params[0];
 				output = this.lookup[arg.exprType].call(this, arg, flags);
 
 				for(n = 1; n < numArgs; n++) {
