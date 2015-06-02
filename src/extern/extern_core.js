@@ -46,6 +46,10 @@ dopple.extern("core", function(extern)
 	type.ast = extern.ast.Null;
 	type.alt = "void";
 
+	type = extern.addType("Class", extern.type.CLASS, extern.type.CLASS, extern.flagType.PTR);
+	type.ast = extern.ast.Class;
+	extern.addDefaultParam(type);
+
 	type = extern.addType("Args", extern.type.ARGS, extern.type.ARGS, extern.flagType.ARGS);
 	type.ast = extern.ast.Args;	
 

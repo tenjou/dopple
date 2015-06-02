@@ -60,6 +60,10 @@ dopple.Extern.prototype =
 			throw "There is already defined type with such name: " + name;	
 		}
 
+		if(!type) {
+			type = this.typeParams.Class;
+		}
+
 		var scope = new dopple.Scope();
 		var clsExpr = new this.ast.Class(name, scope);
 		clsExpr.type = type;
