@@ -261,15 +261,22 @@ dopple.compiler.cpp =
 
 	parseRef: function(node, flags) 
 	{
-		if(node.value) 
+		var nodeValue = node.value;
+
+		if(nodeValue) 
 		{
-			if(node.value.hook) {
-				return node.value.hook(node.name);
+			if(nodeValue.hook) {
+				return nodeValue.hook(node.name);
 			}
 
-			if(node.value.flags & this.flagType.GETTER) {
+			if(nodeValue.flags & this.flagType.GETTER) {
 				return this.createGetterName(node);
 			}
+
+			// if(nodeValue.exprType === this.type.ARRAY) {
+			// 	var name = this.createName(node);
+			// 	return name + ", " + name + ".length"
+			// }
 		}
 
 		return this.createName(node);

@@ -86,6 +86,11 @@ struct Array
 		this->buffer = buffer;
 		this->length = length;
 	}
+	
+	Array(T buffer) {
+		this->buffer = buffer.buffer;
+		this->length = buffer.length;
+	}
 
 	~Array() 
 	{

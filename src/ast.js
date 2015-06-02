@@ -15,7 +15,7 @@ meta.class("dopple.AST.Type",
 	{
 		var templateType;
 		if(node) {
-			templateType = new dopple.AST.TemplateType(node.type, node.templateType);
+			templateType = new dopple.AST.TemplateType(node.type, node.getTemplate());
 		}
 		else {
 			templateType = new dopple.AST.TemplateType(null, null);
@@ -185,11 +185,11 @@ meta.class("dopple.AST.Reference", "dopple.AST.Base",
 	},
 
 	setTemplate: function(template) {
-		this.value.templateType = template;
+		this.value.setTemplate(template);
 	},
 
 	getTemplate: function() { 
-		return this.value.templateType; 
+		return this.value.getTemplate(); 
 	},	
 
 	//
