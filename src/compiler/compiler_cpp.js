@@ -32,6 +32,7 @@ dopple.compiler.cpp =
 		this.lookup[this.type.RETURN] = this.parseReturn;
 		this.lookup[this.type.NULL] = this.parseNull;
 		this.lookup[this.type.ARRAY] = this.parseArray;
+		this.lookup[this.type.SUBSCRIPT] = this.outputSubscript;
 
 		this.argLookup = [];
 		this.argLookup[this.type.NUMBER] = this.outputArgNumber;
@@ -272,11 +273,6 @@ dopple.compiler.cpp =
 			if(nodeValue.flags & this.flagType.GETTER) {
 				return this.createGetterName(node);
 			}
-
-			// if(nodeValue.exprType === this.type.ARRAY) {
-			// 	var name = this.createName(node);
-			// 	return name + ", " + name + ".length"
-			// }
 		}
 
 		return this.createName(node);
@@ -386,7 +382,7 @@ dopple.compiler.cpp =
 			{
 				var valueOutput = this.lookup[nodeValue.exprType].call(this, nodeValue, flags);
 				if(valueOutput) {
-					output = this.createName(node) + " " + node.op + " " + valueOutput;
+					output = this.createName(node.lhs) + " " + node.op + " " + valueOutput;
 				}
 			}
 		}
@@ -485,6 +481,14 @@ dopple.compiler.cpp =
 			
 	//	}
 		
+		return output;
+	},
+
+	outputSubscript: function(node)
+	{
+		var output = this.createName(node.value) + 
+			"[" + this.lookup[node.accessValue.exprType].call(this, node.accessValue) + "]";
+
 		return output;
 	},
 

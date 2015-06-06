@@ -88,8 +88,8 @@ struct Array
 	}
 	
 	Array(T buffer) {
-		this->buffer = buffer.buffer;
-		this->length = buffer.length;
+		this->buffer = &buffer;
+		this->length = 1;
 	}
 
 	~Array() 

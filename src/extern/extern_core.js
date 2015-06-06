@@ -48,6 +48,7 @@ dopple.extern("core", function(extern)
 
 	type = extern.addType("Class", extern.type.CLASS, extern.type.CLASS, extern.flagType.PTR);
 	type.ast = extern.ast.Class;
+	extern.addNativeClass("Object", type);
 	extern.addDefaultParam(type);
 
 	type = extern.addType("Args", extern.type.ARGS, extern.type.ARGS, extern.flagType.ARGS);
@@ -71,6 +72,7 @@ dopple.extern("core", function(extern)
 	externCls.addFunc("push", [ extern.typeParams.Template ], extern.types.Number);
 	externCls.addFunc("pop", null, extern.types.Template);
 	externCls.addFunc("shift", null, extern.types.Template);
+	//externCls.addSubscript();
 	externCls.addMutator("length", extern.typeParams.Real64).flags |= extern.flagType.SETTER | extern.flagType.GETTER;
 	externCls.finish();
 

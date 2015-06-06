@@ -39,6 +39,7 @@ meta.class("dopple.AST.Type",
 	alt: "",
 	type: dopple.Type.UNKNOWN,
 	nativeType: dopple.Type.UNKNOWN,
+	cls: null,
 	_ast: null,
 	flags: 0
 });
@@ -242,17 +243,10 @@ meta.class("dopple.AST.Binary", "dopple.AST.Base",
 /* Var */
 meta.class("dopple.AST.Var", "dopple.AST.Base", 
 {
-	init: function(name, parents, value) 
+	init: function(name, value) 
 	{
-		if(name) {
-			this.name = name;
-		}
-		if(parents) {
-			this.parents = parents;
-		}
-		if(value) {
-			this.value = value;
-		}
+		if(name) { this.name = name; }
+		if(value) { this.value = value; }
 	},
 
 	setTemplate: function(template) {
@@ -270,11 +264,11 @@ meta.class("dopple.AST.Var", "dopple.AST.Base",
 /* Assign */
 meta.class("dopple.AST.Assign", "dopple.AST.Base", 
 {
-	init: function(name, parents, value, op) {
-		this.name = name;
-		this.parents = parents;
-		this.value = value;
-		this.op = op;
+	init: function(lhs, rhs, op) 
+	{
+		if(lhs) { this.lhs = lhs; }
+		if(rhs) { this.value = rhs; }
+		if(op) { this.op = op; }
 	},
 
 	setTemplate: function(template) {
@@ -287,7 +281,7 @@ meta.class("dopple.AST.Assign", "dopple.AST.Base",
 
 	//
 	exprType: dopple.Type.ASSIGN,
-	op: 0
+	op: "="
 });
 
 /* Unary */
@@ -427,17 +421,16 @@ meta.class("dopple.AST.Mutator", "dopple.AST.Base",
 	exprType: dopple.Type.MUTATOR
 });
 
-/* Operator */
-meta.class("dopple.AST.Op", "dopple.AST.Base", 
+/* Subscript */
+meta.class("dopple.AST.Subscript", "dopple.AST.Base", 
 {
-	init: function(op, argCls) {
-		this.op = op;
-		this.argCls = argCls;
+	init: function(value, accessValue) 
+	{
+		if(value) { this.value = value; }
+		if(accessValue) { this.accessValue = accessValue; }
 	},
 
 	//
-	exprType: dopple.Type.OP,
-	op: "",
-	argCls: null
+	exprType: dopple.Type.SUBSCRIPT,
+	accessValue: null
 });
-

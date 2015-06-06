@@ -96,9 +96,20 @@ dopple.acorn =
 		return expr;
 	},
 
-	parseMemberExpr: function(node) {
-		this.parseName(node);
-		var expr = new dopple.AST.Reference(this.cache.name, this.cache.parents);
+	parseMemberExpr: function(node) 
+	{	
+		var expr;
+		if(node.computed) 
+		{
+			var accessValue = this.lookup[node.property.type].call(this, node.property);
+			var value = this.lookup[node.object.type].call(this, node.object);
+			expr = new dopple.AST.Subscript(value, accessValue);
+		}
+		else {
+			this.parseName(node);
+			expr = new dopple.AST.Reference(this.cache.name, this.cache.parents);
+		}
+		
 		return expr;
 	},
 
@@ -114,7 +125,7 @@ dopple.acorn =
 			value = this.lookup[node.init.type].call(this, node.init);
 		}
 
-		var varExpr = new dopple.AST.Var(node.id.name, null, value);
+		var varExpr = new dopple.AST.Var(node.id.name, value);
 		return varExpr;			
 	},
 
@@ -207,10 +218,10 @@ dopple.acorn =
 
 	parseAssignExpr: function(node)
 	{
-		this.parseName(node.left);
+		var lhs = this.lookup[node.left.type].call(this, node.left);
+		var rhs = this.lookup[node.right.type].call(this, node.right);
 
-		var assignExpr = new dopple.AST.Assign(this.cache.name, this.cache.parents, null, node.operator);
-		assignExpr.value = this.lookup[node.right.type].call(this, node.right);
+		var assignExpr = new dopple.AST.Assign(lhs, rhs, node.operator);
 		return assignExpr;
 	},
 
@@ -328,6 +339,7 @@ dopple.acorn =
 
 	//
 	lookup: {},
+	nameLookup: {},
 
 	scope: null,
 	type: 0,

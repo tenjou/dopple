@@ -30,6 +30,7 @@ dopple.Resolver.prototype =
 		this.lookup[this.type.RETURN] = this.resolveReturn;
 		this.lookup[this.type.UNARY] = this.resolveUnary;
 		this.lookup[this.type.MUTATOR] = this.resolveMutator;
+		this.lookup[this.type.SUBSCRIPT] = this.resolveSubscript;
 	},
 
 	do: function() 
@@ -100,22 +101,24 @@ dopple.Resolver.prototype =
 
 	resolveAssign: function(node)
 	{
-		var nodeValue = node.value;
-		nodeValue = this.resolveValue(nodeValue);
-		node.inheritFrom(nodeValue);
+		node.lhs = this.resolveValue(node.lhs);
+		var lhs = node.lhs.value;
 
-		var expr = this.getRefEx(node);
-		if(!this.checkTypes(expr, node)) 
+		node.value = this.resolveValue(node.value);
+		node.inheritFrom(node.value);
+		var rhs = node.value;
+
+		if(!this.checkTypes(lhs, rhs)) 
 		{
-			throw "Types do not match for \"" + expr.name + "\" assignment: expected [" 
-					+ this.createType(expr) + "] but got [" 
-					+ this.createType(node) + "]";				
+			throw "Types do not match for \"" + lhs.name + "\" assignment: expected [" 
+					+ this.createType(lhs) + "] but got [" 
+					+ this.createType(rhs) + "]";				
 		}
 
-		if(expr instanceof this.ast.Mutator) 
+		if(lhs instanceof this.ast.Mutator) 
 		{
-			if((expr.flags & this.flagType.SETTER) === 0) {
-				throw "Assign not possible - mutator \"" + node.name + "\" does not own a setter";
+			if((lhs.flags & this.flagType.SETTER) === 0) {
+				throw "Assign not possible - mutator \"" + rhs.name + "\" does not own a setter";
 			}
 			else {
 				node.flags |= this.flagType.SETTER;
@@ -357,6 +360,10 @@ dopple.Resolver.prototype =
 			var leftType = leftTypeNode.type;
 
 			if(leftTypeNode.flags & this.flagType.ARGS) {}
+			else if(leftTypeNode.type === this.type.TEMPLATE) {
+				console.log("template");
+				return true;
+			}
 			else if(leftTypeNode.type === this.type.NULL) 
 			{
 				if((leftNode.flags & this.flagType.PTR) === 0) {
@@ -395,7 +402,7 @@ dopple.Resolver.prototype =
 					if(leftType.flags & this.flagType.CLASS) {
 						return true;
 					}
-					
+
 					leftNode.setTemplate(rightTemplate);
 					return true;
 				}
@@ -581,6 +588,19 @@ dopple.Resolver.prototype =
 		}
 
 		this.scope.vars[node.name] = node;
+
+		return node;
+	},
+
+	resolveSubscript: function(node)
+	{
+		node.value = this.resolveValue(node.value);
+		node.inheritFrom(node.value);
+
+		node.accessValue = this.resolveValue(node.accessValue);
+		if(node.accessValue.type.type !== this.type.NUMBER) {
+			throw "Unsupported: Only numeric types are allowed";
+		}
 
 		return node;
 	},

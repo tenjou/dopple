@@ -29,7 +29,9 @@ dopple.Type = {
 	REAL64: 25,
 	PARAM: 26,
 	TYPE_ARGS: 27,
-	ARRAY_ARGS: 28
+	ARRAY_ARGS: 28,
+	SUBSCRIPT: 29,
+	SUBSCRIPT_HASH: 30
 };
 
 dopple.Flag = {
