@@ -1,5 +1,7 @@
 #pragma once
 
+#define _POSIX_C_SOURCE 200809
+
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdint.h>
@@ -12,9 +14,11 @@
 typedef int8_t int8;
 typedef int16_t int16;
 typedef int32_t int32;
+typedef int64_t int64;
 typedef uint8_t	uint8;
 typedef uint16_t uint16;
 typedef uint32_t uint32;
+typedef uint64_t uint64;
 typedef float real32;
 typedef double real64;
 
@@ -85,11 +89,13 @@ struct Array
 	Array(T *buffer, int32 length) {
 		this->buffer = buffer;
 		this->length = length;
+		this->capacity = length;
 	}
 	
 	Array(T buffer) {
 		this->buffer = &buffer;
 		this->length = 1;
+		this->capacity = 1;
 	}
 
 	~Array() 
@@ -134,7 +140,7 @@ struct Array
 		return this->length; 
 	}
 	
-	T operator [](int32 index)
+	T operator [](real64 index)
 	{
 		if(index >= this->length) {
 			return 0;
@@ -143,7 +149,7 @@ struct Array
 			return 0;
 		}
 		
-		return this->buffer[index];
+		return this->buffer[(int64)index];
 	}
 	
 	//

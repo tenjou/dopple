@@ -711,14 +711,15 @@ dopple.compiler.cpp =
 
 		var typeNode = node.type;
 		var name = typeNode.alt;
+		var templateType = node.getTemplate();
 
-		if(node.templateType) 
+		if(templateType) 
 		{
 			if((typeNode.flags & this.flagType.PTR) && (typeNode.flags & this.flagType.MEMORY_STACK) === 0) {
-				name += " *<" + this.createTemplateType(node.templateType) + ">";
+				name += " *<" + this.createTemplateType(templateType) + ">";
 			}
 			else {
-				name += "<" + this.createTemplateType(node.templateType) + ">";
+				name += "<" + this.createTemplateType(templateType) + ">";
 			}
 		} 
 		else 

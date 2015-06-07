@@ -1,6 +1,5 @@
 "use strict";
 
-var uid = 0;
 /* Type */
 meta.class("dopple.AST.Type", 
 {
@@ -48,7 +47,6 @@ meta.class("dopple.AST.Type",
 meta.class("dopple.AST.TemplateType", 
 {
 	init: function(type, templateType) {
-		this.uid = uid++;
 		this.type = type;
 		this.templateType = templateType;
 	},
@@ -68,11 +66,7 @@ meta.class("dopple.AST.Base",
 		if(node) {
 			this.type = node.type;
 			this.flags = node.type.flags;
-		}
-
-		if(node.templateType) {
-			this.flags |= flagTypes.TEMPLATE;
-		}		
+		}	
 
 		this.flags |= flagTypes.RESOLVED;
 	},
@@ -412,9 +406,7 @@ meta.class("dopple.AST.Mutator", "dopple.AST.Base",
 {
 	init: function(name) 
 	{
-		if(name) {
-			this.name = name;
-		}
+		if(name) { this.name = name; }
 	},
 
 	//

@@ -64,7 +64,8 @@ dopple.Resolver.prototype =
 	resolveVar: function(node) 
 	{
 		if(node.value) {
-			node.inheritFrom(this.resolveValue(node.value));
+			node.value = this.resolveValue(node.value);
+			node.inheritFrom(node.value);
 		}
 		else {
 			node.inheritFrom(this.typeVars.VoidPtr);
@@ -466,6 +467,9 @@ dopple.Resolver.prototype =
 		else if(node instanceof this.ast.Conditional) {
 			this.resolveConditional(node);
 		}
+		else if(node instanceof this.ast.Subscript) {
+			this.resolveSubscript(node);
+		}
 		else if(node instanceof this.ast.Function) 
 		{
 			if(!node.name) {
@@ -600,6 +604,15 @@ dopple.Resolver.prototype =
 		node.accessValue = this.resolveValue(node.accessValue);
 		if(node.accessValue.type.type !== this.type.NUMBER) {
 			throw "Unsupported: Only numeric types are allowed";
+		}
+
+		var template = node.value.getTemplate();
+
+		if(template.templateType) {
+			node.templateType = template.templateType;
+		}
+		else {
+			node.type = node.value.getTemplate().type;
 		}
 
 		return node;
