@@ -98,11 +98,9 @@ struct Array
 		this->capacity = 1;
 	}
 
+	// TODO: Memory management.
 	~Array() 
 	{
-		if(this->capacity > 0) {
-			delete [] this->buffer;
-		}
 	}
 	
 	int32 push(T *element) {
@@ -149,7 +147,7 @@ struct Array
 			return 0;
 		}
 		
-		return this->buffer[(int64)index];
+		return this->buffer[(int32)index];
 	}
 	
 	//

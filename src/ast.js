@@ -243,14 +243,6 @@ meta.class("dopple.AST.Var", "dopple.AST.Base",
 		if(value) { this.value = value; }
 	},
 
-	setTemplate: function(template) {
-		this.value.templateType = template;
-	},
-
-	getTemplate: function() { 
-		return this.value.templateType; 
-	},	
-
 	//
 	exprType: dopple.Type.VAR
 });
