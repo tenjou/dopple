@@ -63,9 +63,14 @@ dopple.Resolver.prototype =
 
 	resolveVar: function(node) 
 	{
-		if(node.value) {
+		if(node.value) 
+		{
 			node.value = this.resolveValue(node.value);
 			node.inheritFrom(node.value);
+
+			if(node.value.flags & this.flagType.TEMPLATE) {
+				node.templateType = node.value.getTemplate();
+			}
 		}
 		else {
 			node.inheritFrom(this.typeVars.VoidPtr);
@@ -323,26 +328,30 @@ dopple.Resolver.prototype =
 	resolveArray: function(node)
 	{
 		var elements = node.elements;
-		if(!node.elements) { return node; }
-
-		var num = elements.length;
-
-		var bufferNode = this.resolveValue(elements[0]);
-		var value = bufferNode;
-		var type = bufferNode.type;
-
-		for(var n = 1; n < num; n++) 
+		if(node.elements) 
 		{
-			bufferNode = elements[n];
-			bufferNode = this.resolveValue(bufferNode);
-			if(!this.checkTypes(value, bufferNode)) {
-				throw "Types do not match for array value: expected [" 
-						+ this.createType(value) + "] but got [" 
-						+ this.createType(bufferNode) + "]";					
-			}
-		}
+			var num = elements.length;
 
-		node.templateType = node.type.createTemplate(value);
+			var bufferNode = this.resolveValue(elements[0]);
+			var value = bufferNode;
+			var type = bufferNode.type;
+
+			for(var n = 1; n < num; n++) 
+			{
+				bufferNode = elements[n];
+				bufferNode = this.resolveValue(bufferNode);
+				if(!this.checkTypes(value, bufferNode)) {
+					throw "Types do not match for array value: expected [" 
+							+ this.createType(value) + "] but got [" 
+							+ this.createType(bufferNode) + "]";					
+				}
+			}
+
+			node.templateType = node.type.createTemplate(value);
+		}
+		else {
+			node.templateType = node.type.createTemplate(null);
+		}
 
 		return node;
 	},
@@ -599,20 +608,10 @@ dopple.Resolver.prototype =
 	resolveSubscript: function(node)
 	{
 		node.value = this.resolveValue(node.value);
-		node.inheritFrom(node.value);
 
 		node.accessValue = this.resolveValue(node.accessValue);
 		if(node.accessValue.type.type !== this.type.NUMBER) {
 			throw "Unsupported: Only numeric types are allowed";
-		}
-
-		var template = node.value.getTemplate();
-
-		if(template.templateType) {
-			node.templateType = template.templateType;
-		}
-		else {
-			node.type = node.value.getTemplate().type;
 		}
 
 		return node;

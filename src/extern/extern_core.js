@@ -61,6 +61,8 @@ dopple.extern("core", function(extern)
 
 	type = extern.addType("Template", extern.type.TEMPLATE, extern.type.TEMPLATE);
 	type.ast = extern.ast.Template;
+	extern.ast.Subscript.prototype.type = type;
+	extern.ast.Subscript.prototype.flags |= extern.flagType.TEMPLATE;
 
 	type = extern.addType("Array", extern.type.ARRAY, extern.type.ARRAY, 
 		extern.flagType.PTR | extern.flagType.MEMORY_STACK | extern.flagType.TEMPLATE);

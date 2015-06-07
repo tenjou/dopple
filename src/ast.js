@@ -422,6 +422,15 @@ meta.class("dopple.AST.Subscript", "dopple.AST.Base",
 		if(accessValue) { this.accessValue = accessValue; }
 	},
 
+
+	setTemplate: function(template) {
+		this.value.setTemplate(template);
+	},
+
+	getTemplate: function() { 
+		return this.value.getTemplate(); 
+	},		
+
 	//
 	exprType: dopple.Type.SUBSCRIPT,
 	accessValue: null

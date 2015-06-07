@@ -709,17 +709,32 @@ dopple.compiler.cpp =
 			return "void *";
 		}	
 
-		var typeNode = node.type;
-		var name = typeNode.alt;
-		var templateType = node.getTemplate();
+		var typeNode, template;
 
-		if(templateType) 
+		if(node.type.type === this.type.TEMPLATE) 
+		{
+			template = node.getTemplate();
+			typeNode = template.type;
+			if(!typeNode) {
+				return "void *";
+			}
+
+			template = template.templateType;
+		}
+		else {
+			typeNode = node.type;
+			template = node.getTemplate();
+		}
+
+		var name = typeNode.alt;
+
+		if(template) 
 		{
 			if((typeNode.flags & this.flagType.PTR) && (typeNode.flags & this.flagType.MEMORY_STACK) === 0) {
-				name += " *<" + this.createTemplateType(templateType) + ">";
+				name += " *<" + this.createTemplateType(template) + ">";
 			}
 			else {
-				name += "<" + this.createTemplateType(templateType) + ">";
+				name += "<" + this.createTemplateType(template) + ">";
 			}
 		} 
 		else 
@@ -768,6 +783,7 @@ dopple.compiler.cpp =
 				case this.type.BOOL: return "false";
 				case this.type.ARGS: return "\"\"";
 				case this.type.REAL32: return "0.0f";
+				case this.type.TEMPLATE: return this.createDefaultValue(node.templateType);
 			}
 		}
 
