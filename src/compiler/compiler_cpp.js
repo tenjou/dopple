@@ -33,13 +33,6 @@ dopple.compiler.cpp =
 		this.lookup[this.type.NULL] = this.parseNull;
 		this.lookup[this.type.ARRAY] = this.parseArray;
 		this.lookup[this.type.SUBSCRIPT] = this.outputSubscript;
-
-		this.argLookup = [];
-		this.argLookup[this.type.NUMBER] = this.outputArgNumber;
-		this.argLookup[this.type.STRING] = this.outputArgString;
-		this.argLookup[this.type.BOOL] = this.outputArgBool;
-		this.argLookup[this.type.REFERENCE] = this.outputArgRef;
-		this.argLookup[this.type.FUNCTION_CALL] = this.outputArgFuncCall;
 	},
 
 	compile: function()
@@ -849,9 +842,50 @@ dopple.compiler.cpp =
 
 		var arg = null;
 		var numArgs = args.length;
-		for(var n = 0; n < numArgs; n++) {
+		var argFunc, type;
+
+		for(var n = 0; n < numArgs; n++) 
+		{
 			arg = args[n];
-			this.argLookup[arg.exprType].call(this, arg, cache);
+
+			if(arg.exprType === this.type.STRING) {
+				cache.format += " " + arg.outputValue;
+			}
+			else if(arg.exprType === this.type.NUMBER) 
+			{
+				if(arg.outputValue === Math.floor(arg.outputValue)) {
+					cache.format += " " + arg.outputValue + ".0";
+				}
+				else {
+					cache.format += " " + arg.outputValue;
+				}				
+			}
+			else if(arg.exprType === this.type.BOOL) 
+			{
+				if(arg.outputValue === 1) {
+					cache.format += " true";
+				}
+				else {
+					cache.format += " false";
+				}
+			}
+			else 
+			{
+				cache.args += ", " + this.lookup[arg.exprType].call(this, arg, cache);
+			
+				type = arg.type.nativeType;
+				if(type === this.type.STRING) {
+					cache.args += " + dopple::STR_HEADER_SIZE";
+					this.genArgFormat(arg, cache);
+				}
+				else if(type === this.type.BOOL) {
+					cache.args += " ? \"true\" : \"false\"";
+					cache.format += " %s";	
+				}
+				else {
+					this.genArgFormat(arg, cache);
+				}
+			}
 		}
 
 		var output = "\"" + cache.format.slice(1) + "\\n\"" + cache.args;
@@ -859,66 +893,17 @@ dopple.compiler.cpp =
 		return output;
 	},
 
-	outputArgNumber: function(node, cache, index) 
+	genArgFormat: function(node, cache)
 	{
-		cache.format += " %.17g";
-
-		if(node.outputValue === Math.floor(node.outputValue)) {
-			cache.args += ", " + node.outputValue + ".0";
+		var type = node.type.type;
+		switch(type)
+		{
+			case this.type.NUMBER: { cache.format += " %.16g"; } break;
+			case this.type.STRING: { cache.format += " %s"; } break;
+			case this.type.TEMPLATE: { 
+				this.genArgFormat(node.getTemplate(), cache);
+			} break;
 		}
-		else {
-			cache.args += ", " + node.outputValue;
-		}
-	},
-
-	outputArgString: function(node, cache) {
-		cache.format += " " + node.outputValue;
-	},
-
-	outputArgBool: function(node, cache) 
-	{
-		cache.format += " %s";		
-
-		if(node.outputValue === 1) {
-			cache.args += ", \"true\"";
-		}
-		else {
-			cache.args += ", \"false\"";
-		}
-	},
-
-	outputArgRef: function(node, cache) 
-	{
-		var type = node.type.nativeType;
-		if(type === this.type.REAL64 || type === this.type.REAL32) {
-			cache.args += ", " + this.parseRef(node);
-			cache.format += " %.16g";
-		}
-		else if(type === this.type.STRING) {
-			cache.args += ", " + this.parseRef(node) + " + dopple::STR_HEADER_SIZE";
-			cache.format += " %s";			
-		}
-		else if(type === this.type.BOOL) {
-			cache.args += ", " + this.parseRef(node) + " ? \"true\" : \"false\"";
-			cache.format += " %s";
-		}		
-	},
-
-	outputArgFuncCall: function(node, cache) 
-	{
-		var type = node.type.nativeType;
-		if(type === this.type.REAL64 || type === this.type.REAL32) {
-			cache.args += ", " + this.parseFuncCall(node);
-			cache.format += " %.16g";
-		}
-		else if(type === this.type.STRING) {
-			cache.args += ", " + this.parseFuncCall(node) + " + dopple::STR_HEADER_SIZE";
-			cache.format += " %s";			
-		}
-		else if(type === this.type.BOOL) {
-			cache.args += ", " + this.parseFuncCall(node) + " ? \"true\" : \"false\"";
-			cache.format += " %s";
-		}	
 	},
 
 	createTypeArgs: function(args, index)
@@ -967,7 +952,6 @@ dopple.compiler.cpp =
 	global: null,
 
 	lookup: null,
-	argLookup: null,
 	tabs: "",
 
 	ast: null,
