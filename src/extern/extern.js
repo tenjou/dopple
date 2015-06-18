@@ -194,37 +194,15 @@ dopple.ExternClass.prototype =
 		this.cls.scope.body.push(varExpr);
 	},
 
-	addFunc: function(name, params, returnType, returnAsType) 
+	addFunc: function(name, params, returnCls) 
 	{
-		var scope = new dopple.Scope(dopple.scope);
+		var scope = new dopple.Scope(this.cls.scope);
 
 		var funcExpr = new dopple.AST.Function(name, null, scope, params);
 		this.cls.scope.vars[name] = funcExpr;
 
-		if(returnType) 
-		{
-			var valueExpr = new returnType.ast();
-			var retExpr = new dopple.AST.Return(valueExpr);
-
-			// if(returnAsType) {
-			// 	retExpr = new dopple.AST.Return();
-			// 	retExpr.type = returnType;
-			// }
-			// else 
-			// {
-			// 	var newExpr = null;
-			// 	if(returnCls === dopple.nativeVars.Template) {
-			// 		newExpr = new dopple.AST.New(null, null, null);
-			// 		newExpr.cls = returnCls;
-			// 		newExpr.flags |= dopple.Flag.KNOWN;
-			// 	}
-			// 	else {
-			// 		newExpr = new dopple.AST.New(returnCls.name, null, null);
-			// 	}
-
-			// 	retExpr = new dopple.AST.Return(newExpr);
-			// }
-			
+		if(returnCls) {
+			var retExpr = new dopple.AST.Return(new dopple.AST.New(returnCls.name, null, null));
 			scope.body.push(retExpr);			
 		}
 

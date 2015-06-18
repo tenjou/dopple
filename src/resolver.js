@@ -665,7 +665,13 @@ dopple.Resolver.prototype =
 				}
 			}
 
-			scope = expr.scope;
+			if(expr.exprType === this.type.CLASS) {
+				scope = expr.scope;
+			}
+			else {
+				scope = expr.type.cls.scope;
+			}
+			
 			node.parent = expr;
 
 			return scope.vars[name];

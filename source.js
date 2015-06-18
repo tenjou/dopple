@@ -1,167 +1,251 @@
-// var image = new Image();
+var x = [ 10 ];
+var y = x.push("sdsd");
 
-// image.onload = function() {
-// 	console.log(image.src);
-// };
+// var x = 10;
+// var y = 4;
+// x = y;
+// x = "sdsd";
 
-// image.src = "assets/cubetexture.png";
+// var x = [ "sdsds" ];
+// console.log(x[0], false);
 
-//var x = new Float32Array(3);
+// var index = 0;
+// var x = [];
+// var y = x[0];
+// x = [ 10 ];
+// var z = [[ "sdsd" ]];
+// var w = z[index];
+// var g = w[0];
 
-var canvas = null;
-var gl = null;
+// var x = new Array();
+// var y = x[0];
+// x = [ 10 ];
 
-function init() 
-{
-	canvas = document.getElementById("canvas");
-	canvas.width = 800;
-	canvas.height = 600;
-	gl = canvas.getContext("experimental-webgl");
+// var x = 20;
+// // var array = [ [ 10, x ], [ 10 ] ];
 
-	console.log(canvas.width, canvas.height);	
-}
+// // var array = new Array(new Array(40, 30));
 
-function update() 
-{
-	gl.clearColor(0.9, 0.9, 0.9, 1.0);
-	gl.clear(gl.COLOR_BUFFER_BIT);
+// // array = new Array(null, null)
+// // array = new Array(10);
+// // var array2 = [[ 10, 3 ]];
+// // var array = new Array([ 10, 3 ]);
+// //var array = new Array();
+// var array = { x: {} };
+// // //array.push("sdsds");
+// // // var x = array.pop();
+// var y = array[1];
 
-	window.requestAnimationFrame(update);
-}
+// // var array = [];
+// // array = new Array();
+// // array = new Array();
+// // array = [[ 20 ]];
 
-init();
-update();
+// //var canvas = null;
+// // var gl = null;
+// // var image = null;
+// // var aspect = 0;
+// // var foobar = 0.5;
+// // var program;
 
-//gl.viewport(0, 0, canvas.width, canvas.height);
+// //var array = new Float32Array([ 1 ]);
 
-// var vertexShaderSrc = 
-// 	"attribute vec2 position; \
-// 	void main() { \
-// 		gl_Position = vec4(position, 0, 1); \
-// 	}";
+// 	// var vertices = new Float32Array();
 
-// var fragmentShaderSrc = 
-// 	"precision mediump float; uniform vec4 color; \
-// 	void main() { \
-// 	  gl_FragColor = color; \
-// 	}";
+// // function init() 
+// // {
+// // 	canvas = document.getElementById("canvas");
+// // 	if(!canvas) {
+// // 		console.error("no canvas");
+// // 		return false;
+// // 	}
+// // 	canvas.width = 800;
+// // 	canvas.height = 600;
 
-// var vertexShader = gl.createShader(gl.VERTEX_SHADER);
-// gl.shaderSource(vertexShader, vertexShaderSrc);
-// gl.compileShader(vertexShader);
+// // 	gl = canvas.getContext("experimental-webgl");
+// // 	if(!gl) {
+// // 		console.error("no webgl");
+// // 		return false;
+// // 	}
+// // 	gl.viewport(0, 0, canvas.width, canvas.height);
 
-// var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
-// gl.shaderSource(fragmentShader, fragmentShaderSrc);
-// gl.compileShader(fragmentShader);
+// // 	aspect = canvas.width / canvas.height;
 
+// // 	var vertexShaderSrc = 
+// // 		"attribute vec2 position; \
+// // 		void main() { \
+// // 			gl_Position = vec4(position, 0, 1); \
+// // 		}";
 
-//
-//console.log(image.src);
+// // 	var fragmentShaderSrc = 
+// // 		"precision mediump float; uniform vec4 color; \
+// // 		void main() { \
+// // 		  gl_FragColor = color; \
+// // 		}";	
 
-// var canvas = null;
-// var gl = null;
-// var foobar = 0.5;
-// var aspect;
-// var program;
-// var itemSize = 2;
-// var adding = true;
+// // 	var vertexShader = gl.createShader(gl.VERTEX_SHADER);
+// // 	gl.shaderSource(vertexShader, vertexShaderSrc);
+// // 	gl.compileShader(vertexShader);
 
-// function init()
-// {
-// 	canvas = document.getElementById("canvas");
-// 	if(!canvas) {
-// 		console.error("no canvas");
-// 		return false;
-// 	}	
+// // 	var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+// // 	gl.shaderSource(fragmentShader, fragmentShaderSrc);
+// // 	gl.compileShader(fragmentShader);	
 
-// 	gl = canvas.getContext("experimental-webgl");
-// 	if(!gl) {
-// 		console.error("no webgl");
-// 		return false;
-// 	}	
+// // 	program = gl.createProgram();
+// // 	gl.attachShader(program, vertexShader);
+// // 	gl.attachShader(program, fragmentShader);
+// // 	gl.linkProgram(program);
+// // 	gl.useProgram(program);	
 
-// 	aspect = canvas.width / canvas.height;
-// 	gl.viewport(0, 0, canvas.width, canvas.height);
+// // 	if(!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
+// // 		console.error(gl.getShaderInfoLog(vertexShader));
+// // 		return false;
+// // 	}
 
-	// var vertexShaderSrc = 
-	// 	"attribute vec2 position; \
-	// 	void main() { \
-	// 		gl_Position = vec4(position, 0, 1); \
-	// 	}";
+// // 	if(!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
+// // 		console.error(gl.getShaderInfoLog(fragmentShader));
+// // 		return false;
+// // 	}
 
-	// var fragmentShaderSrc = 
-	// 	"precision mediump float; uniform vec4 color; \
-	// 	void main() { \
-	// 	  gl_FragColor = color; \
-	// 	}";
+// // 	if(!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+// // 		console.error(gl.getProgramInfoLog(program));
+// // 		return false;
+// // 	}		
 
-// 	var vertexShader = gl.createShader(gl.VERTEX_SHADER);
-// 	gl.shaderSource(vertexShader, vertexShaderSrc);
-// 	gl.compileShader(vertexShader);
+// // 	return true;	
+// // }
 
-	// var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
-	// gl.shaderSource(fragmentShader, fragmentShaderSrc);
-	// gl.compileShader(fragmentShader);
+// // function loadImages()
+// // {
+// // 	image = new Image();
+// // 	image.onload = function() {
+// // 		console.log(image.src);
+// // 	};
+// // 	image.src = "assets/cubetexture.png";	
+// // }
 
-// 	program = gl.createProgram();
-// 	gl.attachShader(program, vertexShader);
-// 	gl.attachShader(program, fragmentShader);
-// 	gl.linkProgram(program);
-// 	gl.useProgram(program);
+// // function update() 
+// // {
+// // 	var vertices = new Float32Array([
+// // 			-foobar, foobar * aspect,
+// // 			foobar, foobar * aspect,
+// // 			foobar, -foobar * aspect
+// // 		]);
 
-// 	if(!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
-// 		console.error(gl.getShaderInfoLog(vertexShader));
-// 		return false;
-// 	}
+// // 	gl.clearColor(0.9, 0.9, 0.9, 1.0);
+// // 	gl.clear(gl.COLOR_BUFFER_BIT);
 
-// 	if(!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
-// 		console.error(gl.getShaderInfoLog(fragmentShader));
-// 		return false;
-// 	}
+// // 	window.requestAnimationFrame(update);
+// // }
 
-// 	if(!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-// 		console.error(gl.getProgramInfoLog(program));
-// 		return false;
-// 	}	
+// // if(init()) {
+// // 	update();
+// // }
 
-// 	return true;
-// }
+// // var canvas = null;
+// // var gl = null;
+// // var foobar = 0.5;
+// // var aspect;
+// // var program;
+// // var itemSize = 2;
+// // var adding = true;
 
-// function update() 
-// {
-// 	var vertices = new Float32Array([
-// 			-foobar, foobar * aspect,
-// 			foobar, foobar * aspect,
-// 			foobar, -foobar * aspect
-// 		]);
+// // function init()
+// // {
+// // 	canvas = document.getElementById("canvas");
+// // 	if(!canvas) {
+// // 		console.error("no canvas");
+// // 		return false;
+// // 	}	
 
-// 	gl.clearColor(0.9, 0.9, 0.9, 1);
-// 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
+// // 	gl = canvas.getContext("experimental-webgl");
+// // 	if(!gl) {
+// // 		console.error("no webgl");
+// // 		return false;
+// // 	}	
 
-// 	gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
-// 	gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+// // 	aspect = canvas.width / canvas.height;
+// // 	gl.viewport(0, 0, canvas.width, canvas.height);
 
-// 	var uniformColor = gl.getUniformLocation(program, "color");
-// 	gl.uniform4fv(uniformColor, new Float32Array([ foobar, 0, 0, 1 ]))
+// // 	var vertexShaderSrc = 
+// // 		"attribute vec2 position; \
+// // 		void main() { \
+// // 			gl_Position = vec4(position, 0, 1); \
+// // 		}";
 
-// 	var attribPos = gl.getAttribLocation(program, "position");
-// 	gl.enableVertexAttribArray(attribPos);
-// 	gl.vertexAttribPointer(attribPos, itemSize, gl.FLOAT, false, 0, 0);
+// // 	var fragmentShaderSrc = 
+// // 		"precision mediump float; uniform vec4 color; \
+// // 		void main() { \
+// // 		  gl_FragColor = color; \
+// // 		}";
 
-// 	gl.drawArrays(gl.TRIANGLES, 0, 3);
+// // 	var vertexShader = gl.createShader(gl.VERTEX_SHADER);
+// // 	gl.shaderSource(vertexShader, vertexShaderSrc);
+// // 	gl.compileShader(vertexShader);
 
-// 	foobar += (adding ? 1 : -1) * foobar / 100;
+// // 	var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+// // 	gl.shaderSource(fragmentShader, fragmentShaderSrc);
+// // 	gl.compileShader(fragmentShader);
 
-// 	if(foobar > 0.5) {
-// 		adding = false;
-// 	}
-// 	else if(foobar < 0.2) {
-// 		adding = true;
-// 	}
+// // 	program = gl.createProgram();
+// // 	gl.attachShader(program, vertexShader);
+// // 	gl.attachShader(program, fragmentShader);
+// // 	gl.linkProgram(program);
+// // 	gl.useProgram(program);
 
-// 	window.requestAnimationFrame(update);
-// }
+// // 	if(!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
+// // 		console.error(gl.getShaderInfoLog(vertexShader));
+// // 		return false;
+// // 	}
 
-// if(init()) {
-// 	update();
-// }
+// // 	if(!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
+// // 		console.error(gl.getShaderInfoLog(fragmentShader));
+// // 		return false;
+// // 	}
+
+// // 	if(!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+// // 		console.error(gl.getProgramInfoLog(program));
+// // 		return false;
+// // 	}	
+
+// // 	return true;
+// // }
+
+// // function update() 
+// // {
+// // 	var vertices = new Float32Array([
+// // 			-foobar, foobar * aspect,
+// // 			foobar, foobar * aspect,
+// // 			foobar, -foobar * aspect
+// // 		]);
+
+// // 	gl.clearColor(0.9, 0.9, 0.9, 1);
+// // 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
+
+// // 	gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+// // 	gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+// // 	var uniformColor = gl.getUniformLocation(program, "color");
+// // 	gl.uniform4fv(uniformColor, new Float32Array([ foobar, 0, 0, 1 ]))
+
+// // 	var attribPos = gl.getAttribLocation(program, "position");
+// // 	gl.enableVertexAttribArray(attribPos);
+// // 	gl.vertexAttribPointer(attribPos, itemSize, gl.FLOAT, false, 0, 0);
+
+// // 	gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+// // 	foobar += (adding ? 1 : -1) * foobar / 100;
+
+// // 	if(foobar > 0.5) {
+// // 		adding = false;
+// // 	}
+// // 	else if(foobar < 0.2) {
+// // 		adding = true;
+// // 	}
+
+// // 	window.requestAnimationFrame(update);
+// // }
+
+// // if(init()) {
+// // 	update();
+// // }
