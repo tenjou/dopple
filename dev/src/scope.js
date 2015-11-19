@@ -4,7 +4,6 @@ dopple.Scope = function(parent)
 {
 	this.parent = parent || null;
 	this.body = [];
-	this.vars = {};
 };
 
 dopple.Scope.prototype = 
@@ -27,5 +26,8 @@ dopple.Scope.prototype =
 
 	//
 	virtual: false,
-	funcs: []
+	funcs: null,
+	vars: null,
+	funcsBuffer: null,
+	varsBuffer: null
 };

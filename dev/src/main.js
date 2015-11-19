@@ -20,6 +20,6 @@ function parse(source)
 	console.log(ast);
 	console.log(scope);
 
-	var jsonCompiler = new dopple.Compiler.JSON();
-	console.log(jsonCompiler.parse(scope));
+	dopple.resolver.resolve(scope);
+	console.log(dopple.compiler.json.compile(scope));
 };

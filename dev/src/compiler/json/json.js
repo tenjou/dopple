@@ -1,20 +1,29 @@
 "use strict";
 
-dopple.Compiler.JSON = function() 
+dopple.compiler.json =
 {
-	this.scope = null;
-	this.globalScope = null;
-};
-
-dopple.Compiler.JSON.prototype =
-{
-	parse: function(scope)
+	compile: function(scope)
 	{
 		this.scope = scope;
 		this.globalScope = scope;
+		this.result = {};
 
-		var result = {};
+		this.parseBody(scope.body);
 
-		return result;
-	}
+		return this.result;
+	},
+
+	parseBody: function(nodes)
+	{
+		var num = nodes.length;
+		for(var n = 0; n < num; n++)
+		{
+			
+		}
+	},
+
+	//
+	scope: null,
+	globalScope: null,
+	result: null	
 };

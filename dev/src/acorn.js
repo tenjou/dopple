@@ -344,14 +344,11 @@ dopple.acorn =
 		var name = "";
 		if(node.id) {
 			name = node.id.name;
-			this.scope.vars[name] = func;
 		}
 		
 		var func = new dopple.AST.Function(name, null, scope, this.parseParams(node.params));
 		func.type = dopple.Type.FUNCTION_DEF;
 		this.scope = this.scope.parent;
-		this.scope.vars[name] = func;
-		this.scope.funcs.push(func);
 
 		return func;
 	},
@@ -466,7 +463,6 @@ dopple.acorn =
 			node = paramNodes[n];
 			param = new dopple.AST.Reference(node.name, null);
 			params[n] = param;
-			this.scope.vars[param.name] = param;
 		}
 
 		return params;
