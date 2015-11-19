@@ -21,5 +21,6 @@ function parse(source)
 	console.log(scope);
 
 	dopple.resolver.resolve(scope);
-	console.log(dopple.compiler.json.compile(scope));
+	var output = dopple.compiler.json.compile(scope);
+	console.log(JSON.stringify(output));
 };

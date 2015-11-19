@@ -74,7 +74,7 @@ dopple.acorn =
 				return new dopple.AST.Bool(1);
 			}
 			else if(node.raw === "null") {
-				return this.nullExprCached;
+				return new dopple.AST.Null();
 			}
 
 			return new dopple.AST.Number(node.value);
@@ -137,12 +137,20 @@ dopple.acorn =
 		return unaryExpr;
 	},	
 
-	parseVar: function(node) {
-		this.parseBody(node.declarations);
-		return null;
-	},
+	parseVar: function(node) 
+	{
+		var varExpr;
+		var decls = node.declarations;
+		var num = decls.length;
+		for(var n = 0; n < num; n++) {
+			varExpr = this.parseVarDecl(decls[n]);
+			this.scope.body.push(varExpr);
+		}
 
-	parseVarDeclr: function(node) 
+		return null;
+	},	
+
+	parseVarDecl: function(node)
 	{
 		var value = null;
 		if(node.init) {
@@ -150,8 +158,8 @@ dopple.acorn =
 		}
 
 		var varExpr = new dopple.AST.Var(node.id.name, value);
-		return varExpr;			
-	},	
+		return varExpr;
+	},
 
 	parseIf: function(node)
 	{
@@ -347,7 +355,7 @@ dopple.acorn =
 		}
 		
 		var func = new dopple.AST.Function(name, null, scope, this.parseParams(node.params));
-		func.type = dopple.Type.FUNCTION_DEF;
+		func.type = dopple.ExprType.FUNCTION_DEF;
 		this.scope = this.scope.parent;
 
 		return func;
@@ -367,24 +375,43 @@ dopple.acorn =
 
 	parseObjExpr: function(node)
 	{
-		this.scope = new dopple.Scope(this.scope);
+		var objScope = new dopple.Scope(this.scope);
 
+		var propExpr;
 		var props = node.properties;
 		var num = props.length;
 		for(var n = 0; n < num; n++) {
-			this.parseObjProp(props[n]);
+			propExpr = this.parseObjProp(props[n]);
+			objScope.body.push(propExpr);
 		}
 
-		this.scope = this.scope.parent;
+		var objExpr = new dopple.AST.Object(objScope);
+		return objExpr;
 	},
 
 	parseObjProp: function(node) 
 	{
-		var keyNode = this.lookup[node.key.type].call(this, node.key);
-		var valueNode = this.lookup[node.value.type].call(this, node.value);
+		var keyExpr = this.lookup[node.key.type].call(this, node.key);
+		var valueExpr = this.lookup[node.value.type].call(this, node.value);
 
-		var objNode = new dopple.AST.Object(keyNode, valueNode);
-		return objNode;
+		var expr;
+		if(keyExpr.exprType === dopple.ExprType.REFERENCE) 
+		{
+			if(node.kind === "set") {
+				expr = new dopple.AST.Setter(keyExpr.name, valueExpr);
+			}
+			else if(node.kind === "get") {
+				expr = new dopple.AST.Getter(keyExpr.name, valueExpr);
+			}
+			else {			
+				expr = new dopple.AST.Var(keyExpr.name, valueExpr);
+			}
+		}
+		else {
+			expr = new dopple.AST.ObjectProperty(keyExpr, valueExpr);
+		}
+		
+		return expr;
 	},
 
 	parseThisExpr: function(node)

@@ -9,7 +9,8 @@ meta.class("dopple.AST.Number",
 	},
 
 	//
-	exprType: dopple.Type.NUMBER,
+	type: dopple.Type.NUMBER,
+	exprType: dopple.ExprType.NUMBER,
 	outputValue: 0,
 });
 
@@ -23,7 +24,8 @@ meta.class("dopple.AST.Bool",
 	},
 
 	//
-	exprType: dopple.Type.BOOL,
+	type: dopple.Type.BOOL,
+	exprType: dopple.ExprType.BOOL,
 	outputValue: false
 });
 
@@ -38,7 +40,8 @@ meta.class("dopple.AST.String",
 	},
 
 	//
-	exprType: dopple.Type.STRING,
+	type: dopple.Type.STRING,
+	exprType: dopple.ExprType.STRING,
 	outputValue: ""
 });
 
@@ -52,7 +55,7 @@ meta.class("dopple.AST.Binary",
 	},
 
 	//
-	exprType: dopple.Type.BINARY,
+	exprType: dopple.ExprType.BINARY,
 	op: 0
 });
 
@@ -67,7 +70,7 @@ meta.class("dopple.AST.Assign",
 	},
 
 	//
-	exprType: dopple.Type.ASSIGN,
+	exprType: dopple.ExprType.ASSIGN,
 	op: "="
 });
 
@@ -81,7 +84,7 @@ meta.class("dopple.AST.Update",
 	},
 
 	//
-	exprType: dopple.Type.UPDATE,
+	exprType: dopple.ExprType.UPDATE,
 	value: null,
 	op: ""
 });
@@ -96,7 +99,7 @@ meta.class("dopple.AST.Subscript",
 	},	
 
 	//
-	exprType: dopple.Type.SUBSCRIPT,
+	exprType: dopple.ExprType.SUBSCRIPT,
 	value: null,
 	accessValue: null
 });
@@ -111,7 +114,7 @@ meta.class("dopple.AST.Logical",
 	},
 
 	//
-	exprType: dopple.Type.LOGICAL,
+	exprType: dopple.ExprType.LOGICAL,
 	op: 0
 });
 
@@ -124,7 +127,7 @@ meta.class("dopple.AST.Unary",
 	},
 
 	//
-	exprType: dopple.Type.UNARY,
+	exprType: dopple.ExprType.UNARY,
 	op: 0
 });
 
@@ -138,7 +141,8 @@ meta.class("dopple.AST.Var",
 	},
 
 	//
-	exprType: dopple.Type.VAR
+	type: dopple.Type.UNKNOWN,
+	exprType: dopple.ExprType.VAR
 });
 
 /* reference */
@@ -151,9 +155,9 @@ meta.class("dopple.AST.Reference",
 	},	
 
 	//
+	exprType: dopple.ExprType.REFERENCE,
 	name: null,
-	parents: null,
-	exprType: dopple.Type.REFERENCE
+	parents: null,	
 });
 
 /* if */
@@ -165,7 +169,7 @@ meta.class("dopple.AST.If",
 	},
 
 	//
-	exprType: dopple.Type.IF,
+	exprType: dopple.ExprType.IF,
 	branchIf: null,
 	branchElseIf: null,
 	branchElse: null
@@ -180,7 +184,7 @@ meta.class("dopple.AST.Switch",
 	},
 
 	//
-	exprType: dopple.Type.SWITCH,
+	exprType: dopple.ExprType.SWITCH,
 	discriminant: null,
 	cases: null
 });
@@ -196,7 +200,7 @@ meta.class("dopple.AST.SwitchCase",
 	},
 
 	//
-	exprType: dopple.Type.SWITCH_CASE,
+	exprType: dopple.ExprType.SWITCH_CASE,
 	test: null,
 	scope: null
 });
@@ -212,7 +216,7 @@ meta.class("dopple.AST.For",
 	},
 
 	//
-	exprType: dopple.Type.FOR,
+	exprType: dopple.ExprType.FOR,
 	initScope: null,
 	updateScope: null,
 	bodyScope: null
@@ -229,7 +233,7 @@ meta.class("dopple.AST.ForIn",
 	},
 
 	//
-	exprType: dopple.Type.FOR_IN,
+	exprType: dopple.ExprType.FOR_IN,
 	initScope: null,
 	updateScope: null,
 	bodyScope: null
@@ -245,7 +249,7 @@ meta.class("dopple.AST.While",
 	},
 
 	//
-	exprType: dopple.Type.WHILE,
+	exprType: dopple.ExprType.WHILE,
 	test: null,
 	bodyScope: null
 });
@@ -260,7 +264,7 @@ meta.class("dopple.AST.DoWhile",
 	},
 
 	//
-	exprType: dopple.Type.DO_WHILE,
+	exprType: dopple.ExprType.DO_WHILE,
 	test: null,
 	bodyScope: null
 });
@@ -269,21 +273,21 @@ meta.class("dopple.AST.DoWhile",
 meta.class("dopple.AST.Continue", 
 {
 	//
-	exprType: dopple.Type.CONTINUE	
+	exprType: dopple.ExprType.CONTINUE	
 });
 
 /* breka */
 meta.class("dopple.AST.Break", 
 {
 	//
-	exprType: dopple.Type.BREAK	
+	exprType: dopple.ExprType.BREAK	
 });
 
 /* conditional */
 meta.class("dopple.AST.Conditional",
 {
 	//
-	exprType: dopple.Type.CONDITIONAL,
+	exprType: dopple.ExprType.CONDITIONAL,
 	value: null,
 	valueFail: null,
 	test: null
@@ -297,7 +301,7 @@ meta.class("dopple.AST.Block",
 	},
 
 	//
-	exprType: dopple.Type.BLOCK
+	exprType: dopple.ExprType.BLOCK
 });
 
 /* return */
@@ -311,7 +315,7 @@ meta.class("dopple.AST.Return",
 	},
 
 	//
-	exprType: dopple.Type.RETURN
+	exprType: dopple.ExprType.RETURN
 });
 
 /* function */
@@ -346,7 +350,8 @@ meta.class("dopple.AST.Function",
 	},
 
 	//
-	exprType: dopple.Type.FUNCTION,
+	type: dopple.Type.FUNCTION,
+	exprType: dopple.ExprType.FUNCTION,
 	argsIndex: -1,
 	minParams: -1
 });
@@ -361,21 +366,51 @@ meta.class("dopple.AST.FunctionCall",
 	},
 
 	//
-	exprType: dopple.Type.FUNCTION_CALL,
+	exprType: dopple.ExprType.FUNCTION_CALL,
+	args: null
+});
+
+/* setter */
+meta.class("dopple.AST.Setter",
+{
+	//
+	exprType: dopple.ExprType.SETTER,
+	args: null
+});
+
+/* getter */
+meta.class("dopple.AST.Getter",
+{
+	//
+	exprType: dopple.ExprType.GETTER,
 	args: null
 });
 
 /* object */
 meta.class("dopple.AST.Object",
 {
-	init: function(key, value) 
-	{
-		if(key) { this.key = key; }
-		if(value) { this.outputValue = value; }
+	init: function(scope) {
+		this.scope = scope;
 	},
 
 	//
-	exprType: dopple.Type.OBJECT,
+	type: dopple.Type.CLASS,
+	exprType: dopple.ExprType.OBJECT,
+	scope: null
+});
+
+/* object property */
+meta.class("dopple.AST.ObjectProperty",
+{
+	init: function(key, value) 
+	{
+		this.key = key;
+
+		if(value) { this.value = value; }
+	},
+
+	//
+	exprType: dopple.ExprType.OBJECT_PROPERTY,
 	key: null,
 	value: null
 });
@@ -383,7 +418,7 @@ meta.class("dopple.AST.Object",
 /* this */
 meta.class("dopple.AST.This",
 {
-	exprType: dopple.Type.THIS,
+	exprType: dopple.ExprType.THIS,
 });
 
 /* new */
@@ -396,9 +431,17 @@ meta.class("dopple.AST.New",
 	},	
 
 	//
-	exprType: dopple.Type.NEW,
+	exprType: dopple.ExprType.NEW,
 	func: null, 
 	args: null
+});
+
+/* this */
+meta.class("dopple.AST.Null",
+{
+	//
+	type: dopple.Type.OBJECT,
+	exprType: dopple.ExprType.NULL,
 });
 
 /* array */
@@ -410,6 +453,7 @@ meta.class("dopple.AST.Array",
 	},
 
 	//
-	exprType: dopple.Type.ARRAY,
+	type: dopple.Type.ARRAY,
+	exprType: dopple.ExprType.ARRAY,
 	elements: null
 });

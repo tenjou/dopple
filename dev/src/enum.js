@@ -1,7 +1,7 @@
 "use strict";
 
-dopple.Type = {
-	VOID: 0,
+dopple.ExprType = {
+	UNKNOWN: 0,
 	NUMBER: 1,
 	BOOL: 2,
 	STRING: 3,
@@ -28,10 +28,24 @@ dopple.Type = {
 	FUNCTION: 24,
 	FUNCTION_DEF: 25,
 	FUNCTION_CALL: 26,
-	OBJECT: 27,
-	THIS: 28,
-	NEW: 29,
-	ARRAY: 30
+	SETTER: 27,
+	GETTER: 28,
+	OBJECT: 29,
+	OBJECT_PROPERTY: 30,
+	THIS: 31,
+	NEW: 32,
+	NULL: 33,
+	ARRAY: 34
+};
+
+dopple.Type = {
+	UNKNOWN: 0,
+	NUMBER: 1,
+	BOOL: 2,
+	STRING: 3,
+	CLASS: 4,
+	OBJECT: 5,
+	ARRAY: 6
 };
 
 dopple.Flag = {
