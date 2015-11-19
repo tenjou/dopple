@@ -42,7 +42,7 @@ dopple.extern("core", function(extern)
 	type = extern.addType("Function", extern.type.FUNCTION, extern.type.FUNCTION);
 	extern.addNativeClass("Function", type).finish();
 
-	type = extern.addType("Null", extern.type.NULL, extern.type.NULL, extern.flagType.PTR);
+	type = extern.addType("Null", extern.type.NULL, extern.type.NULL, extern.flagType.PTR | extern.flagType.NULL | extern.flagType.KNOWN);
 	type.ast = extern.ast.Null;
 	type.alt = "void";
 

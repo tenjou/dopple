@@ -64,7 +64,7 @@ dopple.Extern.prototype =
 			type = this.typeParams.Class;
 		}
 
-		var scope = new dopple.Scope();
+		var scope = new dopple.Scope(this.scope);
 		var clsExpr = new this.ast.Class(name, scope);
 		clsExpr.type = type;
 		this.vars[name] = clsExpr;	
@@ -106,7 +106,7 @@ dopple.Extern.prototype =
 	addNew: function(name, clsName) 
 	{
 		var newExpr = new dopple.AST.New(clsName, null, null);
-		var varExpr = new dopple.AST.Var(name, null, newExpr);
+		var varExpr = new dopple.AST.Var(name, newExpr);
 		varExpr.flags |= dopple.Flag.HIDDEN | dopple.Flag.EXTERN;
 		this.scope.vars[name] = varExpr;
 
@@ -119,7 +119,7 @@ dopple.Extern.prototype =
 		var refName = parents.pop();
 
 		var refExpr = new dopple.AST.Reference(refName, parents);
-		var varExpr = new dopple.AST.Var(name, null, refExpr);
+		var varExpr = new dopple.AST.Var(name, refExpr);
 		varExpr.flags |= dopple.Flag.HIDDEN | dopple.Flag.EXTERN;
 		this.scope.body.push(varExpr);
 	},
@@ -178,7 +178,7 @@ dopple.ExternClass.prototype =
 	addNew: function(name, clsName) 
 	{
 		var newExpr = new dopple.AST.New(clsName, null, null);
-		var varExpr = new dopple.AST.Var(name, null, newExpr);
+		var varExpr = new dopple.AST.Var(name, newExpr);
 		varExpr.flags |= dopple.Flag.Extern;
 		this.cls.scope.body.push(varExpr);		
 	},

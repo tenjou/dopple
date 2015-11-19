@@ -1,0 +1,40 @@
+"use strict";
+
+dopple.Type = {
+	VOID: 0,
+	NUMBER: 1,
+	BOOL: 2,
+	STRING: 3,
+	BINARY: 4,
+	ASSIGN: 5,
+	UPDATE: 6,
+	SUBSCRIPT: 7,
+	LOGICAL: 8,
+	UNARY: 9,
+	VAR: 10,
+	REFERENCE: 11,
+	IF: 12,
+	SWITCH: 13,
+	SWITCH_CASE: 14,
+	FOR: 15,
+	FOR_IN: 16,
+	WHILE: 17,
+	DO_WHILE: 18,
+	CONTINUE: 19,
+	BREAK: 20,
+	CONDITIONAL: 21,
+	BLOCK: 22,
+	RETURN: 23,
+	FUNCTION: 24,
+	FUNCTION_DEF: 25,
+	FUNCTION_CALL: 26,
+	OBJECT: 27,
+	THIS: 28,
+	NEW: 29,
+	ARRAY: 30
+};
+
+dopple.Flag = {
+	UKNOWN: 0,
+	ARGS: 1
+};

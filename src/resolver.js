@@ -499,6 +499,10 @@ dopple.Resolver.prototype =
 
 	resolveNew: function(node)
 	{
+		if(node.value.exprType === dopple.Type.CLASS) {
+			return node;
+		}
+		
 		var args = node.args;
 		var numArgs = args ? args.length : 0;
 

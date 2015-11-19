@@ -1,5 +1,14 @@
-var x = [ 10 ];
-var y = x.push("sdsd");
+// var canvas = window;
+
+// function init()
+// {
+// 	canvas = document.getElementById("canvas");
+// }
+
+// init();
+
+// var x = [ 10 ];
+// var y = x.push("sdsd");
 
 // var x = 10;
 // var y = 4;

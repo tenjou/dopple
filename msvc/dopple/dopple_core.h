@@ -30,7 +30,9 @@ namespace dopple
 		srand((uint32_t)time(nullptr));
 	}
 
-	inline void destroy();
+	inline void destroy() {
+
+	}
 }
 
 struct
@@ -42,7 +44,7 @@ struct
 		vfprintf(stderr, format, argptr);
 		va_end(argptr);
 	}
-	
+
 	void warn(const char *format, ...)
 	{
 		va_list argptr;
@@ -50,7 +52,7 @@ struct
 		vfprintf(stderr, format, argptr);
 		va_end(argptr);
 	}
-	
+
 	void error(const char *format, ...)
 	{
 		va_list argptr;
@@ -65,33 +67,33 @@ struct Math
 	double abs(double num) {
 		return ::abs((int)num);
 	}
-	
+
 	double random() {
 		return ((double)rand() / (RAND_MAX));
 	}
-	
+
 	double sin(double num) {
 		return ::sin(num);
 	}
-	
+
 	double cos(double num) {
 		return ::cos(num);
 	}
-	
+
 	double PI = 3.141592653589793;
 };
 
 template <class T>
-struct Array 
+struct Array
 {
 	Array(int32 length = 0) {}
-	
+
 	Array(T *buffer, int32 length) {
 		this->buffer = buffer;
 		this->length = length;
 		this->capacity = length;
 	}
-	
+
 	Array(T buffer) {
 		this->buffer = &buffer;
 		this->length = 1;
@@ -99,32 +101,32 @@ struct Array
 	}
 
 	// TODO: Memory management.
-	~Array() 
+	~Array()
 	{
 	}
-	
+
 	int32 push(T *element) {
 		return this->length;
 	}
-	
-	T pop() 
+
+	T pop()
 	{
 		T *element = this->buffer[this->length - 1];
 		this->buffer[this->length] = nullptr;
 
 		return (*element);
 	}
-	
+
 	T shift() {
 		return nullptr;
 	}
-	
+
 	inline void __set__length(int32 length)
 	{
-		if(length > this->capacity) 
+		if (length > this->capacity)
 		{
-			if(this->capacity > 0) {
-				delete [] this->buffer;
+			if (this->capacity > 0) {
+				delete[] this->buffer;
 			}
 
 			this->buffer = new T[length];
@@ -133,23 +135,23 @@ struct Array
 
 		this->length = length;
 	}
-	
-	inline int32 __get__length(real64) { 
-		return this->length; 
+
+	inline int32 __get__length(real64) {
+		return this->length;
 	}
-	
+
 	T operator [](real64 index)
 	{
-		if(index >= this->length) {
+		if (index >= this->length) {
 			return 0;
 		}
-		if(index < 0) {
+		if (index < 0) {
 			return 0;
 		}
-		
+
 		return this->buffer[(int32)index];
 	}
-	
+
 	//
 	T *buffer = nullptr;
 	int32 capacity = 0;
@@ -159,12 +161,12 @@ struct Array
 struct Float32Array
 {
 	Float32Array() {}
-	
+
 	Float32Array(float *buffer, int32_t size) {
 		this->buffer = buffer;
 		this->size = size;
 	}
-	
+
 	//
 	float *buffer = 0;
 	int32_t size = 0;

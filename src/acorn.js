@@ -17,6 +17,7 @@ dopple.acorn =
 		this.lookup["ExpressionStatement"] = this.parseExpr;
 		this.lookup["ReturnStatement"] = this.parseReturn;
 		this.lookup["IfStatement"] = this.parseIf;
+		this.lookup["ForStatement"] = this.parseFor;
 		this.lookup["AssignmentExpression"] = this.parseAssignExpr;
 		this.lookup["SequenceExpression"] = this.parseSequenceExpr;
 		this.lookup["BinaryExpression"] = this.parseBinaryExpr;
@@ -206,6 +207,7 @@ dopple.acorn =
 
 		return ifExpr;
 	},
+
 
 	parseConditionalExpr: function(node)
 	{
