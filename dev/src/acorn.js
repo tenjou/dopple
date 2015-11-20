@@ -68,10 +68,10 @@ dopple.acorn =
 		else 
 		{
 			if(node.raw === "false") {
-				return new dopple.AST.Bool(0);
+				return new dopple.AST.Bool(false);
 			}
 			else if(node.raw === "true") {
-				return new dopple.AST.Bool(1);
+				return new dopple.AST.Bool(true);
 			}
 			else if(node.raw === "null") {
 				return new dopple.AST.Null();

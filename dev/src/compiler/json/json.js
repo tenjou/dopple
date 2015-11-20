@@ -19,7 +19,8 @@ dopple.compiler.json =
 	{
 		var output = {};
 
-		var node, nodeOutput;
+		var node;
+		var nodeOutput = null;
 		var buffer = scope.varsBuffer;
 		var num = buffer.length;
 		for(var n = 0; n < num; n++)
@@ -28,6 +29,14 @@ dopple.compiler.json =
 
 			switch(node.type)
 			{
+				case this.type.NUMBER:
+					nodeOutput = this.parseNumber(node);
+					break;
+
+				case this.type.BOOL:
+					nodeOutput = this.parseBool(node);
+					break;
+
 				case this.type.STRING:
 					nodeOutput = this.parseString(node);
 					break;
@@ -45,9 +54,34 @@ dopple.compiler.json =
 					break;
 			}
 
-			output[node.name] = nodeOutput;
-			nodeOutput = null;
+			if(nodeOutput) {
+				output[node.name] = nodeOutput;
+				nodeOutput = null;
+			}
+			else {
+				output[node.name] = "TODO";
+			}
 		}
+
+		return output;
+	},
+
+	parseNumber: function(node)
+	{
+		var output = {
+			type: this.type.NUMBER,
+			value: node.value.value
+		};
+
+		return output;
+	},
+
+	parseBool: function(node)
+	{
+		var output = {
+			type: this.type.BOOL,
+			value: node.value.value
+		};
 
 		return output;
 	},
@@ -55,8 +89,8 @@ dopple.compiler.json =
 	parseString: function(node)
 	{
 		var output = {
-			type: node.type,
-			value: node.value.outputValue
+			type: this.type.STRING,
+			value: node.value.value
 		};
 
 		return output;

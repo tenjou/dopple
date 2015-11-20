@@ -5,13 +5,13 @@ meta.class("dopple.AST.Number",
 {
 	init: function(value) 
 	{
-		if(value) { this.outputValue = value; }
+		if(value) { this.value = value; }
 	},
 
 	//
 	type: dopple.Type.NUMBER,
 	exprType: dopple.ExprType.NUMBER,
-	outputValue: 0,
+	value: 0,
 });
 
 
@@ -20,13 +20,13 @@ meta.class("dopple.AST.Bool",
 {
 	init: function(value) 
 	{
-		if(value) { this.outputValue = value; }
+		if(value) { this.value = value; }
 	},
 
 	//
 	type: dopple.Type.BOOL,
 	exprType: dopple.ExprType.BOOL,
-	outputValue: false
+	value: false
 });
 
 /* string */
@@ -35,14 +35,14 @@ meta.class("dopple.AST.String",
 	init: function(value) 
 	{
 		if(value) {
-			this.outputValue = value;
+			this.value = value;
 		}
 	},
 
 	//
 	type: dopple.Type.STRING,
 	exprType: dopple.ExprType.STRING,
-	outputValue: ""
+	value: ""
 });
 
 /* binary */
