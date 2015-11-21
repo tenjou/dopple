@@ -27,7 +27,5 @@ dopple.Scope.prototype =
 	//
 	virtual: false,
 	funcs: null,
-	vars: null,
-	funcsBuffer: null,
-	varsBuffer: null
+	vars: null
 };

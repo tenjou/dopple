@@ -373,17 +373,52 @@ meta.class("dopple.AST.FunctionCall",
 /* setter */
 meta.class("dopple.AST.Setter",
 {
+	init: function(name, value)
+	{
+		this.name = name;
+		this.value = value;
+	},
+
 	//
 	exprType: dopple.ExprType.SETTER,
-	args: null
+
+	name: null,
+	value: null
 });
 
 /* getter */
 meta.class("dopple.AST.Getter",
 {
+	init: function(name, value)
+	{
+		this.name = name;
+		this.value = value;
+	},
+
 	//
 	exprType: dopple.ExprType.GETTER,
-	args: null
+
+	name: null,
+	value: null
+});
+
+/* setter getter */
+meta.class("dopple.AST.SetterGetter",
+{
+	init: function(name, setter, getter)
+	{
+		this.name = name;
+		this.setter = setter;
+		this.getter = getter;
+	},
+
+	//
+	type: dopple.Type.SETTER_GETTER,
+	exprType: dopple.ExprType.SETTER_GETTER,
+	
+	name: null,
+	setter: null,
+	getter: null
 });
 
 /* object */

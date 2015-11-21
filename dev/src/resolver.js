@@ -19,7 +19,6 @@ dopple.resolver =
 	{
 		if(!this.scope.vars) {
 			this.scope.vars = {};
-			this.scope.varsBuffer = [];
 		}
 
 		var node;
@@ -31,13 +30,20 @@ dopple.resolver =
 
 			switch(node.exprType)
 			{
-				case this.type.VAR:
+				case this.exprType.VAR:
 					this.resolveVar(node);
 					break;
 
-				case this.type.STRING:
-				case this.type.NUMBER:
+				case this.exprType.STRING:
+				case this.exprType.NUMBER:
 					nodes[n] = null;
+					break;
+
+				case this.exprType.SETTER:
+					this.resolveSetter(node);
+					break;
+				case this.exprType.GETTER:
+					this.resolveGetter(node);
 					break;
 			}
 		}
@@ -49,10 +55,12 @@ dopple.resolver =
 			throw "Redefinition: \"" + node.name + "\" is already defined in this scope";
 		}
 
+		node.value = dopple.optimizer.do(node.value);
+
 		var value = node.value;
 		switch(value.exprType)
 		{
-			case this.type.OBJECT:
+			case this.exprType.OBJECT:
 				this.resolveObj(value);
 				break;
 		}
@@ -60,7 +68,6 @@ dopple.resolver =
 		node.type = node.value.type;
 
 		this.scope.vars[node.name] = node;
-		this.scope.varsBuffer.push(node);
 	},
 
 	resolveObj: function(node)
@@ -73,8 +80,50 @@ dopple.resolver =
 		this.scope = rootScope;
 	},
 
+	resolveSetter: function(node)
+	{
+		var expr = this.scope.vars[node.name];
+
+		// if there is already defined expr with such name:
+		if(expr)
+		{	
+			if(expr.exprType !== this.exprType.SETTER_GETTER) {
+				throw "Redefinition: \"" + node.name + "\" is already defined in this scope";
+			}
+
+			expr.setter = node.value;
+		}
+		else
+		{
+			var setGetExpr = new dopple.AST.SetterGetter(node.name, node.value, null);
+			this.scope.vars[node.name] = setGetExpr;
+		}
+	},
+
+	resolveGetter: function(node)
+	{
+		var expr = this.scope.vars[node.name];
+
+		// if there is already defined expr with such name:
+		if(expr)
+		{	
+			if(expr.exprType !== this.exprType.SETTER_GETTER) {
+				throw "Redefinition: \"" + node.name + "\" is already defined in this scope";
+			}
+
+			expr.getter = node.value;
+		}
+		else
+		{
+			var setGetExpr = new dopple.AST.SetterGetter(node.name, null, node.value);
+			this.scope.vars[node.name] = setGetExpr;
+		}
+	},
+
 	//
 	scope: null,
 	globalScope: null,
-	type: dopple.ExprType
+
+	type: dopple.Type,
+	exprType: dopple.ExprType
 };
