@@ -2938,8 +2938,6 @@ meta.tokenizer = new meta.Tokenizer();
 
 "use strict";
 
-meta.math = {};
-
 meta.math = {
     degToRad: function(degree) {
         return degree * Math.PI / 180;

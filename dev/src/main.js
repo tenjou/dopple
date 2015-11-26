@@ -12,6 +12,8 @@ function main()
 
 function parse(source)
 {
+	dopple.setup();
+
 	var comments = [], tokens = [];
 
 	var ast = acorn.parse(source);

@@ -33,21 +33,26 @@ dopple.ExprType = {
 	SETTER_GETTER: 29,
 	OBJECT: 30,
 	OBJECT_PROPERTY: 31,
-	THIS: 32,
-	NEW: 33,
-	NULL: 34,
-	ARRAY: 35
+	CLASS: 32,
+	MEMBER: 33,
+	THIS: 34,
+	NEW: 35,
+	NULL: 36,
+	ARRAY: 37,
+	TYPE: 38
 };
 
-dopple.Type = {
+dopple.SubType = {
 	UNKNOWN: 0,
 	NUMBER: 1,
 	BOOL: 2,
 	STRING: 3,
-	SETTER_GETTER: 4,
-	CLASS: 5,
+	FUNCTION: 4,
+	SETTER_GETTER: 5,
 	OBJECT: 6,
-	ARRAY: 7,
+	OBJECT_DEF: 7,
+	CLASS: 8,
+	ARRAY: 9
 };
 
 dopple.Flag = {

@@ -22,7 +22,6 @@ dopple.compiler.json =
 		var node;
 		var nodeOutput = null;
 		var buffer = scope.vars;
-		var num = buffer.length;
 		for(var key in buffer)
 		{
 			node = buffer[key];
@@ -45,8 +44,8 @@ dopple.compiler.json =
 					nodeOutput = this.parseCls(node);
 					break;
 
-				case this.type.OBJECT: 
-					nodeOutput = this.parseObj(node);
+				case this.type.OBJECT_DEF: 
+					nodeOutput = this.parseObjDef(node);
 					break;
 
 				case this.type.ARRAY:
@@ -104,15 +103,15 @@ dopple.compiler.json =
 	{
 		var output = {
 			type: this.type.CLASS,
-			vars: this.parseBody(node.value.scope)
+			vars: this.parseBody(node.scope)
 		};
 
 		return output;
 	},
 
-	parseObj: function(node)
+	parseObjDef: function(node)
 	{
-		var value = null;
+		var value = this.parseBody(node.value.scope);
 
 		var output = {
 			type: this.type.OBJECT,
@@ -125,7 +124,7 @@ dopple.compiler.json =
 	parseArray: function(node)
 	{
 		var output = {
-			type: this.type.ARRAY,
+			type: node.type.id,
 			value: []
 		};
 
@@ -135,7 +134,7 @@ dopple.compiler.json =
 	parseSetterGetter: function(node)
 	{
 		var output = {
-			type: this.type.SETTER_GETTER,
+			type: node.type.id,
 			setter: (node.setter) ? true : false,
 			getter: (node.getter) ? true : false
 		};

@@ -256,10 +256,22 @@ dopple.acorn =
 			this.cache.name = node.property.name;
 			this.cache.parents = [];
 
+			var type;
+			var parents = this.cache.parents;
 			var objNode = node.object;
-			for(;;) {
-				this.cache.parents.push(objNode.name);
-				break;
+			for(;;) 
+			{
+				type = objNode.type;
+				if(type === "MemberExpression")
+				{
+					parents.push(objNode.property.name);
+					objNode = objNode.object;
+				}
+				else
+				{
+					console.log("smth");
+					break;
+				}
 			}
 		}
 	},
