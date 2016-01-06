@@ -1,24 +1,6 @@
 "use strict";
 
 /* number */
-meta.class("dopple.AST.Type",
-{
-	init: function(id, name, subType) 
-	{
-		this.id = id;
-		this.name = name;
-		this.subType = subType;
-	},
-
-	//
-	exprType: dopple.ExprType.TYPE,
-
-	id: 0,
-	subType: 0,
-	scope: null
-});
-
-/* number */
 meta.class("dopple.AST.Number",
 {
 	init: function(value) 
@@ -28,7 +10,7 @@ meta.class("dopple.AST.Number",
 
 	//
 	exprType: dopple.ExprType.NUMBER,
-	type: null,
+	cls: null,
 	value: 0
 });
 
@@ -43,7 +25,7 @@ meta.class("dopple.AST.Bool",
 
 	//
 	exprType: dopple.ExprType.BOOL,
-	type: null,
+	cls: null,
 	value: false
 });
 
@@ -57,7 +39,7 @@ meta.class("dopple.AST.String",
 
 	//
 	exprType: dopple.ExprType.STRING,
-	type: null,
+	cls: null,
 	value: ""
 });
 
@@ -72,7 +54,7 @@ meta.class("dopple.AST.Binary",
 
 	//
 	exprType: dopple.ExprType.BINARY,
-	type: null,
+	cls: null,
 	op: "",
 	lhs: null,
 	rhs: null
@@ -81,18 +63,18 @@ meta.class("dopple.AST.Binary",
 /* assign */
 meta.class("dopple.AST.Assign", 
 {
-	init: function(lhs, rhs, op) {
-		this.lhs = lhs;
-		this.rhs = rhs;
+	init: function(left, right, op) {
+		this.left = left;
+		this.right = right;
 		this.op = op;
 	},
 
 	//
 	exprType: dopple.ExprType.ASSIGN,
-	type: null,
+	cls: null,
 	op: "=",
-	lhs: null,
-	rhs: null	
+	left: null,
+	right: null	
 });
 
 /* update */
@@ -152,35 +134,45 @@ meta.class("dopple.AST.Unary",
 	op: 0
 });
 
-/* Var */
+/* variable */
 meta.class("dopple.AST.Var", 
 {
-	init: function(name, value) 
+	init: function(ref) 
 	{
-		if(name) { this.name = name; }
-		if(value) { this.value = value; }
+		if(ref) { this.ref = ref; }
 	},
 
 	//
 	exprType: dopple.ExprType.VAR,
-	type: null
+	cls: null,
+	ref: null
 });
 
 /* reference */
 meta.class("dopple.AST.Reference", 
 {
-	init: function(name, type, value) 
+	init: function(name, value) 
 	{
-		if(name) { this.name = name; }
-		if(type) { this.type = type; }
-		if(value) { this.value = value; }
+		if(name) {
+			this.name = name; 
+		}
+
+		if(value) 
+		{ 
+			this.value = value; 
+			if(value.type) {
+				this.type = value.type;
+			}
+		}
 	},	
 
 	//
 	exprType: dopple.ExprType.REFERENCE,
+	cls: null,
+
 	name: null,
-	type: null,
-	value: null
+	value: null,
+	scope: null
 });
 
 /* if */
@@ -374,7 +366,7 @@ meta.class("dopple.AST.Function",
 
 	//
 	exprType: dopple.ExprType.FUNCTION,
-	type: null,
+	cls: null,
 	argsIndex: -1,
 	minParams: -1
 });
@@ -436,7 +428,7 @@ meta.class("dopple.AST.SetterGetter",
 
 	//
 	exprType: dopple.ExprType.SETTER_GETTER,
-	type: null,
+	cls: null,
 	
 	name: null,
 	setter: null,
@@ -455,7 +447,10 @@ meta.class("dopple.AST.Class",
 
 	//
 	exprType: dopple.ExprType.CLASS,
-	type: null,
+	subType: dopple.ExprType.OBJECT,
+	cls: null,
+	id: 0,
+	flags: 0,
 
 	name: null,
 	scope: null,
@@ -471,7 +466,7 @@ meta.class("dopple.AST.Object",
 
 	//
 	exprType: dopple.ExprType.OBJECT,
-	type: null,
+	cls: null,
 	scope: null
 });
 
@@ -494,16 +489,17 @@ meta.class("dopple.AST.ObjectProperty",
 /* member */
 meta.class("dopple.AST.Member",
 {
-	init: function(nameExpr, valueExpr) {
-		this.nameExpr = nameExpr;
-		this.valueExpr = valueExpr;
+	init: function(left, right) {
+		this.left = left;
+		this.right = right;
 	},
 
 	//
 	exprType: dopple.ExprType.MEMBER,
+	cls: null,
 
-	nameExpr: null,
-	valueExpr: null
+	left: null,
+	right: null
 });
 
 /* this */
@@ -515,15 +511,16 @@ meta.class("dopple.AST.This",
 /* new */
 meta.class("dopple.AST.New", 
 {
-	init: function(name, parents, args) {
-		this.name = name;
-		this.parents = parents || null;
-		this.args = args || null;
+	init: function(nameExpr, args) {
+		this.nameExpr = nameExpr;
+		this.ars = args;
 	},	
 
 	//
 	exprType: dopple.ExprType.NEW,
-	func: null, 
+	cls: null,
+
+	nameExpr: null,
 	args: null
 });
 
@@ -532,7 +529,7 @@ meta.class("dopple.AST.Null",
 {
 	//
 	exprType: dopple.ExprType.NULL,
-	type: null
+	cls: null
 });
 
 /* array */
@@ -545,6 +542,6 @@ meta.class("dopple.AST.Array",
 
 	//
 	exprType: dopple.ExprType.ARRAY,
-	type: null,
+	cls: null,
 	elements: null
 });

@@ -56,6 +56,8 @@ dopple.SubType = {
 };
 
 dopple.Flag = {
-	UKNOWN: 0,
-	ARGS: 1
+	UKNOWN: 1 << 0,
+	ARGS: 1 << 1,
+	VIRTUAL_TYPE: 1 << 2,
+	INTERNAL_TYPE: 2 << 3
 };

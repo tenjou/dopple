@@ -25,44 +25,54 @@ dopple.compiler.json =
 		for(var key in buffer)
 		{
 			node = buffer[key];
+			if(node.flags & dopple.Flag.INTERNAL_TYPE) { continue; }
+			if(!node.cls) { continue; }
 
-			switch(node.type)
+			switch(node.cls.subType)
 			{
-				case this.type.NUMBER:
+				case this.subType.NUMBER:
 					nodeOutput = this.parseNumber(node);
 					break;
 
-				case this.type.BOOL:
+				case this.subType.BOOL:
 					nodeOutput = this.parseBool(node);
 					break;
 
-				case this.type.STRING:
+				case this.subType.STRING:
 					nodeOutput = this.parseString(node);
 					break;
 
-				case this.type.CLASS:
+				case this.subType.FUNCTION:
+					nodeOutput = this.parseFunc(node);
+					break;
+
+				case this.subType.CLASS:
 					nodeOutput = this.parseCls(node);
 					break;
 
-				case this.type.OBJECT_DEF: 
+				case this.subType.OBJECT_DEF: 
 					nodeOutput = this.parseObjDef(node);
 					break;
 
-				case this.type.ARRAY:
+				case this.subType.ARRAY:
 					nodeOutput = this.parseArray(node);
 					break;
 
-				case this.type.SETTER_GETTER:
+				case this.subType.SETTER_GETTER:
 					nodeOutput = this.parseSetterGetter(node);
+					break;
+
+				case this.subType.OBJECT:
+					nodeOutput = this.parseObj(node);
 					break;
 			}
 
 			if(nodeOutput) {
-				output[node.name] = nodeOutput;
+				output[key] = nodeOutput;
 				nodeOutput = null;
 			}
 			else {
-				output[node.name] = "TODO";
+				output[key] = "TODO";
 			}
 		}
 
@@ -72,8 +82,8 @@ dopple.compiler.json =
 	parseNumber: function(node)
 	{
 		var output = {
-			type: this.type.NUMBER,
-			value: node.value.value
+			type: node.cls.id,
+			value: node.value
 		};
 
 		return output;
@@ -82,8 +92,8 @@ dopple.compiler.json =
 	parseBool: function(node)
 	{
 		var output = {
-			type: this.type.BOOL,
-			value: node.value.value
+			type: node.cls.id,
+			value: node.value
 		};
 
 		return output;
@@ -92,8 +102,18 @@ dopple.compiler.json =
 	parseString: function(node)
 	{
 		var output = {
-			type: this.type.STRING,
-			value: node.value.value
+			type: node.cls.id,
+			value: node.value
+		};
+
+		return output;
+	},
+
+	parseFunc: function(node)
+	{
+		var output = {
+			type: node.cls.id,
+			value: "func"
 		};
 
 		return output;
@@ -102,7 +122,7 @@ dopple.compiler.json =
 	parseCls: function(node)
 	{
 		var output = {
-			type: this.type.CLASS,
+			type: node.cls.id,
 			vars: this.parseBody(node.scope)
 		};
 
@@ -111,10 +131,10 @@ dopple.compiler.json =
 
 	parseObjDef: function(node)
 	{
-		var value = this.parseBody(node.value.scope);
+		var value = this.parseBody(node.scope);
 
 		var output = {
-			type: this.type.OBJECT,
+			type: node.cls.id,
 			value: value
 		};
 
@@ -124,7 +144,7 @@ dopple.compiler.json =
 	parseArray: function(node)
 	{
 		var output = {
-			type: node.type.id,
+			type: node.cls.id,
 			value: []
 		};
 
@@ -134,7 +154,7 @@ dopple.compiler.json =
 	parseSetterGetter: function(node)
 	{
 		var output = {
-			type: node.type.id,
+			type: node.cls.id,
 			setter: (node.setter) ? true : false,
 			getter: (node.getter) ? true : false
 		};
@@ -142,17 +162,31 @@ dopple.compiler.json =
 		return output;	
 	},
 
-	addTypeDef: function()
+	parseObj: function(node)
 	{
-		var output = {};
+		var output;
 
-		var keys = Object.keys(dopple.Type);
-		var num = keys.length;
-		for(var n = 0; n < num; n++) {
-			output[n] = keys[n];
+		if(node.exprType === this.exprType.NULL) 
+		{
+			output = {
+				type: node.cls.id,
+				value: null
+			};
+		}
+		else 
+		{
+			output = {
+				type: node.cls.id,
+				value: this.parseBody(node.scope)
+			};
 		}
 
-		this.output["__type__"] = output;
+		return output;
+	},
+
+	addTypeDef: function()
+	{
+		this.output["__type__"] = this.types;
 	},
 
 	//
@@ -160,6 +194,7 @@ dopple.compiler.json =
 	globalScope: null,
 	output: null,
 
-	type: dopple.Type,
+	types: dopple.types,
+	subType: dopple.SubType,
 	exprType: dopple.ExprType
 };

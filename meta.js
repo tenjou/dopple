@@ -10397,6 +10397,9 @@ meta.class("Entity.Gradient", "Entity.Geometry", {
 
 "use strict";
 
+var Physics = {};
+var UI = {};
+
 meta.class("Physics.Manager", {
     init: function() {
         this.bodies = [];

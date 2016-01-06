@@ -86,7 +86,7 @@ dopple.acorn =
 	},	
 
 	parseIdentifier: function(node) {
-		return new dopple.AST.Reference(node.name, null);
+		return new dopple.AST.String(node.name);
 	},	
 
 	parseBinaryExpr: function(node) 
@@ -152,12 +152,15 @@ dopple.acorn =
 
 	parseVarDecl: function(node)
 	{
+		var name = this.lookup[node.id.type].call(this, node.id);
+
 		var value = null;
 		if(node.init) {
 			value = this.lookup[node.init.type].call(this, node.init);
 		}
 
-		var varExpr = new dopple.AST.Var(node.id.name, value);
+		var refExpr = new dopple.AST.Reference(name, value);
+		var varExpr = new dopple.AST.Var(refExpr);
 		return varExpr;
 	},
 
@@ -385,7 +388,8 @@ dopple.acorn =
 				objExpr = this.parseObjExpr(node.arguments[2]);
 			}
 
-			var clsExpr = new dopple.AST.Class(node.arguments[0].value, objExpr.scope);
+			var name = this.genName(node.arguments[0].value);
+			var clsExpr = new dopple.AST.Class(name, objExpr.scope);
 			return clsExpr;
 		}
 		else
@@ -420,22 +424,23 @@ dopple.acorn =
 		var valueExpr = this.lookup[node.value.type].call(this, node.value);
 
 		var expr;
-		if(keyExpr.exprType === dopple.ExprType.REFERENCE) 
+		if(node.kind === "set") {
+			expr = new dopple.AST.Setter(keyExpr, valueExpr);
+		}
+		else if(node.kind === "get") {
+			expr = new dopple.AST.Getter(keyExpr, valueExpr);
+		}
+		else
 		{
-			if(node.kind === "set") {
-				expr = new dopple.AST.Setter(keyExpr.name, valueExpr);
+			if(keyExpr.exprType === dopple.ExprType.REFERENCE) 
+			{		
+				expr = new dopple.AST.Reference(keyExpr, valueExpr);
 			}
-			else if(node.kind === "get") {
-				expr = new dopple.AST.Getter(keyExpr.name, valueExpr);
+			else {
+				expr = new dopple.AST.ObjectProperty(keyExpr, valueExpr);
 			}
-			else {			
-				expr = new dopple.AST.Var(keyExpr.name, valueExpr);
-			}
-		}
-		else {
-			expr = new dopple.AST.ObjectProperty(keyExpr, valueExpr);
-		}
-		
+		}		
+
 		return expr;
 	},
 
@@ -446,21 +451,22 @@ dopple.acorn =
 	},
 
 	parseNewExpr: function(node) {
-		var expr = new dopple.AST.New(node.callee.name, null, this.parseArgs(node.arguments));
+		var nameExpr = this.lookup[node.callee.type].call(this, node.callee);
+		var expr = new dopple.AST.New(nameExpr, this.parseArgs(node.arguments));
 		return expr;
 	},
 
 	parseMemberExpr: function(node) 
 	{	
-		var valueExpr = this.lookup[node.property.type].call(this, node.property);
-		var childExpr = this.lookup[node.object.type].call(this, node.object);
+		var right = this.lookup[node.property.type].call(this, node.property);
+		var left = this.lookup[node.object.type].call(this, node.object);
 
 		var expr;
 		if(node.computed) {
-			expr = new dopple.AST.Subscript(valueExpr, childExpr);
+			expr = new dopple.AST.Subscript(left, right);
 		}
 		else {
-			expr = new dopple.AST.Member(valueExpr, childExpr);
+			expr = new dopple.AST.Member(left, right);
 		}
 		
 		return expr;
@@ -512,6 +518,31 @@ dopple.acorn =
 		}
 
 		return args;
+	},
+
+	genName: function(name)
+	{
+		var expr;
+		var buffer = name.split(".");
+		var num = buffer.length;
+
+		if(num === 1) {
+			expr = new dopple.AST.String(buffer[0]);
+		}
+		else 
+		{
+			num--;
+			var valueRef = new dopple.AST.String(buffer[num--]);
+			var nameRef = new dopple.AST.String(buffer[num--]);
+			expr = new dopple.AST.Member(nameRef, valueRef);
+
+			for(var n = num; n > 0; n--) {
+				nameRef = new dopple.AST.String(buffer[num--]);
+				expr = new dopple.AST.Member(nameRef, valueRef);
+			}
+		}
+
+		return expr;
 	},
 
 	//
