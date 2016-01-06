@@ -11,8 +11,7 @@ var dopple =
 
 	compiler: {},
 
-	types: [],
-	typesMap: {}
+	types: []
 };
 
 dopple.mergeName = function(expr)

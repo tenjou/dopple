@@ -447,7 +447,7 @@ meta.class("dopple.AST.Class",
 
 	//
 	exprType: dopple.ExprType.CLASS,
-	subType: dopple.ExprType.OBJECT,
+	subType: dopple.SubType.OBJECT,
 	cls: null,
 	id: 0,
 	flags: 0,

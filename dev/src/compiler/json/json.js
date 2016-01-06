@@ -111,9 +111,24 @@ dopple.compiler.json =
 
 	parseFunc: function(node)
 	{
+		var param;
+		var params = node.params;
+		var numParams = params.length;
+		var paramsOutput = new Array(numParams);
+		for(var n = 0; n < numParams; n++)
+		{
+			param = params[n];
+
+			paramsOutput[n] = {
+				name: param.name,
+				type: 0
+			};
+		}
+
 		var output = {
 			type: node.cls.id,
-			value: "func"
+			returnType: 0,
+			params: paramsOutput
 		};
 
 		return output;

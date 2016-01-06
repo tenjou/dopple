@@ -454,6 +454,7 @@ dopple.resolver =
 		var clsExpr = dopple.extern.createType(this.refName, dopple.SubType.CLASS, null, node.value.scope);
 		clsExpr.cls = clsExpr;
 		this.refScope.vars[this.refName] = clsExpr;
+		this.types.push(this.refName);
 		
 		// if(this.refVar)
 		// {
@@ -469,9 +470,12 @@ dopple.resolver =
 	{
 		this.resolveName(node.name);
 		this.resolveScope(node.scope);
+
+		console.log(node.subType);
 				
 		node.cls = node;
 		this.refScope.vars[this.refName] = node;
+		this.types.push(this.refName);
 		
 
 		// var expr, name;
@@ -591,7 +595,7 @@ dopple.resolver =
 	refExpr: null,
 	refNew: null,
 
-	typesMap: dopple.typesMap,
+	types: dopple.types,
 	exprType: dopple.ExprType,
 	subType: dopple.SubType
 };
