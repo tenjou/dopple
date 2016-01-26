@@ -177,10 +177,8 @@ dopple.resolver =
 	{
 		this.resolveName(node);
 
-		if(this.refNew) 
-		{
-
-			throw "ReferenceError: " + this.refName + " is not defined";
+		if(this.refNew) {
+			throw "ReferenceError: \"" + this.refName + "\" is not defined";
 		}
 
 		var expr = this.refVarBuffer[this.refName];
@@ -216,7 +214,7 @@ dopple.resolver =
 				this._resolveName(node.left);
 				
 				if(this.refNew && !this.refThis) {
-					throw "ReferenceError: " + this.refName + " is not defined";
+					throw "ReferenceError: \"" + this.refName + "\" is not defined";
 				}
 
 				this.resolveMemberScope(node.right);
@@ -527,7 +525,23 @@ dopple.resolver =
 
 	resolveFuncCall: function(node)
 	{
-		console.log(node);
+		this.resolveName(node.name);
+		if(this.refNew) {
+			throw "ReferenceError: \"" + this.refName + "\" is not defined";
+		}
+
+		var args = node.args;
+		var numArgs = args.length;
+		for(var n = 0; n < numArgs; n++) {
+			args[n] = this.resolveValue(args[n]);
+		}
+
+		var func = this.refVarBuffer[this.refName];
+
+		var numParams = func.params.length;
+		if(numParams !== numArgs) {
+			throw "ParamError: Function \"" + this.refName + "\" is supporting " + numParams + " not " + numArgs + " arguments";
+		}
 	},
 
 	resolveMember: function(node)

@@ -1,5 +1,9 @@
-function x() {
+var a = 10;
+
+function x(a, b) {
 
 }
 
-x(10, a);
+function b() {}
+
+x(4, 2);
