@@ -1,9 +1,10 @@
-var a = 10;
+var a = x;
 
 function x(a, b) {
-
+	var f = 10;
+	return "sdsd" + "sd" + f;
 }
 
 function b() {}
 
-x(4, 2);
+x(a, 2);

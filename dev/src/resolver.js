@@ -64,6 +64,10 @@ dopple.resolver =
 				// 	this.resolveMember(node);
 				// 	break;
 
+				case this.exprType.RETURN:
+					this.resolveReturn(node);
+					break;
+
 				case this.exprType.CLASS:
 					this.resolveCls(node);
 					break;
@@ -504,6 +508,13 @@ dopple.resolver =
 		}
 	},
 
+	resolveReturn: function(node)
+	{
+		if(node.value) {
+			node.value = this.resolveValue(node.value);
+		}
+	},
+
 	resolveFunc: function(node)
 	{
 		if(node.name)
@@ -530,13 +541,13 @@ dopple.resolver =
 			throw "ReferenceError: \"" + this.refName + "\" is not defined";
 		}
 
+		var func = this.refVarBuffer[this.refName];
+
 		var args = node.args;
 		var numArgs = args.length;
 		for(var n = 0; n < numArgs; n++) {
 			args[n] = this.resolveValue(args[n]);
 		}
-
-		var func = this.refVarBuffer[this.refName];
 
 		var numParams = func.params.length;
 		if(numParams !== numArgs) {
