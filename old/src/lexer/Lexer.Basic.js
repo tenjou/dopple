@@ -18,18 +18,9 @@ Lexer.Basic = dopple.Class.extend
 		this.process.varType = 0;
 	},
 
-	read: function(buffer) 
-	{
+	prepare: function() {
 		this.loadVarEnum();
 		this.loadExterns();
-		
-		this.tokenizer.setBuffer(buffer);
-		this.nextToken();
-		if(!this.parseBody(true)) {
-			return false;
-		}
-
-		return dopple.resolver.resolve(this.global);
 	},
 
 	loadVarEnum: function() 
@@ -46,9 +37,21 @@ Lexer.Basic = dopple.Class.extend
 
 	loadExterns: function()
 	{
-		var string = this.extern.obj("String");
+		var string = this.extern.cls("String");
 		string.mutator("length", this.varEnum.NUMBER, this.varEnum.NUMBER);
 	},
+
+	read: function(buffer) 
+	{	
+		this.tokenizer.setBuffer(buffer);
+		this.nextToken();
+		if(!this.parseBody(true)) {
+			return false;
+		}
+
+		dopple.resolver.handle(this.global);
+		return !dopple.isError;
+	},	
 
 	nextToken: function() {
 		this.token = this.tokenizer.nextToken(null);
@@ -102,17 +105,8 @@ Lexer.Basic = dopple.Class.extend
 					expr = this.parseVar(forceInitial);
 					if(this.isError) { return null; }
 
-					if(expr)
-					{
-						if(expr instanceof AST.Var) 
-						{
-							if(expr.expr) {
-								this.scope.exprs.push(expr);
-							}
-						}
-						else {
-							this.scope.exprs.push(expr);
-						}
+					if(expr) {
+						this.scope.exprs.push(expr);
 					}
 
 					if(this.token.str !== ",") { break; }
@@ -121,10 +115,8 @@ Lexer.Basic = dopple.Class.extend
 					this.nextToken();
 				}
 			}
-			else if(str === "this")
-			{
-				this.parseThis()
-				if(this.isError) { return false; }
+			else if(str === "this") {
+				this.parseThis();
 			}
 			else if(type === this.tokenEnum.STRING)
 			{
@@ -144,11 +136,8 @@ Lexer.Basic = dopple.Class.extend
 					return false;
 				}
 			}			
-			else if(str === "function") 
-			{
-				if(!this.parseFunc()) {
-					return false;
-				}
+			else if(str === "function") {
+				this.parseFunc();
 			}
 			else if(str === "return") {
 				this.parseReturn();
@@ -169,6 +158,8 @@ Lexer.Basic = dopple.Class.extend
 			else if(type === this.tokenEnum.COMMENT) {
 				this.nextToken();
 			}
+
+			if(this.isError) { return false; }
 			
 			// Post process:
 			if(this.token.type === this.tokenEnum.EOF) 
@@ -276,7 +267,7 @@ Lexer.Basic = dopple.Class.extend
 			expr = this.parseExprParentheses();
 		}
 		else if(this.token.str === "{") {
-			expr = this.parseObj();
+			expr = this.parseCls();
 		}
 		else {
 			this.tokenError();
@@ -306,33 +297,35 @@ Lexer.Basic = dopple.Class.extend
 
 	parseName: function()
 	{
+		var parentList = null;
+		var line = this.token.line;
+
 		this.currName = this.token.str;
 		this.nextToken();
 
-		if(this.token.str === ".")
+		if(this.token.str === ".") 
 		{
-			var parentList = this.parseParentList();
+			// Invalid if initialized with keyword:
+			if(initial) {
+				this.tokenError();
+				return null;
+			}
+
+			parentList = this.parseParentList();
 			if(!parentList) { return null; }
 
-			var expr = this.getVar(this.currName, parentList);
-			if(!expr) { return null; }
-		}
-		else
-		{
-			var expr = this.getVar(this.currName);
-			if(!expr) { return null; }
-
-			if(this.token.type === this.tokenEnum.UNARY) {
-				expr = this.parseUnary();
-			}				
+			if(this.token.str === "(") {
+				return this.parseFuncCall(parentList);
+			}
 		}
 
-		// Check if it's a function call:
 		if(this.token.str === "(") {
-			expr = this.parseFuncCall(parentList);
-		}
+			return this.parseFuncCall(parentList);
+		}		
 
-		return expr;
+		var varExpr = new AST.Var(this.currName, parentList, this.process.varType);
+		varExpr.line = line;
+		return varExpr;
 	},
 
 	parseString: function()
@@ -452,7 +445,7 @@ Lexer.Basic = dopple.Class.extend
 
 		// Class:
 		var clsExpr = new AST.Class(funcExpr.name);
-		clsExpr.scope = new dopple.Scope(parentScope, clsExpr);
+		clsExpr.scope = new dopple.Scope(parentScope);
 		clsExpr.type = this.registerType(funcExpr.name);
 		clsExpr.constrFunc = funcExpr;
 		clsExpr.isStatic = false;
@@ -465,7 +458,6 @@ Lexer.Basic = dopple.Class.extend
 		funcExpr.name = "constructor";
 		funcExpr.parentList = [ clsExpr ];
 		funcExpr.obj = clsExpr;
-		funcExpr.scope = funcExpr.scope.createVirtual();
 		funcExpr.scope.parent = clsExpr.scope;
 
 		if(funcExpr.scope.staticVars) {
@@ -487,7 +479,7 @@ Lexer.Basic = dopple.Class.extend
 		return clsExpr;	
 	},
 
-	parseVar: function(forceInitial)
+	parseVar: function(forceInitial, parseName)
 	{
 		var initial = forceInitial || false;
 		if(this.token.str === "var")
@@ -500,149 +492,57 @@ Lexer.Basic = dopple.Class.extend
 			initial = true;
 		}
 
-		var varName = this.token.str;
-		this.currName = varName;
-		this.tmpName = varName;
-		this.nextToken();
+		var varExpr = this.parseName();
 
-		if(this.token.str === "(") 
-		{
-			expr = this.parseFuncCall();
-			if(!expr) { 
-				return null; 
-			}
+		if(this.token.type === this.tokenEnum.BINOP) {
+			this.parseUntilExprEnd();
+			return null;
 		}
-		else if(this.token.str === ".") 
+
+		this.parseVarPost();
+
+		var op = "";
+		var expr = null;
+		if(this.token.type === this.tokenEnum.ASSIGN || 
+		   this.token.type === this.tokenEnum.BINOP_ASSIGN)
 		{
-			// Invalid if initialized as: var <objName>.<memberName>
-			if(initial) {
+			op = this.token.str;
+			this.tmpName = this.currName;
+			this.currName = "";
+			this.nextToken();
+
+			this.currExpr = true;
+			expr = this.parseExpr(null);
+			this.currExpr = false;
+
+			if(!expr) { return null; }
+		}
+		else if(this.token.type === this.tokenEnum.UNARY) 
+		{
+			expr = this.parseUnary();
+			if(!expr) { return expr; }
+
+			this.scope.exprs.push(expr);
+			return null;
+		}		
+		else 
+		{
+			if(!initial && this.token.type === this.tokenEnum.NAME) {
 				this.tokenError();
-				return null;
-			}
-
-			var parentList = this.parseParentList();
-			if(!parentList) { return null; }
-
-			if(this.token.str === "=") {
-				this._defineObjVar(parentList);
-			}
-			else if(this.token.str === "(") 
-			{
-				expr = this.parseFuncCall(parentList);
-				if(!expr) { return null; }
 			}
 		}
-		else
-		{	
-			if(this.token.type === this.tokenEnum.BINOP) {
-				this.parseUntilExprEnd();
-				return null;
-			}
 
-			this.parseVarPost();
-
-			var op = "";
-
-			var expr = null;
-			if(this.token.type === this.tokenEnum.ASSIGN || 
-			   this.token.type === this.tokenEnum.BINOP_ASSIGN)
-			{
-				var op = this.token.str;
-				this.currName = "";
-				this.nextToken();
-
-				this.currExpr = true;
-				expr = this.parseExpr(null);
-				this.currExpr = false;
-
-				if(!expr) { return null; }
-
-				if(expr.exprType === this.exprEnum.FUNCTION || 
-				   expr.exprType === this.exprEnum.CLASS) 
-				{
-					return null;
-				} 
-			}
-			else if(this.token.type === this.tokenEnum.UNARY) 
-			{
-				expr = this.parseUnary();
-				if(!expr) { return expr; }
-
-				this.scope.exprs.push(expr);
-				return null;
-			}		
-			else 
-			{
-				if(!initial && this.token.type === this.tokenEnum.NAME) {
-					this.tokenError();
-				}
-			}
-
-			expr = this._defineVar(varName, expr, op, initial);		
-		}
+		varExpr.expr = expr;
+		varExpr.op = op;
+		varExpr.isDef = initial;
 
 		this.currName = "";
 		this.tmpName = "";
 
-		return expr;
+		return varExpr;
 	},	
 
 	parseVarPost: function() {},
-
-	_defineVar: function(name, expr, op, initial)
-	{
-		// Ignore if it's not a definition and without a body.
-		if(!expr && !initial) 
-		{
-			if(!this.getVar(name)) {
-				return null;
-			}
-			return expr;
-		}
-
-		var scopeVarExpr = this.scope.vars[name];
-
-		var varExpr;
-		if(scopeVarExpr)
-		{
-			if(!scopeVarExpr.expr) {
-				varExpr = scopeVarExpr;
-			}
-			else {
-				varExpr = new AST.Var(name, this.parentList, this.process.varType);
-			}
-		}
-		else
-		{
-			varExpr = new AST.Var(name, this.parentList, this.process.varType);
-
-			// No such variable defined.
-			if(!initial) {
-				this.refError(name);
-				return null;
-			}
-
-			varExpr.isDef = true;
-			scopeVarExpr = varExpr;
-
-			// If function pointer:
-			if(expr && expr.exprType === this.exprEnum.FUNCTION) {
-				this.scope.vars[name] = expr;
-			}	
-			else {
-				this.scope.vars[name] = varExpr;
-			}		
-		}
-
-		varExpr.var = scopeVarExpr;
-		varExpr.op = op;
-		
-		if(expr) {
-			varExpr.expr = expr;
-		}
-
-		return varExpr;		
-	},
 
 	_defineObjVar: function(parentList)
 	{
@@ -815,7 +715,7 @@ Lexer.Basic = dopple.Class.extend
 		return true;
 	},
 
-	parseObj: function()
+	parseCls: function()
 	{
 		var name = "";
 		if(this.scope === this.global) {
@@ -825,31 +725,21 @@ Lexer.Basic = dopple.Class.extend
 			name = "__Sanonym" + this.genID++ + "__";
 		}
 
-		if(this.scope.vars[name]) {
-			dopple.error(this.line, dopple.Error.REDEFINITION, name);
-			return null;
-		}
+		var parentList = [ name ];
 
-		var objExpr = new AST.Class(name);
-		objExpr.scope = new dopple.Scope(this.global, objExpr);
-		this.global.vars[name] = objExpr;
-		if(!this.global.objs) {
-			this.global.objs = [];
-		}
-		this.global.objs.push(objExpr);
-		this.scope = objExpr.scope;
-
-		var parentList = [ objExpr ];
+		var clsExpr = new AST.Class(name);
+		var clsScope = new dopple.Scope(this.scope);
+		clsExpr.scope = clsScope;
 
 		// Constructor:
-		var constrFunc = new AST.Function("constructor", this.scope, null, parentList);
-		constrFunc.obj = objExpr;
-		this.scope.vars["constructor"] = constrFunc;
-		objExpr.constrFunc = constrFunc;
-		objExpr.scope.funcs.push(constrFunc);
+		var constrFunc = new AST.Function("constructor", null, null, parentList);
+		var constrScope = new dopple.Scope(clsScope);
+		constrFunc.scope = constrScope;
+		constrFunc.cls = clsExpr;
+		clsScope.funcs.push(constrFunc);
+		clsExpr.constrFunc = constrFunc;
 
-		var constrFuncCall = new AST.FunctionCall(constrFunc);
-		this.global.exprs.push(constrFuncCall);
+		this.scope = clsScope;
 
 		// Parse object members:
 		var varName, varExpr, expr;
@@ -921,10 +811,9 @@ Lexer.Basic = dopple.Class.extend
 		}
 
 		this.nextToken();
-		this.scope = this.global;
-		this.parentList = null;
+		this.scope = this.scope.parent;
 
-		return objExpr;
+		return clsExpr;
 	},
 
 	parseFunc: function(parentList)
@@ -949,25 +838,16 @@ Lexer.Basic = dopple.Class.extend
 			this.handleUnexpectedToken();
 		}
 
-		var funcExpr = this.scope.vars[name];
-		if(!funcExpr) {
-			funcExpr = new AST.Function(name, null, null, parentList);
-			funcExpr.rootName = rootName;
-			funcExpr.scope = new dopple.Scope(this.scope, funcExpr);
-			this.scope.vars[name] = funcExpr;	
-			this.scope.funcs.push(funcExpr);			
-		}
-		else if(funcExpr.exprType !== this.exprEnum.FUNCTION) {
-			dopple.error(funcExpr.line, dopple.Error.EXPECTED_FUNC, dopple.makeFuncName(funcExpr));
-			return null;
-		}
+		var prevScope = this.scope;
+		this.scope = new dopple.Scope(this.scope);		
 
-		this.scope = funcExpr.scope;
-		
-		var vars = this.parseFuncParams();
+		var funcParams = this.parseFuncParams();
 		if(this.isError) { return null; }
 
-		funcExpr.params = vars;		
+		var funcExpr = new AST.Function(name, funcParams, parentList);
+		funcExpr.rootName = rootName;
+		funcExpr.scope = this.scope;
+		prevScope.funcs.push(funcExpr);
 
 		// Parse pre-inner body:
 		this.nextToken();
@@ -984,15 +864,14 @@ Lexer.Basic = dopple.Class.extend
 		this.nextToken();
 		if(this.token.str !== "}") 
 		{
-			if(!this.parseBody(false)) {
-				return null;
-			}
+			this.parseBody(false);
+			if(this.isErorr) { return null; }
 		}
 		else {
 			this.nextToken();
 		}	
 		
-		this.scope = this.scope.parent;
+		this.scope = prevScope;
 		return funcExpr;
 	},
 
@@ -1118,53 +997,47 @@ Lexer.Basic = dopple.Class.extend
 		return params;		
 	},
 
-	parseFuncPre: function(funcExpr) { return true; },
+	parseFuncPre: function(funcExpr) {},
 
-	parseFuncPost: function(funcExpr) { return true; },
+	parseFuncPost: function(funcExpr) {},
 
 	parseFuncCall: function(parentList)
 	{
-		var funcExpr = this.getVar(this.currName, parentList);
-		if(!funcExpr) { return null; }
-
-		if(funcExpr.exprType !== this.exprEnum.FUNCTION) {
-			dopple.error(funcExpr.line, dopple.Error.EXPECTED_FUNC, dopple.makeFuncName(funcExpr));
-			return null;
+		if(this.token.str !== "(") {
+			this.tokenSymbolError();
+			return;	
 		}
 
-		var i = 0;
-		var args = new Array(funcExpr.numParams);
-		var param, expr;
-		var funcParams = funcExpr.params;
-		var numFuncParams = funcParams ? funcParams.length : 0;
+		var funcName = this.currName;
+		var args = [];
+		var expr;
 
-		// Check if there are arguments passed:
+		// Parse all arguments:	
 		this.nextToken();
-		if(this.token.str !== ")") 
+		if(this.token.str !== ")")
 		{
-			// Parse all arguments:	
-			for(;; i++)
+			for(;;)
 			{
 				expr = this.parseExpr(null);
-				if(!expr) { return null; }
+				if(this.isError) { return; }
+				args.push(expr);
 
-				args[i] = expr;
-		
 				if(this.token.str !== ",") {
-					i++;
 					break;
 				}
+				
 				this.nextToken();		
 			}
-		}
 
-		var funcCall = new AST.FunctionCall(funcExpr, args);
-		if(this.scope !== funcExpr.scope) {
-			funcExpr.numUses++;
+			if(this.token.str !== ")") {
+				this.tokenSymbolError();
+				return;
+			}				
 		}
-
+	
 		this.nextToken();
 
+		var funcCall = new AST.FunctionCall(funcName, parentList, args);
 		return funcCall;
 	},
 
@@ -1219,15 +1092,12 @@ Lexer.Basic = dopple.Class.extend
 
 	parseParentList: function()
 	{
+		var scope;
 		var parentList = [];
-		var objExpr = null;
 
 		do
 		{
-			if(objExpr && objExpr.exprType !== this.tokenEnum.CLASS) {
-				dopple.error(funcExpr.line, dopple.Error.EXPECTED_CLS, dopple.makeFuncName(funcExpr));
-				return null;
-			}
+			parentList.push(this.currName)
 
 			this.nextToken();
 			if(this.token.type !== this.tokenEnum.NAME) {
@@ -1235,15 +1105,10 @@ Lexer.Basic = dopple.Class.extend
 				return null;
 			}
 
-			objExpr = this.getVar(this.currName);
-			if(!objExpr) { return null; }
-
-			parentList.push(objExpr);
 			this.currName = this.token.str;
-
 			this.nextToken();
 		}
-		while(this.token.str === ".");	
+		while(this.token.str === ".");
 
 		return parentList;	
 	},
@@ -1260,98 +1125,6 @@ Lexer.Basic = dopple.Class.extend
 				break;
 			}
 		}
-	},
-
-	getVar: function(name, parentList) 
-	{
-		var expr = null;
-
-		if(parentList)
-		{
-			var parentScope = parentList[parentList.length - 1].scope;
-			expr = parentScope.vars[this.currName];
-			if(!expr) {
-				this.refError(dopple.makeName(this.currName, parentList));
-				return null;
-			}
-		}
-		else
-		{
-			var scope = this.scope;
-			for(;;)
-			{
-				expr = scope.vars[name];
-
-				// Success
-				if(expr) { 
-					expr.numUses++;
-					break; 
-				}
-
-				if(!expr) 
-				{
-					if(scope === this.global) {
-						this.refError(name);
-						return null;					
-					}
-
-					scope = scope.parent;
-				}
-			}
-		}
-
-		return expr;
-	},
-
-	getFuncVar: function(name) 
-	{
-		var funcExpr = this.getVar(name);
-		if(!funcExpr) { return null; }
-
-		if(funcExpr.exprType !== this.exprEnum.FUNCTION) {
-			dopple.error(funcExpr.line, dopple.Error.EXPECTED_FUNC, dopple.makeFuncName(funcExpr));
-			return null;
-		}	
-
-		return funcExpr;	
-	},
-
-	getFunc: function(name, parentList) 
-	{
-		var funcExpr = null;
-
-		if(!parentList) {
-			funcExpr = this.global.vars[name];
-		}
-		else
-		{
-			var numItems = parentList.length;
-			if(numItems <= 0) {
-				funcExpr = this.global.vars[name];
-			}
-			else
-			{
-				var fullName = "";
-				for(var i = 0; i < numItems; i++) {
-					fullName += parentList[i].name + "$";
-				}
-				fullName += name;
-
-				var parentExpr = parentList[numItems - 1];
-				funcExpr = parentExpr.scope.vars[fullName];				
-			}
-		}
-
-		if(!funcExpr) 
-		{
-			funcExpr = new AST.Function(name, null, null, parentList);
-			funcExpr.empty = true;
-			funcExpr.rootName = name;
-
-			this.scope.vars[name] = funcExpr;		
-		}		
-
-		return funcExpr;
 	},
 
 	makeFuncName: function(name, parentList)
@@ -1413,16 +1186,6 @@ Lexer.Basic = dopple.Class.extend
 		if(!this.tokenSymbolError()) {
 			dopple.error(this.line, dopple.Error.UNEXPECTED_TOKEN, this.token.str);	
 		}	
-	},
-
-	refError: function(name) 
-	{
-		if(!name) {
-			name = "undefined";
-		}
-
-		this.isError = true;
-		dopple.error(this.line, dopple.Error.REFERENCE_ERROR, name);
 	},
 
 	handleUnexpectedToken: function() 

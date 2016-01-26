@@ -2,33 +2,28 @@
 
 Compiler.C = Compiler.Basic.extend
 ({
-	load: function()
+	prepare: function()
 	{
+		this.varEnum = dopple.VarEnum;
+		this.varMap = dopple.VarMap;
+
 		this.varMap[this.varEnum.VOID] = "void ";
 		this.varMap[this.varEnum.NUMBER] = "double ";
-		this.varMap[this.varEnum.BOOL] = "int32_t ";
+		this.varMap[this.varEnum.BOOL] = "char ";
 		this.varMap[this.varEnum.I32] = "int32_t ";
 		this.varMap[this.varEnum.NAME] = "const char *";
 		this.varMap[this.varEnum.STRING] = "char *";
 
-		this.createLexer();
-	},
-
-	createLexer: function()
-	{
+		//
 		var extern = this.lexer.extern;
 
 		extern.func("confirm", [ this.varEnum.STRING ]);
 		extern.func("prompt", [ this.varEnum.STRING ], this.varEnum.STRING);
 		
-		var console = extern.obj("console");
-		console.func("log", [ this.varEnum.FORMAT ]);
-		console.func("warn", [ this.varEnum.FORMAT ]);
-		console.func("error", [ this.varEnum.FORMAT ]);
-
-		// var NAME = extern.obj("NAME");
-		// NAME.getter("length", null, Variable.Type.NUMBER);
-		// NAME.setter("length", [ Variable.Type.NUMBER, "value" ]);
+		var console = extern.cls("console");
+		console.func("log", [ this.varEnum.ARGS ]);
+		console.func("warn", [ this.varEnum.ARGS ]);
+		console.func("error", [ this.varEnum.ARGS ]);
 
 		extern.func("alert", [ this.varEnum.STRING ]);
 		extern.func("confirm", [ this.varEnum.STRING ]);
@@ -75,12 +70,12 @@ Compiler.C = Compiler.Basic.extend
 			tabs = this.tabs;
 			this.haveNewline = scope.varGroup ? true : false;
 		}
-		else if(scope.objs)
+		else if(scope.clases)
 		{
-			var objs = scope.objs;
-			var numItems = objs.length;
+			var clases = scope.clases;
+			var numItems = clases.length;
 			for(i = 0; i < numItems; i++) {
-				this.emitCls(objs[i]);
+				output += this.tabs + this.emitCls(clases[i]) + ";\n";
 			}
 		}
 
@@ -95,6 +90,8 @@ Compiler.C = Compiler.Basic.extend
 		for(i = 0; i < numExprs; i++)
 		{
 			expr = exprs[i];
+			if(expr.hidden) { continue; }
+
 			type = expr.exprType;
 
 			if(type === this.exprEnum.VAR) {
@@ -229,10 +226,6 @@ Compiler.C = Compiler.Basic.extend
 
 	emitVar: function(varExpr)
 	{
-		if(this.settings.stripDeadCode && varExpr.var.numUses === 0) {
-			return null;
-		}
-
 		var output = "";
 		var varType = varExpr.var.type;
 
@@ -566,12 +559,12 @@ Compiler.C = Compiler.Basic.extend
 			numParams = params.length;
 		}
 
-		var funcName = dopple.makeFuncName(func);
+		var funcName = this.makeFuncName(func);
 		var output = this.varMap[func.type] + funcName + "(";
 
-		var obj = func.obj;
-		if(obj && !obj.isStatic) {
-			output += this.varMap[obj.type] + " *this";
+		var cls = func.cls;
+		if(cls && !cls.isStatic) {
+			output += this.varMap[cls.type] + " *this";
 		}
 
 		if(numParams) 
@@ -605,10 +598,10 @@ Compiler.C = Compiler.Basic.extend
 		output += ") \n{\n";
 	
 		// If is constructor - initialize class variables:
-		if(func.obj && func.obj.isStatic) 
+		if(func.cls && func.cls.isStatic) 
 		{
 			this.incTabs();
-			output += this.emitConstrFunc(func.obj);
+			output += this.emitConstrFunc(func.cls);
 			this.decTabs();
 		}
 		else {
@@ -620,12 +613,12 @@ Compiler.C = Compiler.Basic.extend
 		return output;
 	},
 
-	emitConstrFunc: function(obj)
+	emitConstrFunc: function(clsExpr)
 	{
 		var output = "";
 
 		var varExpr;
-		var vars = obj.scope.vars;
+		var vars = clsExpr.scope.vars;
 		for(var key in vars) 
 		{
 			varExpr = vars[key];
@@ -641,8 +634,8 @@ Compiler.C = Compiler.Basic.extend
 	{
 		var output;
 
-		if(returnExpr.expr) {
-			output = this.tabs + "return " + this.emitExpr(returnExpr.expr.expr, null) + ";\n";
+		if(returnExpr.varExpr) {
+			output = this.tabs + "return " + this.emitExpr(returnExpr.varExpr.expr, null) + ";\n";
 		}
 		else {
 			output = this.tabs + "return;\n";
@@ -660,7 +653,7 @@ Compiler.C = Compiler.Basic.extend
 		var numParams = params ? params.length : 0;
 		var numArgs = args ? args.length : 0;
 
-		var output = dopple.makeFuncName(funcCall.func) + "(";
+		var output = this.makeFuncName(funcCall.func) + "(";
 
 		if(thisVar) 
 		{
@@ -676,8 +669,8 @@ Compiler.C = Compiler.Basic.extend
 		for(i = 0; i < numArgs; i++)
 		{
 			param = params[i];
-			if(param.type === this.varEnum.FORMAT) {
-				output += this.emitFormat(args, i);
+			if(param.type === this.varEnum.ARGS) {
+				output += this.emitArgs(args, i);
 				output += ")";
 				return output;
 			}
@@ -686,6 +679,9 @@ Compiler.C = Compiler.Basic.extend
 				arg = args[i];
 				if(arg.exprType === this.exprEnum.BINARY) {
 					output += this.emitExpr(arg);			
+				}
+				else if(arg.isArg) {
+					output += this.emitDefaultValue(arg);
 				}
 				else {
 					output += arg.castTo(param);
@@ -739,12 +735,13 @@ Compiler.C = Compiler.Basic.extend
 		this.funcOutput += output;
 
 		this.emitFuncs(clsExpr.scope.funcs);
-		if(this.isError) { return false; }
+		if(this.isError) { return; }
 
-		return false;
+		var constrFuncCall = new AST.FunctionCall(clsExpr.constrFunc);
+		return this.emitFuncCall(constrFuncCall);
 	},
 
-	emitFormat: function(args)
+	emitArgs: function(args)
 	{
 		this.tmpOutput1 = "";
 		this.tmpOutput2 = "";
@@ -820,7 +817,7 @@ Compiler.C = Compiler.Basic.extend
 				}
 			}			
 			else {
-				console.error("(Compiler.emitFormat) An unhandled case.");
+				console.error("(Compiler.emitArgs) An unhandled case.");
 				return false;
 			}
 		}
@@ -873,11 +870,31 @@ Compiler.C = Compiler.Basic.extend
 			}
 		}
 		else {
-			console.error("Compiler.emitFormat: An unhandled case.");
+			console.error("Compiler.emitArgs: An unhandled case.");
 			return false;
 		}			
 
 		return true;
+	},
+
+	emitDefaultValue: function(varExpr) 
+	{
+		var type = varExpr.type;
+		switch(type)
+		{
+			case this.varEnum.NUMBER:
+			case this.varEnum.BOOL:
+				return "0";
+
+			case this.varEnum.STRING:
+				return "\"\\x0\\x0\\x0\\x0\"\"\"";
+		}
+
+		if(type > 99) {
+			return "null";
+		}
+
+		return "Unknown";
 	},
 
 	makeVarName: function(varExpr)
@@ -888,24 +905,37 @@ Compiler.C = Compiler.Basic.extend
 		}
 
 		var numItems = parentList.length;
-		if(numItems <= 0) {
-			return varExpr.value;
-		}
-		
 		var name = "";
 
 		var i = 0;
-		if(this.scope.owner && !this.scope.owner.obj && parentList[0].exprType === this.exprEnum.THIS) {
+		if(this.scope.owner && !this.scope.owner.cls && parentList[0].exprType === this.exprEnum.THIS) {
 			i++;
 		}
 
 		for(; i < numItems; i++) {
-			name += parentList[i].name + ".";
+			name += parentList[i] + ".";
 		}
 		name += varExpr.value;
 
 		return name;
 	},
+
+	makeFuncName: function(funcExpr)
+	{
+		var parentList = funcExpr.parentList;
+		if(!parentList) {
+			return funcExpr.name;
+		}
+		
+		var name = "";
+		var numItems = parentList.length;
+		for(var i = 0; i < numItems; i++) {
+			name += parentList[i] + "$";
+		}
+		name += funcExpr.name;
+
+		return name;		
+	},	
 
 	//
 	varMap: {},
