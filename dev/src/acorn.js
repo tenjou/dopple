@@ -19,6 +19,7 @@ dopple.acorn =
 		this.lookup["ReturnStatement"] = this.parseReturn;
 		this.lookup["BlockStatement"] = this.parseBlock;
 		this.lookup["IfStatement"] = this.parseIf;
+		this.lookup["SequenceExpression"] = this.parseSequenceExpr;
 		this.lookup["SwitchStatement"] = this.parseSwitch;
 		this.lookup["ForStatement"] = this.parseFor;
 		this.lookup["ForInStatement"] = this.parseForIn;
@@ -86,7 +87,7 @@ dopple.acorn =
 	},	
 
 	parseIdentifier: function(node) {
-		return new dopple.AST.String(node.name);
+		return new dopple.AST.Identifier(node.name);
 	},	
 
 	parseBinaryExpr: function(node) 
@@ -202,6 +203,17 @@ dopple.acorn =
 
 		return ifExpr;
 	},	
+
+	parseSequenceExpr: function(node)
+	{
+		var expr;
+		var exprs = node.expressions;
+		var num = exprs.length;
+		for(var n = 0; n < num; n++) {
+			expr = exprs[n];
+			this.lookup[expr.type].call(this, expr);
+		}
+	},
 
 	parseSwitch: function(node)
 	{
@@ -432,13 +444,13 @@ dopple.acorn =
 		}
 		else
 		{
-			if(keyExpr.exprType === dopple.ExprType.REFERENCE) 
-			{		
-				expr = new dopple.AST.Reference(keyExpr, valueExpr);
-			}
-			else {
+			// if(keyExpr.exprType === dopple.ExprType.REFERENCE) 
+			// {		
+			// 	expr = new dopple.AST.Reference(keyExpr, valueExpr);
+			// }
+			// else {
 				expr = new dopple.AST.ObjectProperty(keyExpr, valueExpr);
-			}
+			//}
 		}		
 
 		return expr;

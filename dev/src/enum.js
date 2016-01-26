@@ -39,7 +39,8 @@ dopple.ExprType = {
 	NEW: 35,
 	NULL: 36,
 	ARRAY: 37,
-	TYPE: 38
+	TYPE: 38,
+	IDENTIFIER: 39
 };
 
 dopple.SubType = {

@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+
+		<title>Meta2D</title>
+
+		<style>
+/* open-sans-regular - latin */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Open Sans'), local('OpenSans'),
+       url('fonts/open-sans-v13-latin-regular.woff2') format('woff2'), /* Chrome 26+, Opera 23+ */
+       url('fonts/open-sans-v13-latin-regular.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+}
+/* open-sans-600 - latin */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 600;
+  src: local('Open Sans Semibold'), local('OpenSans-Semibold'),
+       url('fonts/open-sans-v13-latin-600.woff2') format('woff2'), /* Chrome 26+, Opera 23+ */
+       url('fonts/open-sans-v13-latin-600.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+}
+/* open-sans-700 - latin */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 700;
+  src: local('Open Sans Bold'), local('OpenSans-Bold'),
+       url('fonts/open-sans-v13-latin-700.woff2') format('woff2'), /* Chrome 26+, Opera 23+ */
+       url('fonts/open-sans-v13-latin-700.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+}
+
+			* {
+				padding: 0;
+				margin: 0;
+			}
+
+			body {
+				position: absolute;
+				width: 100%;
+				height: 100%;
+				background: #f0f0f0;
+			    font-family: "Open Sans";
+			    font-size: 14px;
+			}
+
+			docs {
+				display: flex;
+			    margin: 7px;
+			}
+
+			footer {
+				margin-top: 20px;
+				background-color: #e1e1e1;
+				padding: 20px;
+				color: #111;
+				text-align: center;
+				text-transform: uppercase;
+				font-weight: 700;
+				font-size: 11px;
+			}			
+
+		h3 {
+			background: black;
+			color: white;
+			    font-size: 14px;
+			    text-transform: uppercase;
+			    padding: 3px;
+			    padding-left: 5px;
+			}
+
+		nav h3 {
+						    margin: 14px;
+			    margin-bottom: 3px;
+
+		}
+
+nav {
+  flex: 0 0 240px;
+  border-right: 1px dashed #ccc;
+}
+
+		nav content {
+			display: block;
+			margin: 14px;
+			margin-top: 0px;
+		}
+			nav a {
+				text-decoration: none;
+				color: #222;
+				padding: 3px;
+				padding-left: 8px;
+				padding-right: 8px;
+				min-width: 60px;
+				box-sizing: border-box;
+			}
+
+			nav a:hover, nav a.active {
+				background: white;
+				font-weight: bold;
+			}
+
+			nav a {
+				display: block;
+				margin-left: 2px;
+			}
+
+			item {
+				display: block;
+			}
+
+input {
+	    display: flex;
+    max-width: 100%;
+    /* margin: 10px; */
+    padding: 7px;
+    border-radius: 2px;
+    border: 2px solid #DEDEDE;
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 2px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+type {
+	margin-top: 12px;
+    font-weight: bold;
+    color: #FFFFFF;
+    text-transform: uppercase;
+    font-size: 11px;
+    background: black;
+    padding: 3px;
+    display: inline-block;
+    margin-right: 4px;
+    min-width: 70px;
+    text-align: center;
+}
+
+
+.hidden {
+	display: none;
+}
+
+inner {
+	flex: 1 1 100%;
+				padding: 10px;	
+				padding-left: 14px;
+}
+
+inner h2 {
+	margin-top: 25px;
+}
+
+inner name {
+	font-size: 1.5em;
+	font-weight: bold;
+}
+
+inner p {
+    padding: 10px;
+    padding-bottom: 2px;
+}
+
+inner section a {
+	text-decoration: none;
+	display: block;
+	color: #000;
+	padding: 5px;
+	margin-left: 5px;
+	margin-right: 5px;
+	border-bottom: 1px dashed #ddd;
+}
+
+inner section a:hover {
+	background: white;
+	font-weight: bold;
+}
+
+inner section a:last-child {
+	border-bottom: none;
+}
+
+input:focus,
+select:focus,
+textarea:focus,
+button:focus {
+    outline: none;
+    border: 2px solid #348fe2;
+}
+
+inner section h3 {
+	border-bottom: 1px solid black;
+	margin-top: 4px;
+	margin-bottom: 2px;
+}
+
+term {
+	background: #CEE1EC;
+}
+
+scope {
+	color: #999;
+}
+
+inner name a {
+	display: inline;
+	color: #000;
+	text-decoration: none;
+}
+
+inner name a:hover {
+	text-decoration: underline;
+}
+
+		</style>	
+
+		<script src="src/meta.utils.js"></script>
+		<script src="src/main.js"></script>	
+		
+
+	</head>
+
+<body onload="main();">
+	<docs>
+		
+	</docs>
+
+	<footer>
+		Portions of this content are ©2015 by individual Infinite Foundation Inc. contributors.
+	</footer>
+</html>

@@ -60,6 +60,20 @@ meta.class("dopple.AST.Binary",
 	rhs: null
 });
 
+/* identifier */
+meta.class("dopple.AST.Identifier",
+{
+	init: function(value) 
+	{
+		if(value) { this.value = value; }
+	},
+
+	//
+	exprType: dopple.ExprType.IDENTIFIER,
+	cls: null,
+	value: ""
+});
+
 /* assign */
 meta.class("dopple.AST.Assign", 
 {
@@ -442,6 +456,7 @@ meta.class("dopple.AST.Class",
 	{
 		this.name = name;
 		this.scope = scope;
+
 		if(this.extend) { this.extend = extend; }
 	},
 
@@ -451,6 +466,8 @@ meta.class("dopple.AST.Class",
 	cls: null,
 	id: 0,
 	flags: 0,
+
+	constrFunc: null,
 
 	name: null,
 	scope: null,
@@ -462,6 +479,7 @@ meta.class("dopple.AST.Object",
 {
 	init: function(scope) {
 		this.scope = scope;
+		this.scope.staticVars = scope.vars;
 	},
 
 	//

@@ -101,6 +101,10 @@ var meta = {
 
 "use strict";
 
+var UI = {};
+var Physics = {};
+var Steering = {};
+
 (function(scope) {
     if (!scope.meta) {
         scope.meta = {};
@@ -339,7 +343,7 @@ meta.engine = {
         this.time.current = Date.now();
         var cache = meta.cache;
         var masterView = new meta.View("master");
-        cache.views["master"] = masterView;
+        cache.views.master = masterView;
         cache.view = masterView;
         var ctrlInfo;
         var ctrlsToCreate = cache.ctrlsToCreate;
@@ -793,11 +797,11 @@ meta.engine = {
     _printInfo: function() {
         if (meta.device.support.consoleCSS) {
             console.log("%c META2D v" + meta.version + " ", "background: #000; color: white; font-size: 12px; padding: 2px 0 1px 0;", "http://meta2d.com");
-            console.log("%cBrowser: %c" + meta.device.name + " " + meta.device.version + "  ", "font-weight: bold; padding: 2px 0 1px 0;", "padding: 2px 0 1px 0;");
+            console.log("%cBrowser: %c" + meta.device.name + " " + meta.device.version + "	", "font-weight: bold; padding: 2px 0 1px 0;", "padding: 2px 0 1px 0;");
             console.log("%cRenderer: %cCanvas ", "font-weight: bold; padding: 2px 0 2px 0;", "padding: 2px 0 2px 0;");
         } else {
             console.log("META2D v" + meta.version + " http://meta2d.com ");
-            console.log("Browser: " + meta.device.name + " " + meta.device.version + "  ");
+            console.log("Browser: " + meta.device.name + " " + meta.device.version + "	");
             console.log("Renderer: Canvas ");
         }
     },
@@ -1403,7 +1407,7 @@ meta.rgbToHex = function(r, g, b) {
 };
 
 function isSpace(c) {
-    return c === " " || c === " " || c === "\r" || c === "\n";
+    return c === " " || c === "	" || c === "\r" || c === "\n";
 }
 
 function isNewline(c) {
@@ -8245,493 +8249,6 @@ meta.class("Entity.Tiling", "Entity.Geometry", {
 
 "use strict";
 
-meta.class("Entity.ParticleEmitter", "Entity.Geometry", {
-    onCreate: function() {
-        this.particles = [];
-        this.preset = "meteor";
-    },
-    update: function(tDelta) {
-        this.elapsed += tDelta;
-        if (this.elapsed > this.duration) {
-            this.updating = false;
-            return;
-        }
-        if (this.emissionRate > 0) {
-            var rate = 1 / this.emissionRate;
-            this.emissionCounter += tDelta;
-            var num = Math.floor(this.emissionCounter / rate);
-            if (num > 0) {
-                this.emissionCounter -= num * rate;
-                if (num > this.particles.length - this.numActive) {
-                    num = this.particles.length - this.numActive;
-                }
-                var newNumActive = this.numActive + num;
-                for (var i = this.numActive; i < newNumActive; i++) {
-                    this.initParticle(this.particles[i]);
-                }
-                this.numActive = newNumActive;
-            }
-        }
-        var particle;
-        for (var n = 0; n < this.numActive; n++) {
-            particle = this.particles[n];
-            particle.life -= tDelta;
-            if (particle.life <= 0) {
-                this.numActive--;
-                this.particles[n] = this.particles[this.numActive];
-                this.particles[this.numActive] = particle;
-                continue;
-            }
-            this.updateParticle(particle, tDelta);
-        }
-        this.renderer.needRender = true;
-    },
-    initParticle: function(particle) {
-        particle.x = meta.random.numberF(-1, 1) * this.xVar;
-        particle.y = meta.random.numberF(-1, 1) * this.yVar;
-        particle.life = this.life + meta.random.numberF(-1, 1) * this.lifeVar;
-        var speed = this.speed + meta.random.numberF(-1, 1) * this.speedVar;
-        var angle = this.startAngle + meta.random.numberF(-1, 1) * this.startAngleVar;
-        particle.velX = Math.cos(Math.PI * angle / 180) * speed;
-        particle.vecY = -Math.sin(Math.PI * angle / 180) * speed;
-        particle.radialAccel = this.radialAccel + this.radialAccelVar * meta.random.numberF(-1, 1);
-        particle.tangentialAccel = this.tangentialAccel + this.tangentialAccelVar * meta.random.numberF(-1, 1);
-        if (this._textureTinting) {
-            particle.color[0] = this.startColor[0] + this.startColorVar[0] * meta.random.numberF(-1, 1);
-            particle.color[1] = this.startColor[1] + this.startColorVar[1] * meta.random.numberF(-1, 1);
-            particle.color[2] = this.startColor[2] + this.startColorVar[2] * meta.random.numberF(-1, 1);
-            particle.color[3] = this.startColor[3] + this.startColorVar[3] * meta.random.numberF(-1, 1);
-            this._endColor[0] = this.endColor[0] + this.endColorVar[0] * meta.random.numberF(-1, 1);
-            this._endColor[1] = this.endColor[1] + this.endColorVar[1] * meta.random.numberF(-1, 1);
-            this._endColor[2] = this.endColor[2] + this.endColorVar[2] * meta.random.numberF(-1, 1);
-            this._endColor[3] = this.endColor[3] + this.endColorVar[3] * meta.random.numberF(-1, 1);
-            particle.colorDelta[0] = (this._endColor[0] - this.startColor[0]) / particle.life;
-            particle.colorDelta[1] = (this._endColor[1] - this.startColor[1]) / particle.life;
-            particle.colorDelta[2] = (this._endColor[2] - this.startColor[2]) / particle.life;
-            particle.colorDelta[3] = (this._endColor[3] - this.startColor[3]) / particle.life;
-        }
-        particle.scale = this.startScale + this.startScaleVar * meta.random.numberF(-1, 1);
-        var endScale = this.endScale + this.endScaleVar * meta.random.numberF(-1, 1);
-        particle.scaleDelta = (endScale - particle.scale) / particle.life;
-    },
-    updateParticle: function(particle, tDelta) {
-        particle.forcesX = this.gravityX * tDelta;
-        particle.forcesY = this.gravityY * tDelta;
-        particle.velX += particle.forcesX;
-        particle.vecY += particle.forcesY;
-        particle.x += particle.velX * tDelta;
-        particle.y += particle.vecY * tDelta;
-        if (particle.color) {
-            particle.color[0] += particle.colorDelta[0] * tDelta;
-            particle.color[1] += particle.colorDelta[1] * tDelta;
-            particle.color[2] += particle.colorDelta[2] * tDelta;
-            particle.color[3] += particle.colorDelta[3] * tDelta;
-        }
-        particle.scale += this.scaleDelta;
-    },
-    draw: function(ctx) {
-        if (!this._texture.loaded) {
-            return;
-        }
-        var tDelta = meta.time.deltaF;
-        var img = this.texture.canvas;
-        var parentX = this.volume.minX - img.width * .5;
-        var parentY = this.volume.minY - img.height * .5;
-        if (this._textureAdditive) {
-            ctx.globalCompositeOperation = "lighter";
-        } else {
-            ctx.globalCompositeOperation = "source-over";
-        }
-        var particle, color;
-        for (var n = 0; n < this.numActive; n++) {
-            particle = this.particles[n];
-            color = particle.color;
-            if (color[3] > 1) {
-                color[3] = 1;
-            }
-            if (color[3] < 0) {
-                color[3] = 0;
-            }
-            this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
-            this._ctx.globalCompositeOperation = "source-over";
-            this._ctx.globalAlpha = color[3];
-            this._ctx.drawImage(img, 0, 0);
-            this._ctx.globalCompositeOperation = "source-atop";
-            this._ctx.fillStyle = "rgba(" + (color[0] | 0) + ", " + (color[1] | 0) + ", " + (color[2] | 0) + ", 1.0)";
-            this._ctx.fillRect(0, 0, this._canvas.width, this._canvas.height);
-            this._ctx.globalCompositeOperation = "source-over";
-            this._ctx.globalAlpha = color[3];
-            ctx.drawImage(this.texture.canvas, parentX + particle.x, parentY + particle.y);
-        }
-    },
-    play: function() {
-        this.updating = true;
-    },
-    pause: function() {
-        this.updating = false;
-    },
-    togglePlay: function() {
-        if (this.updating) {
-            this.pause();
-        } else {
-            this.play();
-        }
-    },
-    reset: function() {
-        this.numActive = 0;
-        this.elapsed = 0;
-    },
-    set texture(value) {
-        if (!value) {
-            if (!this._svgTexture) {
-                this._svgTexture = new Resource.SVG();
-                this._svgTexture.fillStyle = "white";
-                this._svgTexture.circle(this._radius);
-            }
-            this._texture = this._svgTexture;
-        } else {
-            this._texture = value;
-        }
-        if (this._texture.loaded) {
-            this.updateTintCanvas();
-        } else {
-            this.texture.subscribe(this.onTextureEvent, this);
-        }
-    },
-    get texture() {
-        return this._texture;
-    },
-    updateTintCanvas: function() {
-        if (!this._canvas) {
-            this._canvas = document.createElement("canvas");
-            this._ctx = this._canvas.getContext("2d");
-        }
-        this._canvas.width = this._texture.width;
-        this._canvas.height = this._texture.height;
-    },
-    onTextureEvent: function(data, event) {
-        this.updateTintCanvas();
-        this._texture.unsubscribe(this);
-    },
-    set totalParticles(value) {
-        var num = this.particles.length;
-        this.particles.length = value;
-        for (var n = num; n < value; n++) {
-            this.particles[n] = new this.Particle();
-        }
-        if (this.numActive > value) {
-            this.numActive = value;
-        }
-    },
-    get totalParticles() {
-        return this.particles.length;
-    },
-    set textureAdditive(value) {
-        this._textureAdditive = value;
-    },
-    get textureAdditive() {
-        return this._textureAdditive;
-    },
-    set textureTinting(value) {
-        this._textureTinting = value;
-    },
-    get textureTinting() {
-        return this._textureTinting;
-    },
-    set radius(value) {
-        this._radius = value;
-        if (this._texture === this._svgTexture) {
-            this._svgTexture.clear();
-            this._svgTexture.circle(this._radius);
-            this.updateTintCanvas();
-        }
-    },
-    get radius() {
-        return this._radius;
-    },
-    set preset(name) {
-        var preset = this.presets[name];
-        for (var key in preset) {
-            if (this[key] === preset[key]) {
-                continue;
-            }
-            this[key] = preset[key];
-        }
-        this.textureAdditive = this._textureAdditive;
-    },
-    Particle: function() {
-        this.life = 0;
-        this.x = 0;
-        this.y = 0;
-        this.velX = 0;
-        this.velY = 0;
-        this.radialAccel = 0;
-        this.tangentialAccel = 0;
-        this.forcesX = 0;
-        this.forcesY = 0;
-        this.color = new Float32Array(4);
-        this.colorDelta = new Float32Array(4);
-        this.scale = 1;
-        this.scaleDelta = 1;
-    },
-    particles: null,
-    numActive: 0,
-    emissionRate: 0,
-    emissionCounter: 0,
-    elapsed: 0,
-    duration: Infinity,
-    life: 1,
-    lifeVar: 0,
-    xVar: 0,
-    yVar: 0,
-    speed: 0,
-    speedVar: 0,
-    startAngle: 0,
-    startAngleVar: 0,
-    startScale: 1,
-    startScaleVar: 0,
-    endScale: 1,
-    endScaleVar: 0,
-    gravityX: 0,
-    gravityY: 0,
-    radialAccel: 0,
-    radialAccelVar: 0,
-    tangentialAccel: 0,
-    tangentialAccelVar: 0,
-    startColor: null,
-    startColorVar: null,
-    endColor: null,
-    endColorVar: null,
-    _endColor: new Float32Array(4),
-    _canvas: null,
-    _ctx: null,
-    _svgTexture: null,
-    _radius: 10,
-    _textureAdditive: false,
-    presets: {
-        empty: {
-            totalParticles: 50,
-            emissionRate: 10,
-            life: 1,
-            lifeVar: 0
-        },
-        meteor: {
-            totalParticles: 45,
-            emissionRate: 40,
-            life: 1,
-            lifeVar: .1,
-            xVar: 2,
-            yVar: 2,
-            speed: 15,
-            speedVar: 5,
-            angle: 90,
-            angleVar: 360,
-            gravityX: -200,
-            gravityY: -200,
-            radialAccel: 0,
-            radialAccelVar: 0,
-            tangentialAccel: 0,
-            tangentialAccelVar: 0,
-            startColor: [ 255, 42, 0, 1 ],
-            startColorVar: [ 0, 0, 51, .1 ],
-            endColor: [ 0, 0, 0, 1 ],
-            endColorVar: [ 0, 0, 0, 0 ],
-            scale: 1,
-            scaleVar: 1,
-            endScale: 1,
-            endScaleVar: 1,
-            textureAdditive: true,
-            radius: 10
-        }
-    }
-});
-
-"use strict";
-
-meta.class("Component.Basic", {
-    set updating(value) {
-        if (value) {
-            if (this._updating) {
-                return;
-            }
-            this._updating = true;
-            if (this.owner.flags & this.owner.Flag.INSTANCE_ENABLED) {
-                if (this._updateIndex > -1) {
-                    var compsUpdateRemove = meta.renderer.compsUpdateRemove;
-                    var index = compsUpdateRemove.indexOf(this);
-                    compsUpdateRemove[index] = null;
-                } else {
-                    var compsUpdate = meta.renderer.compsUpdate;
-                    compsUpdate.push(this);
-                    this._updateIndex = compsUpdate.length;
-                }
-            }
-        } else {
-            if (!this._updating) {
-                return;
-            }
-            this._updating = false;
-            if (this._updateIndex > -1) {
-                meta.renderer.compsUpdateRemove.push(this);
-            }
-        }
-    },
-    get updating() {
-        return this._updating;
-    },
-    owner: null,
-    _updating: false,
-    _updateIndex: -1
-});
-
-"use strict";
-
-meta.component("Component.Anim", {
-    set: function(texture) {
-        if (!texture) {
-            if (this.__index !== -1) {
-                meta.renderer.removeAnim(this);
-            }
-            this.texture = null;
-            return;
-        }
-        this.texture = texture;
-        if (texture.frames > 1) {
-            this.texture = texture;
-            this.fps = texture.fps;
-            this.__tAnim = 0;
-            if (this.reverse) {
-                this._frame = texture.frames - 1;
-            } else {
-                this._frame = 0;
-            }
-            if (this.autoPlay) {
-                meta.renderer.addAnim(this);
-            }
-        } else if (this.__index !== -1) {
-            meta.renderer.removeAnim(this);
-        }
-    },
-    play: function(loop, fps) {
-        if (!this.texture) {
-            console.warn("(Component.Anim.play) Invalid texture");
-            return;
-        }
-        this.loop = loop || false;
-        this.fps = fps || this.texture.fps;
-        meta.renderer.addAnim(this);
-    },
-    pause: function() {
-        meta.renderer.removeAnim(this);
-    },
-    resume: function() {
-        meta.renderer.addAnim(this);
-    },
-    stop: function() {
-        if (this.reverse) {
-            this._frame = texture.frames - 1;
-        } else {
-            this._frame = 0;
-        }
-        meta.renderer.removeAnim(this);
-    },
-    reset: function() {
-        if (this.reverse) {
-            this._frame = texture.frames - 1;
-        } else {
-            this._frame = 0;
-        }
-        meta.renderer.addAnim(this);
-    },
-    onEnd: null,
-    onCancel: null,
-    update: function(tDelta) {
-        this.__tAnim += tDelta;
-        if (this.__tAnim < this.__delay) {
-            return;
-        }
-        var frames = this.__tAnim / this.__delay | 0;
-        this.__tAnim -= frames * this.__delay;
-        if (!this.reverse) {
-            this._frame += frames;
-            if (this._frame >= this.texture.frames) {
-                if (this.pauseLastFrame) {
-                    meta.renderer.removeAnim(this);
-                    this._frame = this.texture.frames - 1;
-                } else if (!this.loop) {
-                    meta.renderer.removeAnim(this);
-                    this._frame = 0;
-                } else {
-                    this._frame = this._frame % this.texture.frames;
-                }
-                if (this.onEnd) {
-                    this.onEnd.call(this.owner);
-                }
-            }
-        } else {
-            this._frame -= frames;
-            if (this._frame < 0) {
-                if (this.pauseLastFrame) {
-                    meta.renderer.removeAnim(this);
-                    this._frame = 0;
-                } else if (!this.loop) {
-                    meta.renderer.removeAnim(this);
-                    this._frame = this.texture.frames - 1;
-                } else {
-                    this._frame = (this.texture.frames + this._frame) % this.texture.frames;
-                }
-                if (this.onEnd) {
-                    this.onEnd.call(this.owner);
-                }
-            }
-        }
-        this.owner.renderer.needRender = true;
-    },
-    set frame(frame) {
-        this._frame = frame;
-        this.owner.renderer.needRender = true;
-    },
-    get frame() {
-        return this._frame;
-    },
-    set fps(fps) {
-        this._fps = fps;
-        this.__delay = 1 / (fps * this._speed);
-    },
-    get fps() {
-        return this._fps;
-    },
-    set speed(speed) {
-        this._speed = speed;
-        this.__delay = 1 / (fps * this._speed);
-    },
-    get speed() {
-        return this._speed;
-    },
-    set paused(value) {
-        if (value) {
-            this.pause();
-        } else {
-            this.resume();
-        }
-    },
-    get paused() {
-        return true;
-    },
-    loop: true,
-    reverse: false,
-    autoPlay: true,
-    pauseLastFrame: false,
-    _fps: 0,
-    _speed: 1,
-    _frame: 0,
-    __index: -1,
-    __delay: 0,
-    __tAnim: 0
-});
-
-"use strict";
-
 meta.class("Entity.Tilemap", "Entity.Geometry", {
     init: function(tilesX, tilesY, tileWidth, tileHeight) {
         this._super();
@@ -9261,13 +8778,13 @@ meta.class("Entity.TilemapLayer", "Entity.Geometry", {
         this._super(entity);
         entity._activate();
         if (entity.flags & entity.Flag.PICKING) {
-            this.renderer.entitiesPicking.push(entity);
+            meta.renderer.entitiesPicking.push(entity);
         }
     },
     _attachToCell: function(entity) {
         entity.layerParent = this;
         if (entity.flags & entity.Flag.PICKING) {
-            this.renderer.entitiesPicking.push(entity);
+            meta.renderer.entitiesPicking.push(entity);
         }
     },
     detach: function(entity) {},
@@ -9696,35 +9213,42 @@ meta.class("Entity.TilemapHexLayer", "Entity.TilemapLayer", {
 
 "use strict";
 
-meta.class("Component.TileBody", "Component.Basic", {
+meta.class("Entity.TileGeometry", "Entity.Geometry", {
     update: function(tDelta) {
         if (this.needMoving) {
-            var volume = this.owner.volume;
-            var distance = meta.math.length(volume.x - this.owner.totalOffsetX, volume.y - this.owner.totalOffsetY, this.targetX, this.targetY);
+            var distance = meta.math.length(this.volume.x - this.totalOffsetX, this.volume.y - this.totalOffsetY, this.targetX, this.targetY);
             if (distance <= this.speed * tDelta) {
-                this.owner.position(this.targetX, this.targetY);
-                if (this.targets && this.targets.length > 0) {
-                    this.moveToCells(this.targets);
-                } else {
-                    this.needMoving = false;
-                }
+                this.position(this.targetX, this.targetY);
+                this.needMoving = false;
                 if (this.onMoveDone) {
-                    this.onMoveDone.call(this);
+                    this.onMoveDone();
+                }
+                if (this.targets) {
+                    this.moveToCells(this.targets);
                 }
             } else {
-                this._tmpVec.x = this.targetX - volume.x + this.owner.totalOffsetX;
-                this._tmpVec.y = this.targetY - volume.y + this.owner.totalOffsetY;
+                this._tmpVec.x = this.targetX - this.volume.x + this.totalOffsetX;
+                this._tmpVec.y = this.targetY - this.volume.y + this.totalOffsetY;
                 this._tmpVec.normalize();
                 var speed = this.speed * tDelta;
-                this.owner.move(this._tmpVec.x * speed, this._tmpVec.y * speed);
+                this.move(this._tmpVec.x * speed, this._tmpVec.y * speed);
             }
         }
     },
+    updatePos: function() {
+        this._super();
+        this.parent._calcEntityCell(this);
+    },
+    setCell: function(cellX, cellY) {
+        this.cellX = cellX;
+        this.cellY = cellY;
+        this.parent._calcEntityPos(this);
+    },
     moveToCell: function(cellX, cellY) {
-        var cellPos = this.owner.parent.cellPos;
+        var cellPos = this.parent.cellPos;
         cellPos.cellX = cellX;
         cellPos.cellY = cellY;
-        this.owner.parent.getPosEx(cellPos);
+        this.parent.getPosEx(cellPos);
         this.targetX = cellPos.x;
         this.targetY = cellPos.y;
         this.needMoving = true;
@@ -9744,8 +9268,12 @@ meta.class("Component.TileBody", "Component.Basic", {
         this.target = null;
     },
     onMoveDone: null,
+    _setView: function(view, parent) {},
+    cellX: 0,
+    cellY: 0,
+    _cellId: -1,
+    _cellIndex: -1,
     needMoving: false,
-    target: null,
     targets: null,
     targetCellX: 0,
     targetY: 0,
@@ -9755,21 +9283,451 @@ meta.class("Component.TileBody", "Component.Basic", {
 
 "use strict";
 
-meta.class("Entity.TileGeometry", "Entity.Geometry", {
-    updatePos: function() {
-        this._super();
-        this.parent._calcEntityCell(this);
+meta.class("Entity.ParticleEmitter", "Entity.Geometry", {
+    onCreate: function() {
+        this.particles = [];
+        this.preset = "meteor";
     },
-    setCell: function(cellX, cellY) {
-        this.cellX = cellX;
-        this.cellY = cellY;
-        this.parent._calcEntityPos(this);
+    update: function(tDelta) {
+        this.elapsed += tDelta;
+        if (this.elapsed > this.duration) {
+            this.updating = false;
+            return;
+        }
+        if (this.emissionRate > 0) {
+            var rate = 1 / this.emissionRate;
+            this.emissionCounter += tDelta;
+            var num = Math.floor(this.emissionCounter / rate);
+            if (num > 0) {
+                this.emissionCounter -= num * rate;
+                if (num > this.particles.length - this.numActive) {
+                    num = this.particles.length - this.numActive;
+                }
+                var newNumActive = this.numActive + num;
+                for (var i = this.numActive; i < newNumActive; i++) {
+                    this.initParticle(this.particles[i]);
+                }
+                this.numActive = newNumActive;
+            }
+        }
+        var particle;
+        for (var n = 0; n < this.numActive; n++) {
+            particle = this.particles[n];
+            particle.life -= tDelta;
+            if (particle.life <= 0) {
+                this.numActive--;
+                this.particles[n] = this.particles[this.numActive];
+                this.particles[this.numActive] = particle;
+                continue;
+            }
+            this.updateParticle(particle, tDelta);
+        }
+        this.renderer.needRender = true;
     },
-    _setView: function(view, parent) {},
-    cellX: 0,
-    cellY: 0,
-    _cellId: -1,
-    _cellIndex: -1
+    initParticle: function(particle) {
+        particle.x = meta.random.numberF(-1, 1) * this.xVar;
+        particle.y = meta.random.numberF(-1, 1) * this.yVar;
+        particle.life = this.life + meta.random.numberF(-1, 1) * this.lifeVar;
+        var speed = this.speed + meta.random.numberF(-1, 1) * this.speedVar;
+        var angle = this.startAngle + meta.random.numberF(-1, 1) * this.startAngleVar;
+        particle.velX = Math.cos(Math.PI * angle / 180) * speed;
+        particle.vecY = -Math.sin(Math.PI * angle / 180) * speed;
+        particle.radialAccel = this.radialAccel + this.radialAccelVar * meta.random.numberF(-1, 1);
+        particle.tangentialAccel = this.tangentialAccel + this.tangentialAccelVar * meta.random.numberF(-1, 1);
+        if (this._textureTinting) {
+            particle.color[0] = this.startColor[0] + this.startColorVar[0] * meta.random.numberF(-1, 1);
+            particle.color[1] = this.startColor[1] + this.startColorVar[1] * meta.random.numberF(-1, 1);
+            particle.color[2] = this.startColor[2] + this.startColorVar[2] * meta.random.numberF(-1, 1);
+            particle.color[3] = this.startColor[3] + this.startColorVar[3] * meta.random.numberF(-1, 1);
+            this._endColor[0] = this.endColor[0] + this.endColorVar[0] * meta.random.numberF(-1, 1);
+            this._endColor[1] = this.endColor[1] + this.endColorVar[1] * meta.random.numberF(-1, 1);
+            this._endColor[2] = this.endColor[2] + this.endColorVar[2] * meta.random.numberF(-1, 1);
+            this._endColor[3] = this.endColor[3] + this.endColorVar[3] * meta.random.numberF(-1, 1);
+            particle.colorDelta[0] = (this._endColor[0] - this.startColor[0]) / particle.life;
+            particle.colorDelta[1] = (this._endColor[1] - this.startColor[1]) / particle.life;
+            particle.colorDelta[2] = (this._endColor[2] - this.startColor[2]) / particle.life;
+            particle.colorDelta[3] = (this._endColor[3] - this.startColor[3]) / particle.life;
+        }
+        particle.scale = this.startScale + this.startScaleVar * meta.random.numberF(-1, 1);
+        var endScale = this.endScale + this.endScaleVar * meta.random.numberF(-1, 1);
+        particle.scaleDelta = (endScale - particle.scale) / particle.life;
+    },
+    updateParticle: function(particle, tDelta) {
+        particle.forcesX = this.gravityX * tDelta;
+        particle.forcesY = this.gravityY * tDelta;
+        particle.velX += particle.forcesX;
+        particle.vecY += particle.forcesY;
+        particle.x += particle.velX * tDelta;
+        particle.y += particle.vecY * tDelta;
+        if (particle.color) {
+            particle.color[0] += particle.colorDelta[0] * tDelta;
+            particle.color[1] += particle.colorDelta[1] * tDelta;
+            particle.color[2] += particle.colorDelta[2] * tDelta;
+            particle.color[3] += particle.colorDelta[3] * tDelta;
+        }
+        particle.scale += this.scaleDelta;
+    },
+    draw: function(ctx) {
+        if (!this._texture.loaded) {
+            return;
+        }
+        var tDelta = meta.time.deltaF;
+        var img = this.texture.canvas;
+        var parentX = this.volume.minX - img.width * .5;
+        var parentY = this.volume.minY - img.height * .5;
+        if (this._textureAdditive) {
+            ctx.globalCompositeOperation = "lighter";
+        } else {
+            ctx.globalCompositeOperation = "source-over";
+        }
+        var particle, color;
+        for (var n = 0; n < this.numActive; n++) {
+            particle = this.particles[n];
+            color = particle.color;
+            if (color[3] > 1) {
+                color[3] = 1;
+            }
+            if (color[3] < 0) {
+                color[3] = 0;
+            }
+            this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
+            this._ctx.globalCompositeOperation = "source-over";
+            this._ctx.globalAlpha = color[3];
+            this._ctx.drawImage(img, 0, 0);
+            this._ctx.globalCompositeOperation = "source-atop";
+            this._ctx.fillStyle = "rgba(" + (color[0] | 0) + ", " + (color[1] | 0) + ", " + (color[2] | 0) + ", 1.0)";
+            this._ctx.fillRect(0, 0, this._canvas.width, this._canvas.height);
+            this._ctx.globalCompositeOperation = "source-over";
+            this._ctx.globalAlpha = color[3];
+            ctx.drawImage(this.texture.canvas, parentX + particle.x, parentY + particle.y);
+        }
+    },
+    play: function() {
+        this.updating = true;
+    },
+    pause: function() {
+        this.updating = false;
+    },
+    togglePlay: function() {
+        if (this.updating) {
+            this.pause();
+        } else {
+            this.play();
+        }
+    },
+    reset: function() {
+        this.numActive = 0;
+        this.elapsed = 0;
+    },
+    set texture(value) {
+        if (!value) {
+            if (!this._svgTexture) {
+                this._svgTexture = new Resource.SVG();
+                this._svgTexture.fillStyle = "white";
+                this._svgTexture.circle(this._radius);
+            }
+            this._texture = this._svgTexture;
+        } else {
+            this._texture = value;
+        }
+        if (this._texture.loaded) {
+            this.updateTintCanvas();
+        } else {
+            this.texture.subscribe(this.onTextureEvent, this);
+        }
+    },
+    get texture() {
+        return this._texture;
+    },
+    updateTintCanvas: function() {
+        if (!this._canvas) {
+            this._canvas = document.createElement("canvas");
+            this._ctx = this._canvas.getContext("2d");
+        }
+        this._canvas.width = this._texture.width;
+        this._canvas.height = this._texture.height;
+    },
+    onTextureEvent: function(data, event) {
+        this.updateTintCanvas();
+        this._texture.unsubscribe(this);
+    },
+    set totalParticles(value) {
+        var num = this.particles.length;
+        this.particles.length = value;
+        for (var n = num; n < value; n++) {
+            this.particles[n] = new this.Particle();
+        }
+        if (this.numActive > value) {
+            this.numActive = value;
+        }
+    },
+    get totalParticles() {
+        return this.particles.length;
+    },
+    set textureAdditive(value) {
+        this._textureAdditive = value;
+    },
+    get textureAdditive() {
+        return this._textureAdditive;
+    },
+    set textureTinting(value) {
+        this._textureTinting = value;
+    },
+    get textureTinting() {
+        return this._textureTinting;
+    },
+    set radius(value) {
+        this._radius = value;
+        if (this._texture === this._svgTexture) {
+            this._svgTexture.clear();
+            this._svgTexture.circle(this._radius);
+            this.updateTintCanvas();
+        }
+    },
+    get radius() {
+        return this._radius;
+    },
+    set preset(name) {
+        var preset = this.presets[name];
+        for (var key in preset) {
+            if (this[key] === preset[key]) {
+                continue;
+            }
+            this[key] = preset[key];
+        }
+        this.textureAdditive = this._textureAdditive;
+    },
+    Particle: function() {
+        this.life = 0;
+        this.x = 0;
+        this.y = 0;
+        this.velX = 0;
+        this.velY = 0;
+        this.radialAccel = 0;
+        this.tangentialAccel = 0;
+        this.forcesX = 0;
+        this.forcesY = 0;
+        this.color = new Float32Array(4);
+        this.colorDelta = new Float32Array(4);
+        this.scale = 1;
+        this.scaleDelta = 1;
+    },
+    particles: null,
+    numActive: 0,
+    emissionRate: 0,
+    emissionCounter: 0,
+    elapsed: 0,
+    duration: Infinity,
+    life: 1,
+    lifeVar: 0,
+    xVar: 0,
+    yVar: 0,
+    speed: 0,
+    speedVar: 0,
+    startAngle: 0,
+    startAngleVar: 0,
+    startScale: 1,
+    startScaleVar: 0,
+    endScale: 1,
+    endScaleVar: 0,
+    gravityX: 0,
+    gravityY: 0,
+    radialAccel: 0,
+    radialAccelVar: 0,
+    tangentialAccel: 0,
+    tangentialAccelVar: 0,
+    startColor: null,
+    startColorVar: null,
+    endColor: null,
+    endColorVar: null,
+    _endColor: new Float32Array(4),
+    _canvas: null,
+    _ctx: null,
+    _svgTexture: null,
+    _radius: 10,
+    _textureAdditive: false,
+    presets: {
+        empty: {
+            totalParticles: 50,
+            emissionRate: 10,
+            life: 1,
+            lifeVar: 0
+        },
+        meteor: {
+            totalParticles: 45,
+            emissionRate: 40,
+            life: 1,
+            lifeVar: .1,
+            xVar: 2,
+            yVar: 2,
+            speed: 15,
+            speedVar: 5,
+            angle: 90,
+            angleVar: 360,
+            gravityX: -200,
+            gravityY: -200,
+            radialAccel: 0,
+            radialAccelVar: 0,
+            tangentialAccel: 0,
+            tangentialAccelVar: 0,
+            startColor: [ 255, 42, 0, 1 ],
+            startColorVar: [ 0, 0, 51, .1 ],
+            endColor: [ 0, 0, 0, 1 ],
+            endColorVar: [ 0, 0, 0, 0 ],
+            scale: 1,
+            scaleVar: 1,
+            endScale: 1,
+            endScaleVar: 1,
+            textureAdditive: true,
+            radius: 10
+        }
+    }
+});
+
+"use strict";
+
+meta.component("Component.Anim", {
+    set: function(texture) {
+        if (!texture) {
+            if (this.__index !== -1) {
+                meta.renderer.removeAnim(this);
+            }
+            this.texture = null;
+            return;
+        }
+        this.texture = texture;
+        if (texture.frames > 1) {
+            this.texture = texture;
+            this.fps = texture.fps;
+            this.__tAnim = 0;
+            if (this.reverse) {
+                this._frame = texture.frames - 1;
+            } else {
+                this._frame = 0;
+            }
+            if (this.autoPlay) {
+                meta.renderer.addAnim(this);
+            }
+        } else if (this.__index !== -1) {
+            meta.renderer.removeAnim(this);
+        }
+    },
+    play: function(loop, fps) {
+        if (!this.texture) {
+            console.warn("(Component.Anim.play) Invalid texture");
+            return;
+        }
+        this.loop = loop || false;
+        this.fps = fps || this.texture.fps;
+        meta.renderer.addAnim(this);
+    },
+    pause: function() {
+        meta.renderer.removeAnim(this);
+    },
+    resume: function() {
+        meta.renderer.addAnim(this);
+    },
+    stop: function() {
+        if (this.reverse) {
+            this._frame = texture.frames - 1;
+        } else {
+            this._frame = 0;
+        }
+        meta.renderer.removeAnim(this);
+    },
+    reset: function() {
+        if (this.reverse) {
+            this._frame = texture.frames - 1;
+        } else {
+            this._frame = 0;
+        }
+        meta.renderer.addAnim(this);
+    },
+    onEnd: null,
+    onCancel: null,
+    update: function(tDelta) {
+        this.__tAnim += tDelta;
+        if (this.__tAnim < this.__delay) {
+            return;
+        }
+        var frames = this.__tAnim / this.__delay | 0;
+        this.__tAnim -= frames * this.__delay;
+        if (!this.reverse) {
+            this._frame += frames;
+            if (this._frame >= this.texture.frames) {
+                if (this.pauseLastFrame) {
+                    meta.renderer.removeAnim(this);
+                    this._frame = this.texture.frames - 1;
+                } else if (!this.loop) {
+                    meta.renderer.removeAnim(this);
+                    this._frame = 0;
+                } else {
+                    this._frame = this._frame % this.texture.frames;
+                }
+                if (this.onEnd) {
+                    this.onEnd.call(this.owner);
+                }
+            }
+        } else {
+            this._frame -= frames;
+            if (this._frame < 0) {
+                if (this.pauseLastFrame) {
+                    meta.renderer.removeAnim(this);
+                    this._frame = 0;
+                } else if (!this.loop) {
+                    meta.renderer.removeAnim(this);
+                    this._frame = this.texture.frames - 1;
+                } else {
+                    this._frame = (this.texture.frames + this._frame) % this.texture.frames;
+                }
+                if (this.onEnd) {
+                    this.onEnd.call(this.owner);
+                }
+            }
+        }
+        this.owner.renderer.needRender = true;
+    },
+    set frame(frame) {
+        this._frame = frame;
+        this.owner.renderer.needRender = true;
+    },
+    get frame() {
+        return this._frame;
+    },
+    set fps(fps) {
+        this._fps = fps;
+        this.__delay = 1 / (fps * this._speed);
+    },
+    get fps() {
+        return this._fps;
+    },
+    set speed(speed) {
+        this._speed = speed;
+        this.__delay = 1 / (fps * this._speed);
+    },
+    get speed() {
+        return this._speed;
+    },
+    set paused(value) {
+        if (value) {
+            this.pause();
+        } else {
+            this.resume();
+        }
+    },
+    get paused() {
+        return true;
+    },
+    loop: true,
+    reverse: false,
+    autoPlay: true,
+    pauseLastFrame: false,
+    _fps: 0,
+    _speed: 1,
+    _frame: 0,
+    __index: -1,
+    __delay: 0,
+    __tAnim: 0
 });
 
 "use strict";
@@ -9848,20 +9806,14 @@ meta.class("meta.Renderer", {
             this._removeEntities(this.entitiesDebug, this.entitiesDebugRemove);
         }
         this._removeFromBuffer(this.entitiesUpdate, this.entitiesUpdateRemove);
-        this._removeFromBuffer(this.entitiesUpdate, this.entitiesUpdateRemove);
         this._removeFromBuffer(this.entitiesAnim, this.entitiesAnimRemove);
         this._removeFromBuffer(this.entitiesPicking, this.entitiesPickingRemove);
         this._removeFromBuffer(this.tweens, this.tweensRemove);
-        this._removeFromBufferEx(this.compsUpdate, this.compsUpdateRemove);
         this.__updating = true;
         var entity;
         var num = this.entitiesUpdate.length;
         for (var i = 0; i < num; i++) {
             this.entitiesUpdate[i].update(tDelta);
-        }
-        num = this.compsUpdate.length;
-        for (i = 0; i < num; i++) {
-            this.compsUpdate[i].update(tDelta);
         }
         num = this.tweens.length;
         for (i = 0; i < num; i++) {
@@ -9965,33 +9917,6 @@ meta.class("meta.Renderer", {
                 }
             } else {
                 buffer.length = 0;
-            }
-            removeBuffer.length = 0;
-        }
-    },
-    _removeFromBufferEx: function(buffer, removeBuffer) {
-        var num = removeBuffer.length;
-        if (num > 0) {
-            var n;
-            var numItems = buffer.length;
-            if (num === numItems) {
-                for (n = 0; n < num; n++) {
-                    buffer[n]._updateIndex = -1;
-                }
-                buffer.length = 0;
-            } else {
-                var item, lastItem;
-                for (n = 0; n < num; n++) {
-                    item = removeBuffer[n];
-                    if (!item) {
-                        continue;
-                    }
-                    lastItem = buffer[--numItems];
-                    lastItem._updateIndex = item._updateIndex;
-                    item._updateIndex = -1;
-                    buffer[item._updateIndex] = lastItem;
-                }
-                buffer.length = numItems;
             }
             removeBuffer.length = 0;
         }
@@ -10348,8 +10273,6 @@ meta.class("meta.Renderer", {
     entitiesStaticRemove: null,
     entitiesDebug: null,
     entitiesDebugRemove: null,
-    compsUpdate: [],
-    compsUpdateRemove: [],
     tweens: [],
     tweensRemove: [],
     needRender: true,

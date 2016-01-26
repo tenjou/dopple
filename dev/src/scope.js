@@ -4,6 +4,7 @@ dopple.Scope = function(parent)
 {
 	this.parent = parent || null;
 	this.vars = {};
+	this.staticVars = {};
 	this.body = [];
 };
 

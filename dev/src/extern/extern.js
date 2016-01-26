@@ -17,6 +17,8 @@ dopple.extern =
 		this.addInternalType("Function", dopple.SubType.FUNCTION, dopple.AST.Function, null);
 		this.addInternalType("Object", dopple.SubType.OBJECT, [ dopple.AST.Object, dopple.AST.Null ], null);
 		this.addInternalType("Array", dopple.SubType.ARRAY, dopple.AST.Array, null);
+
+		this.maxInternalTypeId = this.types.length - 1;
 	},
 
 	createType: function(name, subType, ast, scope)
@@ -26,9 +28,13 @@ dopple.extern =
 		}
 
 		var cls = new dopple.AST.Class(name, scope, null);
-		cls.id = this.numTypes++;
+		cls.id = this.types.length;
 		cls.cls = cls;
-		cls.subType = subType;
+
+		if(subType) {
+			cls.subType = subType;
+		}
+		
 		this.types.push(name);
 
 		if(ast) 
@@ -46,6 +52,10 @@ dopple.extern =
 		}
 
 		return cls;
+	},
+
+	createCls: function(name, scope) {
+		return this.createType(name, 0, null, scope);
 	},
 
 	addInternalType: function(name, subType, ast, scope)
@@ -80,6 +90,7 @@ dopple.extern =
 
 	//
 	globalScope: null,
-	numTypes: 0,
+
+	maxInternalTypeId: 0,
 	types: dopple.types
 };

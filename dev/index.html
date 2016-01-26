@@ -5,30 +5,73 @@
 		<meta charset="utf-8">
 
 		<title>Dopple</title>
+
+		<link href="http://fonts.googleapis.com/css?family=Open+Sans:400,700,600" rel="stylesheet" type="text/css">
+
+		<style>
+			* {
+				padding: 0;
+				margin: 0;
+			}
+
+			body {
+				padding: 20px;
+				background: #f5f5f5;
+			    font-family: "Open Sans";
+			    font-size: 14px;
+			}
+
+			ul {
+				margin-left: 15px;
+				list-style-type: none;
+				margin-bottom: 6px;
+			}
+
+			item {
+				display: block;
+				margin-left: 15px;
+			}
+
+			info {
+				display: block;
+				margin-left: 30px;	
+				margin-bottom: 6px;
+			}
+
+			padding {
+				display: block;
+				padding-bottom: 10px;
+			}
+
+			parent_name {
+				font-weight: bold;
+				border-left: 3px solid orange;
+				padding-left: 5px;
+			}
+
+			name {
+				font-weight: bold;
+				color: #222;
+			}
+		</style>		
+
+		<script src="../lib/js/acorn.js"></script>
+		<script src="../lib/js/ajax.js"></script>
+		<script src="../lib/js/class.js"></script>
+
+		<script src="src/dopple.js"></script>
+		<script src="src/enum.js"></script>
+		<script src="src/ast.js"></script>
+		<script src="src/scope.js"></script>
+		<script src="src/optimizer.js"></script>
+		<script src="src/resolver.js"></script>
+		<script src="src/acorn.js"></script>
+		<script src="src/main.js"></script>
+
+		<script src="src/extern/extern.js"></script>
+		<script src="src/compiler/js/js.js"></script>
+		<script src="src/compiler/json/json.js"></script>
 	</head>
-
-	<style>
-		* {
-			padding: 0;
-			margin: 0;
-		}
-	</style>
-
-	<script src="../lib/js/acorn.js"></script>
-	<script src="../lib/js/ajax.js"></script>
-	<script src="../lib/js/class.js"></script>
-
-	<script src="src/dopple.js"></script>
-	<script src="src/enum.js"></script>
-	<script src="src/ast.js"></script>
-	<script src="src/scope.js"></script>
-	<script src="src/optimizer.js"></script>
-	<script src="src/resolver.js"></script>
-	<script src="src/acorn.js"></script>
-	<script src="src/main.js"></script>
-
-	<script src="src/extern/extern.js"></script>
-	<script src="src/compiler/json/json.js"></script>
 
 	<body onload="main();">
 

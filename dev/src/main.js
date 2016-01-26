@@ -3,7 +3,7 @@
 function main() 
 {
 	meta.ajax({
-		url: "../meta.js",
+		url: "../meta2d.js",
 		success: function(source) {
 			parse(source);
 		}
@@ -19,11 +19,21 @@ function parse(source)
 	var ast = acorn.parse(source);
 	var scope = dopple.acorn.parse(ast);
 
-	console.log(ast);
-	console.log(scope);
+	// console.log(ast);
+	// console.log(scope);
 
 	dopple.resolver.resolve(scope);
-	var output = dopple.compiler.json.compile(scope);
+	var output = dopple.compiler.js.compile(scope);
+
+	// for(var key in output) {
+	// 	console.log(key);
+	// }
 	console.log(output);
-	console.log(JSON.stringify(output));
+	//var htmlOutput = dopple.compiler.jsonHtml.compile(output);
+
+	//console.log(htmlOutput);
+
+	//document.body.innerHTML = htmlOutput;
+	//console.log(output);
+	//console.log(JSON.stringify(output));
 };

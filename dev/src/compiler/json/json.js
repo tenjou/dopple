@@ -10,7 +10,7 @@ dopple.compiler.json =
 
 		this.output = this.parseBody(scope);
 
-		this.addTypeDef();
+		this.appendInternal();
 
 		return this.output;
 	},
@@ -138,7 +138,7 @@ dopple.compiler.json =
 	{
 		var output = {
 			type: node.cls.id,
-			vars: this.parseBody(node.scope)
+			value: this.parseBody(node.scope)
 		};
 
 		return output;
@@ -199,9 +199,14 @@ dopple.compiler.json =
 		return output;
 	},
 
-	addTypeDef: function()
+	appendInternal: function()
 	{
-		this.output["__type__"] = this.types;
+		var output = {
+			type: this.types,
+			maxInternalTypeId: dopple.extern.maxInternalTypeId
+		};
+
+		this.output["__internal__"] = output;
 	},
 
 	//
