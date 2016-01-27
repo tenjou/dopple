@@ -60,5 +60,7 @@ dopple.Flag = {
 	UKNOWN: 1 << 0,
 	ARGS: 1 << 1,
 	VIRTUAL_TYPE: 1 << 2,
-	INTERNAL_TYPE: 2 << 3
+	INTERNAL_TYPE: 1 << 3,
+	HIDDEN: 1 << 4,
+	DEF: 1 << 5
 };

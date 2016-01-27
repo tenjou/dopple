@@ -54,10 +54,18 @@ dopple.acorn =
 	parseBody: function(body)
 	{
 		var numNodes = body.length;
-		for(var n = 0; n < numNodes; n++) {
+		for(var n = 0; n < numNodes; n++) 
+		{
 			var node = body[n];
 			var expr = this.lookup[node.type].call(this, node);
-			this.scope.body.push(expr);
+			if(!expr) { continue; }
+
+			if(expr.exprType === this.exprType.FUNCTION) {
+				this.scope.bodyFuncs.push(expr);
+			}
+			else {
+				this.scope.body.push(expr);
+			}
 		}
 	},
 
@@ -421,9 +429,15 @@ dopple.acorn =
 		var propExpr;
 		var props = node.properties;
 		var num = props.length;
-		for(var n = 0; n < num; n++) {
+		for(var n = 0; n < num; n++) 
+		{
 			propExpr = this.parseObjProp(props[n]);
-			objScope.body.push(propExpr);
+			if(propExpr.exprType === this.exprType.FUNCTION) {
+				objScope.bodyFuncs.push(propExpr);
+			}
+			else {
+				objScope.body.push(propExpr);
+			}
 		}
 
 		var objExpr = new dopple.AST.Object(objScope);
@@ -561,5 +575,7 @@ dopple.acorn =
 	lookup: [],
 
 	globalScope: null,
-	scope: null	
+	scope: null,
+
+	exprType: dopple.ExprType
 };

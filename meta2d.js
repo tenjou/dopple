@@ -1,10 +1,10 @@
-var a = x;
-
-function x(a, b) {
-	var f = 10;
-	return "sdsd" + "sd" + f;
+function x(a) {
+	this.b = 10;
+	this.b = 2;
 }
 
-function b() {}
+x.prototype = {
+	c: "sdsd"
+};
 
-x(a, 2);
+var a = new x(10);

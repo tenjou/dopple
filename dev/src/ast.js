@@ -1,5 +1,12 @@
 "use strict";
 
+/* basic */
+meta.class("dopple.AST.Basic",
+{
+	//
+	flags: 0
+});
+
 /* number */
 meta.class("dopple.AST.Number",
 {
@@ -75,7 +82,7 @@ meta.class("dopple.AST.Identifier",
 });
 
 /* assign */
-meta.class("dopple.AST.Assign", 
+meta.class("dopple.AST.Assign", "dopple.AST.Basic",
 {
 	init: function(left, right, op) {
 		this.left = left;
@@ -348,7 +355,7 @@ meta.class("dopple.AST.Return",
 });
 
 /* function */
-meta.class("dopple.AST.Function",
+meta.class("dopple.AST.Function", "dopple.AST.Basic",
 {
 	init: function(name, parents, scope, params) 
 	{
@@ -452,10 +459,11 @@ meta.class("dopple.AST.SetterGetter",
 /* class */
 meta.class("dopple.AST.Class",
 {
-	init: function(name, scope, extend) 
+	init: function(name, body, extend) 
 	{
 		this.name = name;
-		this.scope = scope;
+		this.body = body;
+		this.scope = body.scope;
 
 		if(this.extend) { this.extend = extend; }
 	},
@@ -467,10 +475,10 @@ meta.class("dopple.AST.Class",
 	id: 0,
 	flags: 0,
 
-	constrFunc: null,
-
 	name: null,
 	scope: null,
+	constrFunc: null,
+	body: null,
 	extend: null
 });
 
@@ -529,16 +537,16 @@ meta.class("dopple.AST.This",
 /* new */
 meta.class("dopple.AST.New", 
 {
-	init: function(nameExpr, args) {
-		this.nameExpr = nameExpr;
-		this.ars = args;
+	init: function(name, args) {
+		this.name = name;
+		this.args = args;
 	},	
 
 	//
 	exprType: dopple.ExprType.NEW,
 	cls: null,
 
-	nameExpr: null,
+	name: null,
 	args: null
 });
 

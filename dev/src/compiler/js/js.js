@@ -9,7 +9,7 @@ dopple.compiler.js =
 		this.output = {};
 
 		this.output = "\"use strict\"\n\n";
-		this.output += this.parseBody(scope.body);
+		this.output += this.parseBody(scope);
 
 		return this.output;
 	},
@@ -18,50 +18,90 @@ dopple.compiler.js =
 	{
 		this.tabs += "\t";
 
-		var output = this.parseBody(scope.body);
+		var output = this.parseBody(scope);
 
 		this.tabs = this.tabs.substr(0, this.tabs.length - 1);
 
 		return output;
 	},
 
-	parseBody: function(buffer)
+	parseBody: function(scope)
 	{
 		var output = "";
-		var funcOutput = "";
+		var tmpOutput = "";
 
-		var node;
-		var num = buffer.length;
+		// parse classes:
+		var cls;
+		var bodyCls = scope.bodyCls;
+		var num = scope.bodyCls.length;
 		for(var n = 0; n < num; n++)
 		{
-			node = buffer[n];
+			cls = bodyCls[n];
+			if(cls.flags & dopple.Flag.HIDDEN) { continue; }
+
+			tmpOutput += this.parseCls(cls);
+		}
+
+		output += tmpOutput;
+		tmpOutput = "";		
+
+		// parse functions:
+		var func;
+		var bodyFuncs = scope.bodyFuncs;
+		num = bodyFuncs.length;
+		for(n = 0; n < num; n++)
+		{
+			func = bodyFuncs[n];
+			if(func.flags & dopple.Flag.HIDDEN) { continue; }
+
+			tmpOutput += this.parseFunc(func);
+		}
+
+		output += tmpOutput;
+		tmpOutput = "";
+
+		//
+		var node;
+		var body = scope.body;
+		num = body.length;
+		for(n = 0; n < num; n++)
+		{
+			node = body[n];
 			if(!node) { continue; }
+			if(node.flags & dopple.Flag.HIDDEN) { continue; }
+
+			tmpOutput += this.tabs;
 
 			switch(node.exprType)
 			{
 				case this.exprType.VAR:
-					output += this.parseVar(node);
+					tmpOutput += this.parseVar(node);
 					break;
+
+				case this.exprType.ASSIGN:
+					tmpOutput += this.parseAssign(node);	
+					break;				
 
 				case this.exprType.FUNCTION_CALL:
-					output += this.parseFuncCall(node);
+					tmpOutput += this.parseFuncCall(node);
 					break;
 
-				case this.exprType.FUNCTION:
-					funcOutput += this.parseFunc(node);
+				case this.exprType.NEW: 
+					tmpOutput += this.parseNew(node);
 					break;
 
 				case this.exprType.RETURN:
-					output += this.parseReturn(node);
+					tmpOutput += this.parseReturn(node);
 					break;
 
 				default:
 					throw "unhandled";
 			}
+
+			tmpOutput += ";\n";
 		}
 
-		output = funcOutput + output;
-		funcOutput = null;
+		output += tmpOutput;
 
 		return output;
 	},
@@ -86,14 +126,30 @@ dopple.compiler.js =
 		return this.parseValue(node.lhs) + " " + node.op + " " + this.parseValue(node.rhs);
 	},
 
+	parseAssign: function(node)
+	{
+		var output = this.parseName(node.left) + " " + node.op + " " + this.parseValue(node.right);
+
+		return output;
+	},
+
+	parseNew: function(node) 
+	{
+		var output = "new " + this.parseName(node.name);
+
+		if(node.args) {
+			output += "(" + this.parseArgs(node.args) + ")";
+		}
+
+		return output;
+	},
+
 	parseVar: function(node)
 	{
 		var ref = node.ref;
 
-		var output = "";
-
-		output += this.tabs + "var " + this.parseName(ref.name);
-		output += " = " + this.parseValue(ref.value) + ";\n";
+		var output = "var " + this.parseName(ref.name);
+		output += " = " + this.parseValue(ref.value);
 
 		return output;
 	},
@@ -104,6 +160,17 @@ dopple.compiler.js =
 
 		return output;
 	},
+
+	parseReturn: function(node)
+	{
+		var output = this.tabs + "return";
+		if(node.value) {
+			output += " " + this.parseValue(node.value);
+		}
+		output += ";\n";
+
+		return output;
+	},	
 
 	parseFunc: function(node)
 	{
@@ -127,13 +194,31 @@ dopple.compiler.js =
 		return output;
 	},
 
-	parseReturn: function(node)
+	parseCls: function(node)
 	{
-		var output = this.tabs + "return";
-		if(node.value) {
-			output += " " + this.parseValue(node.value);
+		var output = this.parseFunc(node.constrFunc);
+		output += node.name + ".prototype = \n{\n" + this.parseProto(node.scope.vars) + "\n};\n\n";
+
+		return output;
+	},
+
+	parseProto: function(vars)
+	{
+		this.tabs += "\t";		
+
+		var output = "";
+		var added = false;
+
+		for(var key in vars)
+		{
+			if(added) {
+				output += ",\n";
+			}
+			output += this.tabs + key + ": " + this.parseValue(vars[key]);
+			added = true;
 		}
-		output += ";\n";
+
+		this.tabs = this.tabs.substr(0, this.tabs.length - 1);
 
 		return output;
 	},
@@ -144,6 +229,12 @@ dopple.compiler.js =
 
 		if(node.exprType === this.exprType.IDENTIFIER) {
 			output += node.value;
+		}
+		else if(node.exprType === this.exprType.MEMBER) {
+			output += this.parseName(node.left) + "." + this.parseName(node.right);
+		}
+		else if(node.exprType === this.exprType.THIS) {
+			output += "this";
 		}
 		else {
 			throw "unhandled";
@@ -209,6 +300,12 @@ dopple.compiler.js =
 
 			case this.exprType.BINARY:
 				return this.parseBinary(node);
+
+			case this.exprType.ASSIGN:
+				return this.parseAssign(node);
+
+			case this.exprType.NEW:
+				return this.parseNew(node);	
 
 			default:
 				throw "unhandled";
