@@ -75,30 +75,34 @@ dopple.compiler.js =
 			switch(node.exprType)
 			{
 				case this.exprType.VAR:
-					tmpOutput += this.parseVar(node);
+					tmpOutput += this.parseVar(node) + ";";
 					break;
 
 				case this.exprType.ASSIGN:
-					tmpOutput += this.parseAssign(node);	
-					break;				
+					tmpOutput += this.parseAssign(node) + ";";
+					break;
+
+				case this.exprType.IF:
+					tmpOutput += this.parseIf(node);
+					break;		
 
 				case this.exprType.FUNCTION_CALL:
-					tmpOutput += this.parseFuncCall(node);
+					tmpOutput += this.parseFuncCall(node) + ";";
 					break;
 
 				case this.exprType.NEW: 
-					tmpOutput += this.parseNew(node);
+					tmpOutput += this.parseNew(node) + ";";
 					break;
 
 				case this.exprType.RETURN:
-					tmpOutput += this.parseReturn(node);
+					tmpOutput += this.parseReturn(node) + ";";
 					break;
 
 				default:
 					throw "unhandled";
 			}
 
-			tmpOutput += ";\n";
+			tmpOutput += "\n";
 		}
 
 		output += tmpOutput;
@@ -126,9 +130,29 @@ dopple.compiler.js =
 		return this.parseValue(node.lhs) + " " + node.op + " " + this.parseValue(node.rhs);
 	},
 
+	parseLogical: function(node) {
+		return this.parseValue(node.lhs) + " " + node.op + " " + this.parseValue(node.rhs);
+	},
+
 	parseAssign: function(node)
 	{
 		var output = this.parseName(node.left) + " " + node.op + " " + this.parseValue(node.right);
+
+		return output;
+	},
+
+	parseIf: function(node)
+	{
+		var output = "if" + this._parseBranch(node.branchIf);
+		return output;
+	},
+
+	_parseBranch: function(branch)
+	{
+		var output = "(" + this.parseValue(branch.value) + ")\n";
+		output += this.tabs + "{\n";
+		output += this.parseScope(branch.scope);
+		output += this.tabs + "}";
 
 		return output;
 	},
@@ -140,6 +164,73 @@ dopple.compiler.js =
 		if(node.args) {
 			output += "(" + this.parseArgs(node.args) + ")";
 		}
+
+		return output;
+	},
+
+	parseNull: function(node)
+	{
+		return "null";
+	},
+
+	parseMember: function(node)
+	{
+		var output = this.parseName(node)
+		return output;
+	},
+
+	parseObj: function(node)
+	{
+		var isEmpty = true;
+		var vars = node.scope.vars;
+		for(var key in vars) {
+			isEmpty = false;
+			break;
+		}
+
+		var output;
+		if(!isEmpty) {
+			output = "\n" + this.tabs + "{\n" + this.parseProto(vars) + "\n" + this.tabs + "}";
+		}
+		else {
+			output = "{}";
+		}
+		
+		return output;
+	},
+
+	parseArray: function(node)
+	{
+		var output = "[]";
+		return output;
+	},
+
+	parseSetter: function(node)
+	{
+		var scopeOutput = this.parseScope(node.value.scope);
+
+		var output = "(" + this.parseParams(node.value.params) + ")\n" + this.tabs + "{\n";
+		
+		if(scopeOutput) {
+			output += scopeOutput;
+		}
+
+		output += this.tabs + "}";
+
+		return output;
+	},
+
+	parseGetter: function(node)
+	{
+		var scopeOutput = this.parseScope(node.value.scope);
+
+		var output = "()\n" + this.tabs + "{\n";
+		
+		if(scopeOutput) {
+			output += scopeOutput;
+		}
+
+		output += this.tabs + "}";
 
 		return output;
 	},
@@ -163,11 +254,10 @@ dopple.compiler.js =
 
 	parseReturn: function(node)
 	{
-		var output = this.tabs + "return";
+		var output = "return";
 		if(node.value) {
 			output += " " + this.parseValue(node.value);
 		}
-		output += ";\n";
 
 		return output;
 	},	
@@ -189,7 +279,7 @@ dopple.compiler.js =
 
 	parseFuncCall: function(node)
 	{
-		var output = this.parseName(node.name) + "(" + this.parseArgs(node.args) + ");\n";
+		var output = this.parseName(node.name) + "(" + this.parseArgs(node.args) + ")";
 
 		return output;
 	},
@@ -209,12 +299,31 @@ dopple.compiler.js =
 		var output = "";
 		var added = false;
 
+		var node;
 		for(var key in vars)
 		{
 			if(added) {
 				output += ",\n";
 			}
-			output += this.tabs + key + ": " + this.parseValue(vars[key]);
+
+			node = vars[key];
+			if(node.exprType === this.exprType.SETTER_GETTER)
+			{
+				if(node.setter) {
+					output += this.tabs + "set " + key + this.parseSetter(node.setter);
+				}
+				if(node.getter) 
+				{
+					if(node.setter) {
+						output += ",\n";
+					}
+					output += this.tabs + "get " + key + this.parseGetter(node.getter);
+				}
+			}
+			else {
+				output += this.tabs + key + ": " + this.parseValue(node);
+			}
+			
 			added = true;
 		}
 
@@ -298,14 +407,29 @@ dopple.compiler.js =
 			case this.exprType.REFERENCE:
 				return this.parseRef(node);
 
+			case this.exprType.MEMBER:
+				return this.parseMember(node);
+
 			case this.exprType.BINARY:
 				return this.parseBinary(node);
+
+			case this.exprType.LOGICAL:
+				return this.parseLogical(node);
 
 			case this.exprType.ASSIGN:
 				return this.parseAssign(node);
 
 			case this.exprType.NEW:
 				return this.parseNew(node);	
+
+			case this.exprType.NULL:
+				return this.parseNull(node);
+
+			case this.exprType.OBJECT:
+				return this.parseObj(node);
+
+			case this.exprType.ARRAY:
+				return this.parseArray(node);
 
 			default:
 				throw "unhandled";

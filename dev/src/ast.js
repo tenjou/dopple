@@ -408,33 +408,33 @@ meta.class("dopple.AST.FunctionCall",
 /* setter */
 meta.class("dopple.AST.Setter",
 {
-	init: function(name, scope)
+	init: function(name, value)
 	{
 		this.name = name;
-		this.scope = scope;
+		this.value = value;
 	},
 
 	//
 	exprType: dopple.ExprType.SETTER,
 
 	name: null,
-	scope: null
+	value: null
 });
 
 /* getter */
 meta.class("dopple.AST.Getter",
 {
-	init: function(name, scope)
+	init: function(name, value)
 	{
 		this.name = name;
-		this.scope = scope;
+		this.value = value;
 	},
 
 	//
 	exprType: dopple.ExprType.GETTER,
 
 	name: null,
-	scope: null
+	value: null
 });
 
 /* setter getter */

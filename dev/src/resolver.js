@@ -42,7 +42,7 @@ dopple.resolver =
 
 				case this.exprType.STRING:
 				case this.exprType.NUMBER:
-					nodes[n] = null;
+					body[n] = null;
 					break;
 
 				case this.exprType.FUNCTION_CALL:
@@ -169,7 +169,7 @@ dopple.resolver =
 				break;
 
 			case this.exprType.IDENTIFIER:
-				this.resolveId(node);
+				node = this.resolveId(node);
 				break;
 
 			case this.exprType.NUMBER:
@@ -326,27 +326,39 @@ dopple.resolver =
 			this.resolveName(node.left);
 		}
 
-		var prevScope = this.scope;
-		this.scope = this.refScope;
+		var name = this.refName;
+		var varBuffer = this.refVarBuffer;
+		var isNew = this.refNew;
+		var isPrototype = this.refPrototype;
+		var isThis = this.refThis;
 
 		node.right = this.resolveValue(node.right);
 
-		var prevVar = this.refVarBuffer[this.refName];
-		if(prevVar) 
+		var prevScope = this.scope;
+		this.scope = this.refScope;
+		
+		if(isNew) 
 		{
-			if(this.refPrototype)
+			if(isThis) {
+				varBuffer[name] = new dopple.AST.Null();
+			}
+			else {
+				varBuffer[name] = node.right;
+			}
+		}
+		else 
+		{
+			if(isPrototype)
 			{
-				if(prevVar.exprType === this.exprType.FUNCTION) {
-					this.createClsFromFunc(node, prevVar);
+				var expr = varBuffer[name];
+
+				if(expr.exprType === this.exprType.FUNCTION) {
+					this.createClsFromFunc(node, expr);
 				}
 				else {
 					throw "error";
 				}
 			}
-		}
-		else 
-		{
-			this.refVarBuffer[this.refName] = node.right;
 		}
 
 		this.scope = prevScope;
@@ -419,9 +431,26 @@ dopple.resolver =
 			this.scope.vars[node.name] = node;
 		}
 
+		var prevScope = this.scope;
+		this.scope = node.scope;
+
+		this.resolveParams(node.params);
 		this.resolveScope(node.scope);
 
+		this.scope = prevScope;
+
 		return node;
+	},
+
+	resolveParams: function(params)
+	{
+		var param;
+		var num = params.length;
+		for(var n = 0; n < num; n++)
+		{
+			param = params[n];
+			this.scope.vars[param.name] = param;
+		}
 	},
 
 	resolveFuncCall: function(node)
