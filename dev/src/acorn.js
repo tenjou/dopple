@@ -377,7 +377,7 @@ dopple.acorn =
 			name = node.id.name;
 		}
 		
-		var func = new dopple.AST.Function(name, null, scope, this.parseParams(node.params));
+		var func = new dopple.AST.Function(name, scope, this.parseParams(node.params));
 		this.scope = this.scope.parent;
 
 		return func;

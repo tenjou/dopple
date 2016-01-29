@@ -28,6 +28,13 @@ dopple.Scope.prototype =
 		return scope;
 	},
 
+	createChild: function()
+	{
+		var scope = new dopple.Scope(this);
+		scope.staticVars = this.staticVars;
+		return scope;
+	},
+
 	//
 	virtual: false,
 	funcs: null

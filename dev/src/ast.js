@@ -4,6 +4,8 @@
 meta.class("dopple.AST.Basic",
 {
 	//
+	exprType: 0,
+	subType: 0,
 	flags: 0
 });
 
@@ -48,6 +50,14 @@ meta.class("dopple.AST.String",
 	exprType: dopple.ExprType.STRING,
 	cls: null,
 	value: ""
+});
+
+/* args */
+meta.class("dopple.AST.Args", "dopple.AST.Basic",
+{
+	//
+	exprType: dopple.ExprType.ARGS,
+	cls: null
 });
 
 /* binary */
@@ -357,10 +367,9 @@ meta.class("dopple.AST.Return",
 /* function */
 meta.class("dopple.AST.Function", "dopple.AST.Basic",
 {
-	init: function(name, parents, scope, params) 
+	init: function(name, scope, params) 
 	{
 		if(name) { this.name = name; }
-		if(parents) { this.parents = parents; }
 		if(scope) { this.scope = scope; }
 		if(params) 
 		{ 
@@ -387,6 +396,7 @@ meta.class("dopple.AST.Function", "dopple.AST.Basic",
 
 	//
 	exprType: dopple.ExprType.FUNCTION,
+	subType: dopple.SubType.FUNCTION,
 	cls: null,
 	argsIndex: -1,
 	minParams: -1
@@ -459,11 +469,10 @@ meta.class("dopple.AST.SetterGetter",
 /* class */
 meta.class("dopple.AST.Class",
 {
-	init: function(name, body, extend) 
+	init: function(name, scope, extend) 
 	{
 		this.name = name;
-		this.body = body;
-		this.scope = body.scope;
+		this.scope = scope;
 
 		if(this.extend) { this.extend = extend; }
 	},
@@ -472,13 +481,13 @@ meta.class("dopple.AST.Class",
 	exprType: dopple.ExprType.CLASS,
 	subType: dopple.SubType.OBJECT,
 	cls: null,
+	ast: null,
 	id: 0,
 	flags: 0,
 
 	name: null,
 	scope: null,
 	constrFunc: null,
-	body: null,
 	extend: null
 });
 

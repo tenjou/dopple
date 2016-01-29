@@ -6,20 +6,22 @@ dopple.resolver =
 	{
 		this.scope = scope;
 		this.globalScope = scope;
+		scope.staticVars = this.globalScope.vars;
 
 		dopple.extern.loadPrimitives();
 
 		// try {
-		 	this.resolveBody(scope.bodyFuncs, scope.body);
+		 	this.resolveBody(scope);
 		// }
 		// catch(error) {
 		// 	console.error(error);
 		// }
 	},
 
-	resolveBody: function(bodyFuncs, body)
+	resolveBody: function(scope)
 	{
 		var func;
+		var bodyFuncs = scope.bodyFuncs;
 		var num = bodyFuncs.length;
 		for(var n = 0; n < num; n++)
 		{
@@ -28,7 +30,8 @@ dopple.resolver =
 		}
 
 		var node;
-		var num = body.length;
+		var body = scope.body;
+		num = body.length;
 		for(n = 0; n < num; n++)
 		{
 			node = body[n];
@@ -88,11 +91,12 @@ dopple.resolver =
 		var name = node.ref.name.value;
 		var expr = this.scope.vars[name];
 
-		if(node.ref.value) {
-			node.ref.value = this.resolveValue(node.ref.value);
+		var value = node.ref.value;
+		if(value) {
+			value = this.resolveValue(node.ref.value);
 		}
 
-		this.scope.vars[name] = node;
+		this.scope.vars[name] = value;
 	},
 
 	resolveRef: function(node)
@@ -208,12 +212,15 @@ dopple.resolver =
 		this.refPrototype = false;
 		this.refThis = false;
 		this.refVarBuffer = this.scope.vars;
+		this.refDepth = 0;
 
 		this._resolveName(node);
 	},
 
 	_resolveName: function(node)
 	{
+		this.refDepth++;
+
 		switch(node.exprType)
 		{
 			case this.exprType.IDENTIFIER:
@@ -226,7 +233,7 @@ dopple.resolver =
 			{
 				this._resolveName(node.left);
 				
-				if(this.refNew && !this.refThis) {
+				if(this.refNew) {
 					throw "ReferenceError: \"" + this.refName + "\" is not defined";
 				}
 
@@ -236,6 +243,7 @@ dopple.resolver =
 			case this.exprType.THIS:
 			{
 				this.refScope = this.scope;
+				this.refVarBuffer = this.scope.staticVars;
 				this.refThis = true;
 			} break;
 
@@ -247,6 +255,8 @@ dopple.resolver =
 			default:
 				throw "error";
 		}
+
+		this.refDepth--;
 	},
 
 	resolveMemberScope: function(node)
@@ -268,15 +278,22 @@ dopple.resolver =
 
 			this.refName = node.value;
 
-			if(this.refThis) {
-				this.refVarBuffer = this.refScope.staticVars;
-			}
-			else {
-				this.refVarBuffer = this.refScope.vars;
-			}
-
-			if(this.refVarBuffer[this.refName]) {
+			var expr = this.refVarBuffer[this.refName];
+			if(expr) 
+			{
 				this.refNew = false;
+
+				if(this.refDepth > 1)
+				{
+					if(expr.exprType === this.exprType.OBJECT) {
+						this.refScope = expr.scope;
+					}
+					else {
+						this.refScope = expr.cls.scope;
+					}
+					
+					this.refVarBuffer = this.refScope.staticVars;
+				}
 			}
 			else {
 				this.refNew = true;
@@ -293,21 +310,31 @@ dopple.resolver =
 		var value = node.value;
 		var expr;
 
-		do
+		if(this.refDepth < 2)
 		{
-			expr = scope.vars[value];
-			if(expr) 
+			do
 			{
-				// TODO: possibly needing?
-				// if(!expr.scope) {
-				// 	throw "error";
-				// }
-				// scope = expr.scope;
-				break;
-			}
+				expr = scope.vars[value];
+				if(expr) {
+					break;
+				}
 
-			scope = scope.parent;
-		} while(scope);
+				scope = scope.parent;
+			} while(scope);
+		}
+		else
+		{
+			do
+			{
+				expr = scope.vars[value];
+				if(expr) {
+					scope = expr.cls.scope;
+					break;
+				}
+
+				scope = scope.parent;
+			} while(scope);
+		}
 
 		if(!scope) {
 			scope = this.globalScope;
@@ -318,7 +345,7 @@ dopple.resolver =
 		}
 
 		this.refScope = scope;
-	},
+	},	
 
 	resolveAssign: function(node)
 	{
@@ -377,6 +404,14 @@ dopple.resolver =
 	{
 		var expr = this.scope.vars[node.name.value];
 
+		var prevScope = node.value.scope;
+		this.scope = node.value.scope;
+
+		this.resolveParams(node.value.params);
+		this.resolveBody(this.scope);
+
+		this.scope = prevScope;
+
 		// if there is already defined expr with such name:
 		if(expr)
 		{	
@@ -434,7 +469,10 @@ dopple.resolver =
 		var prevScope = this.scope;
 		this.scope = node.scope;
 
-		this.resolveParams(node.params);
+		if(node.params) {
+			this.resolveParams(node.params);
+		}
+		
 		this.resolveScope(node.scope);
 
 		this.scope = prevScope;
@@ -468,9 +506,9 @@ dopple.resolver =
 			args[n] = this.resolveValue(args[n]);
 		}
 
-		var numParams = func.params.length;
+		var numParams = func.params ? func.params.length : 0;
 		if(numParams !== numArgs) {
-			throw "ParamError: Function \"" + this.refName + "\" is supporting " + numParams + " not " + numArgs + " arguments";
+			throw "ParamError: Function \"" + this.refName + "\" supports " + numParams + " arguments but passed " + numArgs;
 		}
 	},
 
@@ -529,7 +567,7 @@ dopple.resolver =
 
 	createClsFromFunc: function(node, constrFunc)
 	{
-		var cls = dopple.extern.createCls(this.refName, node.right);
+		var cls = dopple.extern.createCls(this.refName, node.right.scope);
 		cls.constrFunc = constrFunc;
 		this.refVarBuffer[this.refName] = cls;
 
@@ -599,13 +637,12 @@ dopple.resolver =
 
 	resolveCls: function(node)
 	{
-		this.resolveName(node.name);
 		this.resolveScope(node.scope);
 				
 		node.id = this.types.length;
 		node.cls = node;
-		this.refScope.vars[this.refName] = node;
-		this.types.push(this.refName);
+		this.scope.vars[node.name] = node;
+		this.types.push(node.name);
 		
 
 		// var expr, name;
@@ -664,11 +701,8 @@ dopple.resolver =
 				} break;
 
 				case this.exprType.SETTER:
-					this.resolveSetter(item);
-					break;
-
 				case this.exprType.GETTER:
-					this.resolveGetter(item);
+					funcs.push(item);
 					break;
 
 				default:
@@ -684,14 +718,25 @@ dopple.resolver =
 			funcProp = funcs[n];
 			funcProp.value.scope.staticVars = staticVars;
 
-			name = funcProp.key.value;
-			if(this.scope.vars[name]) {
-				throw "redefinition";
-			}			
+			if(funcProp.exprType === this.exprType.FUNCTION)
+			{
+				name = funcProp.key.value;
+				if(this.scope.vars[name]) {
+					throw "redefinition";
+				}			
 
-			this.resolveFunc(funcProp.value);
+				this.resolveFunc(funcProp.value);
 
-			this.scope.vars[name] = funcProp.value;
+				this.scope.vars[name] = funcProp.value;
+			}
+			else if(funcProp.exprType === this.exprType.SETTER)
+			{
+				this.resolveSetter(funcProp);
+			}
+			else if(funcProp.exprType === this.exprType.GETTER)
+			{
+				this.resolveGetter(funcProp);
+			}
 		}
 
 		this.scope = prevScope;
@@ -714,7 +759,7 @@ dopple.resolver =
 		var rootScope = this.scope;
 		this.scope = scope;
 
-		this.resolveBody(scope.bodyFuncs, scope.body);
+		this.resolveBody(scope);
 
 		this.scope = rootScope;
 	},
@@ -784,6 +829,7 @@ dopple.resolver =
 	refVarBuffer: null,
 	refPrototype: false,
 	refThis: false,
+	refDepth: 0,
 
 	types: dopple.types,
 	exprType: dopple.ExprType,

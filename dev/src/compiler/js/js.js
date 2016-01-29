@@ -201,7 +201,25 @@ dopple.compiler.js =
 
 	parseArray: function(node)
 	{
-		var output = "[]";
+		var output;
+
+		if(node.elements)
+		{
+			output = "[ "
+
+			var elements = node.elements;
+			var num = elements.length - 1;
+			for(var n = 0; n < num; n++) {
+				output += this.parseValue(elements[n]) + ", ";
+			}
+			output += this.parseValue(elements[n]);
+
+			output += " ]";
+		}
+		else {
+			output = "[]";
+		}
+
 		return output;
 	},
 
@@ -239,7 +257,7 @@ dopple.compiler.js =
 	{
 		var ref = node.ref;
 
-		var output = "var " + this.parseName(ref.name);
+		var output = "var " + this.parseName(ref.name) + this.parseType(ref.value);
 		output += " = " + this.parseValue(ref.value);
 
 		return output;
@@ -349,6 +367,14 @@ dopple.compiler.js =
 			throw "unhandled";
 		}
 
+		return output;
+	},
+
+	parseType: function(node)
+	{
+		return "";
+		
+		var output = ":" + node.cls.name;
 		return output;
 	},
 

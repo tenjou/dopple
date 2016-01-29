@@ -40,7 +40,8 @@ dopple.ExprType = {
 	NULL: 36,
 	ARRAY: 37,
 	TYPE: 38,
-	IDENTIFIER: 39
+	IDENTIFIER: 39,
+	ARGS: 40
 };
 
 dopple.SubType = {
@@ -53,7 +54,8 @@ dopple.SubType = {
 	OBJECT: 6,
 	OBJECT_DEF: 7,
 	CLASS: 8,
-	ARRAY: 9
+	ARRAY: 9,
+	ARGS: 10
 };
 
 dopple.Flag = {
