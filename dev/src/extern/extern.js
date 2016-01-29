@@ -119,13 +119,14 @@ dopple.extern =
 		if(params)
 		{
 			var numParams = params.length;
-			var param, expr, ref;
+			var param, id, expr, ref;
 			paramBuffer = new Array(numParams);
 			for(var n = 0; n < numParams; n++)
 			{
 				param = params[n];
+				id = new dopple.AST.Identifier("arg" + n);
 				expr = new this.typesMap[param].cls.ast();
-				ref = new dopple.AST.Reference("", expr);
+				ref = new dopple.AST.Reference(id, expr);
 				paramBuffer[n] = ref;
 			}
 		}

@@ -57,7 +57,7 @@ dopple.resolver =
 					break;
 
 				case this.exprType.ASSIGN:
-					this.resolveAssign(node);
+					body[n] = this.resolveAssign(node);
 					break;
 
 				case this.exprType.SETTER:
@@ -198,9 +198,21 @@ dopple.resolver =
 			throw "ReferenceError: \"" + this.refName + "\" is not defined";
 		}
 
-		var expr = this.refVarBuffer[this.refName];
+		var expr = new dopple.AST.Reference(node, this.refVarBuffer[this.refName]);
 		return expr;
 	},
+
+	resolveMember: function(node)
+	{
+		this.resolveName(node);
+
+		if(this.refNew) {
+			throw "ReferenceError: \"" + this.refName + "\" is not defined";
+		}
+
+		var expr = new dopple.AST.Reference(node, this.refVarBuffer[this.refName]);
+		return expr;
+	},	
 
 	resolveBinary: function(node)
 	{
@@ -327,8 +339,19 @@ dopple.resolver =
 			do
 			{
 				expr = scope.vars[value];
-				if(expr) {
-					scope = expr.cls.scope;
+				if(expr) 
+				{
+					if(expr.exprType === this.exprType.REFERENCE) {
+						expr = expr.value;
+					}
+
+					if(expr.exprType === this.exprType.OBJECT) {
+						scope = expr.scope;
+					}
+					else {
+						scope = expr.cls.scope;
+					}
+					
 					break;
 				}
 
@@ -345,6 +368,7 @@ dopple.resolver =
 		}
 
 		this.refScope = scope;
+		this.refVarBuffer = scope.vars;
 	},	
 
 	resolveAssign: function(node)
@@ -389,6 +413,12 @@ dopple.resolver =
 		}
 
 		this.scope = prevScope;
+
+		if(node.left.exprType === this.exprType.MEMBER) {
+			return null; 
+		}
+
+		return node;
 	},
 
 	resolveEqualsAssign: function(node)
@@ -404,7 +434,7 @@ dopple.resolver =
 	{
 		var expr = this.scope.vars[node.name.value];
 
-		var prevScope = node.value.scope;
+		var prevScope = this.scope;
 		this.scope = node.value.scope;
 
 		this.resolveParams(node.value.params);
@@ -487,7 +517,7 @@ dopple.resolver =
 		for(var n = 0; n < num; n++)
 		{
 			param = params[n];
-			this.scope.vars[param.name] = param;
+			this.scope.vars[param.name.value] = param;
 		}
 	},
 
@@ -510,18 +540,6 @@ dopple.resolver =
 		if(numParams !== numArgs) {
 			throw "ParamError: Function \"" + this.refName + "\" supports " + numParams + " arguments but passed " + numArgs;
 		}
-	},
-
-	resolveMember: function(node)
-	{
-		this.resolveName(node);
-
-		if(!this.refNew) {
-			throw "undefined";
-		}
-
-		var expr = this.refVarBuffer[this.refName];
-		return expr;
 	},
 
 	resolveNew: function(node)

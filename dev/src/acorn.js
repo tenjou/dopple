@@ -520,10 +520,12 @@ dopple.acorn =
 		var param = null;
 		var num = paramNodes.length;		
 		var params = new Array(num);
+		var id;
 
 		for(var n = 0; n < num; n++) {
 			node = paramNodes[n];
-			param = new dopple.AST.Reference(node.name);
+			id = this.parseIdentifier(node);
+			param = new dopple.AST.Reference(id);
 			params[n] = param;
 		}
 

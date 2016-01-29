@@ -175,7 +175,7 @@ dopple.compiler.js =
 
 	parseMember: function(node)
 	{
-		var output = this.parseName(node)
+		var output = this.parseName(node);
 		return output;
 	},
 
@@ -265,8 +265,7 @@ dopple.compiler.js =
 
 	parseRef: function(node)
 	{
-		var output = node.name;
-
+		var output = this.parseName(node.name);
 		return output;
 	},
 
@@ -338,7 +337,8 @@ dopple.compiler.js =
 					output += this.tabs + "get " + key + this.parseGetter(node.getter);
 				}
 			}
-			else {
+			else 
+			{
 				output += this.tabs + key + ": " + this.parseValue(node);
 			}
 			
