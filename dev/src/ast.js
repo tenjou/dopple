@@ -52,6 +52,14 @@ meta.class("dopple.AST.String",
 	value: ""
 });
 
+/* param */
+meta.class("dopple.AST.Param", "dopple.AST.Basic",
+{
+	//
+	exprType: dopple.ExprType.PARAM,
+	cls: null
+});
+
 /* args */
 meta.class("dopple.AST.Args", "dopple.AST.Basic",
 {

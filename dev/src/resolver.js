@@ -60,6 +60,10 @@ dopple.resolver =
 					body[n] = this.resolveAssign(node);
 					break;
 
+				case this.exprType.IF:
+					this.resolveIf(node);
+					break;
+
 				case this.exprType.SETTER:
 					this.resolveSetter(node);
 					break;
@@ -156,6 +160,9 @@ dopple.resolver =
 				break;
 			case this.exprType.UNARY:
 				break;
+			case this.exprType.LOGICAL:
+				this.resolveLogical(node);
+				break;
 
 			case this.exprType.MEMBER:
 				node = this.resolveMember(node);
@@ -217,6 +224,12 @@ dopple.resolver =
 	resolveBinary: function(node)
 	{
 		return dopple.optimizer.do(node);
+	},
+
+	resolveLogical: function(node)
+	{
+		node.lhs = this.resolveValue(node.lhs);
+		node.rhs = this.resolveValue(node.rhs);
 	},
 
 	resolveName: function(node)
@@ -419,6 +432,17 @@ dopple.resolver =
 		}
 
 		return node;
+	},
+
+	resolveIf: function(node)
+	{
+		this.resolveBranch(node.branchIf);
+	},
+
+	resolveBranch: function(node)
+	{
+		this.resolveValue(node.value);
+		this.resolveScope(node.scope);
 	},
 
 	resolveEqualsAssign: function(node)
