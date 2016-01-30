@@ -12,6 +12,7 @@ dopple.resolver =
 
 		// try {
 		 	this.resolveBody(scope);
+		 	this.resolveBodyFuncs(scope);
 		// }
 		// catch(error) {
 		// 	console.error(error);
@@ -64,12 +65,12 @@ dopple.resolver =
 					this.resolveIf(node);
 					break;
 
-				case this.exprType.SETTER:
-					this.resolveSetter(node);
-					break;
-				case this.exprType.GETTER:
-					this.resolveGetter(node);
-					break;
+				// case this.exprType.SETTER:
+				// 	this.resolveSetter(node);
+				// 	break;
+				// case this.exprType.GETTER:
+				// 	this.resolveGetter(node);
+				// 	break;
 
 				case this.exprType.NEW:
 					this.resolveNew(node);
@@ -86,6 +87,33 @@ dopple.resolver =
 				case this.exprType.CLASS:
 					this.resolveCls(node);
 					break;
+			}
+		}
+	},
+
+	resolveBodyFuncs: function(scope)
+	{
+		var node;
+		var vars = scope.staticVars;
+		for(var key in vars)
+		{
+			node = vars[key];
+			if(node.exprType === this.exprType.FUNCTION) {
+				this.resolveScope(node.scope);
+			}
+			else if(node.exprType === this.exprType.SETTER_GETTER)
+			{
+				if(node.setter) {
+					this.resolveScope(node.setter.value.scope);
+				}
+				if(node.getter) {
+					this.resolveScope(node.getter.value.scope);
+				}
+			}
+			else if(node.exprType === this.exprType.OBJECT ||
+					node.exprType === this.exprType.CLASS) 
+			{
+				this.resolveBodyFuncs(node.scope);
 			}
 		}
 	},
@@ -256,29 +284,26 @@ dopple.resolver =
 
 			case this.exprType.MEMBER:
 			{
-				this._resolveName(node.left);
-				
-				if(this.refNew) {
-					throw "ReferenceError: \"" + this.refName + "\" is not defined";
+				if(node.left.exprType === this.exprType.THIS) 
+				{
+					this.refScope = this.scope;
+					this.refVarBuffer = this.scope.staticVars;
+					this.refThis = true;
+				}
+				else 
+				{
+					this._resolveName(node.left);
+
+					if(this.refNew) {
+						throw "ReferenceError: \"" + this.refName + "\" is not defined";
+					}
 				}
 
 				this.resolveMemberScope(node.right);
 			} break;
 
-			case this.exprType.THIS:
-			{
-				this.refScope = this.scope;
-				this.refVarBuffer = this.scope.staticVars;
-				this.refThis = true;
-			} break;
-
-			// case this.exprType.SUBSCRIPT:
-			// {
-			// 	return;
-			// } break;
-
 			default:
-				throw "error";
+				throw "unandled";
 		}
 
 		this.refDepth--;
@@ -462,7 +487,6 @@ dopple.resolver =
 		this.scope = node.value.scope;
 
 		this.resolveParams(node.value.params);
-		this.resolveBody(this.scope);
 
 		this.scope = prevScope;
 
@@ -526,8 +550,6 @@ dopple.resolver =
 		if(node.params) {
 			this.resolveParams(node.params);
 		}
-		
-		this.resolveScope(node.scope);
 
 		this.scope = prevScope;
 
