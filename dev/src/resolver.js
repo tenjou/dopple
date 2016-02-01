@@ -6,7 +6,7 @@ dopple.resolver =
 	{
 		this.scope = scope;
 		this.globalScope = scope;
-		scope.staticVars = this.globalScope.vars;
+		scope.protoVars = this.globalScope.vars;
 
 		dopple.extern.loadPrimitives();
 
@@ -21,19 +21,10 @@ dopple.resolver =
 
 	resolveBody: function(scope)
 	{
-		var func;
-		var bodyFuncs = scope.bodyFuncs;
-		var num = bodyFuncs.length;
-		for(var n = 0; n < num; n++)
-		{
-			func = bodyFuncs[n];
-			this.resolveFunc(func);
-		}
-
 		var node;
 		var body = scope.body;
-		num = body.length;
-		for(n = 0; n < num; n++)
+		var num = body.length;
+		for(var n = 0; n < num; n++)
 		{
 			node = body[n];
 			if(!node) { continue; }
@@ -41,7 +32,7 @@ dopple.resolver =
 			switch(node.exprType)
 			{
 				case this.exprType.VAR:
-					this.resolveVar(node);
+					body[n] = this.resolveVar(node);
 					break;
 
 				case this.exprType.STRING:
@@ -84,6 +75,12 @@ dopple.resolver =
 					this.resolveReturn(node);
 					break;
 
+				case this.exprType.FUNCTION:
+					this.resolveFunc(node);
+					this.scope.bodyFuncs.push(node);
+					body[n] = null;
+					break;					
+
 				case this.exprType.CLASS:
 					this.resolveCls(node);
 					break;
@@ -94,7 +91,7 @@ dopple.resolver =
 	resolveBodyFuncs: function(scope)
 	{
 		var node;
-		var vars = scope.staticVars;
+		var vars = scope.protoVars;
 		for(var key in vars)
 		{
 			node = vars[key];
@@ -110,9 +107,15 @@ dopple.resolver =
 					this.resolveScope(node.getter.value.scope);
 				}
 			}
-			else if(node.exprType === this.exprType.OBJECT ||
-					node.exprType === this.exprType.CLASS) 
+			else if(node.exprType === this.exprType.OBJECT) {
+				this.resolveBodyFuncs(node.scope);
+			}
+			else if(node.exprType === this.exprType.CLASS) 
 			{
+				if(node.constrFunc) {
+					this.resolveScope(node.constrFunc.scope);
+				}
+				
 				this.resolveBodyFuncs(node.scope);
 			}
 		}
@@ -129,6 +132,15 @@ dopple.resolver =
 		}
 
 		this.scope.vars[name] = value;
+
+		if(value.exprType === this.exprType.FUNCTION)
+		{
+			value.name = name;
+			this.scope.bodyFuncs.push(value);
+			return null;
+		}
+
+		return node;
 	},
 
 	resolveRef: function(node)
@@ -245,7 +257,14 @@ dopple.resolver =
 			throw "ReferenceError: \"" + this.refName + "\" is not defined";
 		}
 
-		var expr = new dopple.AST.Reference(node, this.refVarBuffer[this.refName]);
+		var expr;
+		if(this.refParentExpr.exprType !== this.exprType.REFERENCE) {
+			expr = new dopple.AST.Reference(node, this.refParentExpr);
+		}
+		else {
+			expr = this.refParentExpr;
+		}
+
 		return expr;
 	},	
 
@@ -262,140 +281,138 @@ dopple.resolver =
 
 	resolveName: function(node)
 	{
-		this.refPrototype = false;
-		this.refThis = false;
 		this.refVarBuffer = this.scope.vars;
-		this.refDepth = 0;
+		this.refParentExpr = null;
+		this.refNew = false;
+		this._resolveName_depth = 0;
+		this._resolveName_num = 0;
 
 		this._resolveName(node);
 	},
 
 	_resolveName: function(node)
 	{
-		this.refDepth++;
+		this._resolveName_depth++;
 
 		switch(node.exprType)
 		{
 			case this.exprType.IDENTIFIER:
 			{
-				this.resolveRootScope(node);
-				this.refName = node.value;
+				if(this._resolveName_num === 0) 
+				{
+					this._resolveRootScope(node);
+					this.refName = node.value;
+				}
+				else
+				{
+					this.refName = node.value;
+					if(this.refName === "prototype") {
+						this.refVarBuffer = this.refScope.protoVars;
+					}
+					else
+					{
+						var expr = this.refVarBuffer[this.refName];
+						if(expr) {
+							this.refNew = false;
+							this.refParentExpr = expr;
+						}
+						else {
+							this.refNew = true;
+						}						
+					}
+				}
 			} break;
 
 			case this.exprType.MEMBER:
 			{
-				if(node.left.exprType === this.exprType.THIS) 
+				if(node.left.exprType === this.exprType.THIS)
 				{
-					this.refScope = this.scope;
-					this.refVarBuffer = this.scope.staticVars;
-					this.refThis = true;
+					if(this._resolveName_num === 0) 
+					{
+						this.refScope = this.scope;
+						this.refVarBuffer = this.scope.protoVars;
+					}
+					else {
+						throw "Unexpected: This expression";
+					}
+
+					this._resolveName_num++;
 				}
-				else 
+				else
 				{
 					this._resolveName(node.left);
 
 					if(this.refNew) {
 						throw "ReferenceError: \"" + this.refName + "\" is not defined";
-					}
+					}	
+					
+					this.refParentExpr = this.refVarBuffer[this.refName];	
+					this._resolveExprScope();			
 				}
 
-				this.resolveMemberScope(node.right);
+				this._resolveName(node.right);
+				this._resolveExprScope();
 			} break;
 
 			default:
 				throw "unandled";
 		}
 
-		this.refDepth--;
+		this._resolveName_num++;
+		this._resolveName_depth--;
 	},
 
-	resolveMemberScope: function(node)
+	_resolveExprScope: function()
 	{
-		if(node.exprType === this.exprType.REFERENCE) {
-			this.refExpr = this.refScope[node.name];
-			this.refName = node.name;
-		}
-		else if(node.exprType === this.exprType.MEMBER)
-		{
-			throw "member"
-		}
-		else if(node.exprType === this.exprType.IDENTIFIER) 
-		{
-			if(node.value === "prototype") {
-				this.refPrototype = true;
-				return;
-			}
+		if(!this.refParentExpr) { return; }
 
-			this.refName = node.value;
-
-			var expr = this.refVarBuffer[this.refName];
-			if(expr) 
-			{
-				this.refNew = false;
-
-				if(this.refDepth > 1)
-				{
-					if(expr.exprType === this.exprType.OBJECT) {
-						this.refScope = expr.scope;
-					}
-					else {
-						this.refScope = expr.cls.scope;
-					}
-					
-					this.refVarBuffer = this.refScope.staticVars;
-				}
-			}
-			else {
-				this.refNew = true;
-			}
+		var expr;
+		if(this.refParentExpr.exprType === this.exprType.REFERENCE) {
+			expr = this.refParentExpr.value;
 		}
 		else {
-			throw "NOT IMPLEMENTED";
+			expr = this.refParentExpr;
+		}
+
+		if(expr.exprType === this.exprType.OBJECT) 
+		{
+			if(this.refName === "prototype") {
+				throw "Cannot set property \"" + this.refName + "\" of undefined";
+			}
+
+			this.refScope = expr.scope;
+			this.refVarBuffer = this.refScope.protoVars;
+			this.refParentExpr = expr;
+		}
+		else if(expr.exprType === this.exprType.FUNCTION)
+		{
+			this.refScope = expr.scope;
+			this.refParentExpr = expr;
+
+			if(this.refName === "prototype") {
+				this.refVarBuffer = this.refScope.protoVars;
+			}
+			else {
+				this.refVarBuffer = this.refScope.staticVars;
+			}
 		}
 	},
 
-	resolveRootScope: function(node)
+	_resolveRootScope: function(node)
 	{
 		var scope = this.scope;
 		var value = node.value;
 		var expr;
 
-		if(this.refDepth < 2)
+		do
 		{
-			do
-			{
-				expr = scope.vars[value];
-				if(expr) {
-					break;
-				}
+			expr = scope.vars[value];
+			if(expr) {
+				break;
+			}
 
-				scope = scope.parent;
-			} while(scope);
-		}
-		else
-		{
-			do
-			{
-				expr = scope.vars[value];
-				if(expr) 
-				{
-					if(expr.exprType === this.exprType.REFERENCE) {
-						expr = expr.value;
-					}
-
-					if(expr.exprType === this.exprType.OBJECT) {
-						scope = expr.scope;
-					}
-					else {
-						scope = expr.cls.scope;
-					}
-					
-					break;
-				}
-
-				scope = scope.parent;
-			} while(scope);
-		}
+			scope = scope.parent;
+		} while(scope);
 
 		if(!scope) {
 			scope = this.globalScope;
@@ -406,57 +423,72 @@ dopple.resolver =
 		}
 
 		this.refScope = scope;
-		this.refVarBuffer = scope.vars;
+		this.refVarBuffer = scope.staticVars;
 	},	
 
 	resolveAssign: function(node)
 	{
+		node.right = this.resolveValue(node.right);
+
 		if(node.op === "=") {
 			this.resolveName(node.left);
 		}
 
-		var name = this.refName;
-		var varBuffer = this.refVarBuffer;
-		var isNew = this.refNew;
-		var isPrototype = this.refPrototype;
-		var isThis = this.refThis;
+		var returnNode = node;
 
-		node.right = this.resolveValue(node.right);
-
-		var prevScope = this.scope;
-		this.scope = this.refScope;
-		
-		if(isNew) 
+		if(this.refNew) 
 		{
-			if(isThis) {
-				varBuffer[name] = new dopple.AST.Null();
+			if(this.refParentExpr)
+			{
+				var parentExprType = this.refParentExpr.exprType;
+
+				if(parentExprType === this.exprType.OBJECT) {
+					returnNode = null;
+					this.refVarBuffer[this.refName] = new dopple.AST.Reference(this.refName, node.right);
+				}
+				else {
+					this.refVarBuffer[this.refName] = new dopple.AST.Reference(this.refName, node.right);
+				}
 			}
-			else {
-				varBuffer[name] = node.right;
+			// THIS
+			else
+			{
+				if(node.right.exprType !== this.exprType.REFERENCE && 
+				   node.right.cls.flags & dopple.Flag.SIMPLE) 
+				{
+					this.refVarBuffer[this.refName] = node.right;
+					returnNode = null;
+				}
+				else
+				{
+					if(node.right.exprType === this.exprType.REFERENCE) {
+						this.refVarBuffer[this.refName] = new node.right.value.cls.ast();
+					}
+					else {
+						throw "unhandled";
+					}
+				}
 			}
 		}
 		else 
 		{
-			if(isPrototype)
+			if(this.refName === "prototype")
 			{
-				var expr = varBuffer[name];
-
-				if(expr.exprType === this.exprType.FUNCTION) {
-					this.createClsFromFunc(node, expr);
+				if(this.refParentExpr.exprType === this.exprType.FUNCTION) {
+					returnNode = null;
+					this.createClsFromFunc(node, this.refParentExpr);
 				}
 				else {
-					throw "error";
+					throw "unhandled";
 				}
+			}
+			else
+			{
+				// TODO: typechecks
 			}
 		}
 
-		this.scope = prevScope;
-
-		if(node.left.exprType === this.exprType.MEMBER) {
-			return null; 
-		}
-
-		return node;
+		return returnNode;
 	},
 
 	resolveIf: function(node)
@@ -631,12 +663,17 @@ dopple.resolver =
 
 	createClsFromFunc: function(node, constrFunc)
 	{
-		var cls = dopple.extern.createCls(this.refName, node.right.scope);
+		var name = constrFunc.name;
+
+		var cls = dopple.extern.createCls(name, node.right.scope);
 		cls.constrFunc = constrFunc;
-		this.refVarBuffer[this.refName] = cls;
+		cls.nameBuffer = this.genNameBuffer(node.left);
+		this.scope.protoVars[name] = cls;
+
+		constrFunc.flags |= dopple.Flag.CONSTRUCTOR | dopple.Flag.HIDDEN;
 
 		var clsVars = cls.scope.vars;
-		var constrVars = constrFunc.scope.staticVars;
+		var constrVars = constrFunc.scope.protoVars;
 
 		var varNode, constrVarNode;
 		for(var key in constrVars) 
@@ -652,8 +689,8 @@ dopple.resolver =
 			}
 		}
 
-		constrFunc.scope.staticVars = clsVars;
-		cls.scope.staticVars = clsVars;
+		constrFunc.scope.protoVars = clsVars;
+		cls.scope.protoVars = clsVars;
 
 		this.hideDef(constrFunc.scope);
 
@@ -662,6 +699,33 @@ dopple.resolver =
 		this.scope.bodyCls.push(cls);
 
 		return cls;
+	},
+
+	genNameBuffer: function(node)
+	{
+		var buffer = [];
+
+		this._genNameBuffer(buffer, node);
+
+		return buffer;
+	},
+
+	_genNameBuffer: function(buffer, node)
+	{
+		if(node.exprType === this.exprType.IDENTIFIER) 
+		{
+			if(node.value !== "prototype") {
+				buffer.push(node.value);
+			}
+		}
+		else if(node.exprType === this.exprType.MEMBER)
+		{
+			this._genNameBuffer(buffer, node.left);
+			this._genNameBuffer(buffer, node.right);
+		}
+		else if(node.exprType === this.exprType.THIS) {
+			buffer.push("this");
+		}
 	},
 
 	hideDef: function(scope)
@@ -742,7 +806,7 @@ dopple.resolver =
 		this.scope = node.scope;
 
 		var funcs = [];
-		var staticVars = this.scope.staticVars;
+		var protoVars = this.scope.protoVars;
 
 		var item;
 		var body = this.scope.body;
@@ -780,7 +844,7 @@ dopple.resolver =
 		for(n = 0; n < num; n++) 
 		{
 			funcProp = funcs[n];
-			funcProp.value.scope.staticVars = staticVars;
+			funcProp.value.scope.protoVars = protoVars;
 
 			if(funcProp.exprType === this.exprType.FUNCTION)
 			{
@@ -891,9 +955,10 @@ dopple.resolver =
 	refExpr: null,
 	refNew: false,
 	refVarBuffer: null,
-	refPrototype: false,
-	refThis: false,
-	refDepth: 0,
+	refParentExpr: null,
+
+	_resolveName_depth: 0,
+	_resolveName_num: 0,
 
 	types: dopple.types,
 	exprType: dopple.ExprType,

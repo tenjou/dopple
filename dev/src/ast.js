@@ -10,7 +10,7 @@ meta.class("dopple.AST.Basic",
 });
 
 /* number */
-meta.class("dopple.AST.Number",
+meta.class("dopple.AST.Number", "dopple.AST.Basic",
 {
 	init: function(value) 
 	{
@@ -25,7 +25,7 @@ meta.class("dopple.AST.Number",
 
 
 /* bool */
-meta.class("dopple.AST.Bool",
+meta.class("dopple.AST.Bool", "dopple.AST.Basic",
 {
 	init: function(value) 
 	{
@@ -39,7 +39,7 @@ meta.class("dopple.AST.Bool",
 });
 
 /* string */
-meta.class("dopple.AST.String",
+meta.class("dopple.AST.String", "dopple.AST.Basic",
 {
 	init: function(value) 
 	{
@@ -208,6 +208,7 @@ meta.class("dopple.AST.Reference",
 	//
 	exprType: dopple.ExprType.REFERENCE,
 	cls: null,
+	ops: 0,
 
 	name: null,
 	value: null,
@@ -494,6 +495,7 @@ meta.class("dopple.AST.Class",
 	flags: 0,
 
 	name: null,
+	nameBuffer: null,
 	scope: null,
 	constrFunc: null,
 	extend: null
@@ -504,7 +506,7 @@ meta.class("dopple.AST.Object",
 {
 	init: function(scope) {
 		this.scope = scope;
-		this.scope.staticVars = scope.vars;
+		this.scope.protoVars = scope.vars;
 	},
 
 	//

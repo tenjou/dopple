@@ -3,8 +3,9 @@
 dopple.Scope = function(parent) 
 {
 	this.parent = parent || null;
-	this.vars = {};
-	this.staticVars = {};
+	this.vars = {}
+	this.protoVars = this.vars;
+	this.staticVars = this.vars;
 	this.body = [];
 	this.bodyFuncs = [];
 	this.bodyCls = [];
@@ -31,7 +32,7 @@ dopple.Scope.prototype =
 	createChild: function()
 	{
 		var scope = new dopple.Scope(this);
-		scope.staticVars = this.staticVars;
+		scope.protoVars = this.protoVars;
 		return scope;
 	},
 

@@ -24,17 +24,20 @@ dopple.extern =
 
 	load_Number: function()
 	{
-		this.addInternalType("Number", dopple.SubType.NUMBER, dopple.AST.Number, null);
+		var cls = this.addInternalType("Number", dopple.SubType.NUMBER, dopple.AST.Number, null);
+		cls.flags |= dopple.Flag.SIMPLE;
 	},
 
 	load_Bool: function()
 	{
-		this.addInternalType("Bool", dopple.SubType.NUMBER, dopple.AST.Bool, null);
+		var cls = this.addInternalType("Bool", dopple.SubType.NUMBER, dopple.AST.Bool, null);
+		cls.flags |= dopple.Flag.SIMPLE;
 	},
 
 	load_String: function()
 	{
-		this.addInternalType("String", dopple.SubType.STRING, dopple.AST.String, null);
+		var cls = this.addInternalType("String", dopple.SubType.STRING, dopple.AST.String, null);
+		cls.flags |= dopple.Flag.SIMPLE;
 	},	
 
 	load_Function: function()
@@ -58,7 +61,7 @@ dopple.extern =
 	{
 		if(!scope) {
 			scope = new dopple.Scope();
-			scope.staticVars = scope.vars;
+			scope.protoVars = scope.vars;
 		}
 
 		var cls = new dopple.AST.Class(name, scope, null);

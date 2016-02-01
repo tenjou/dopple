@@ -60,13 +60,13 @@ dopple.acorn =
 			var expr = this.lookup[node.type].call(this, node);
 			if(!expr) { continue; }
 
-			if(expr.exprType === this.exprType.FUNCTION) {
-				this.scope.bodyFuncs.push(expr);
-			}
-			else {
-				this.scope.body.push(expr);
-			}
+			this.scope.body.push(expr);
 		}
+	},
+
+	parseEmpty: function(node)
+	{
+		
 	},
 
 	parseLiteral: function(node)

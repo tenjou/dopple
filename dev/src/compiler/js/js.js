@@ -9,7 +9,8 @@ dopple.compiler.js =
 		this.output = {};
 
 		this.output = "\"use strict\"\n\n";
-		this.output += this.parseBody(scope);
+		this.output += this.parseBody(scope) + "\n";
+		this.output += this.clsOutput;
 
 		return this.output;
 	},
@@ -29,36 +30,53 @@ dopple.compiler.js =
 	{
 		var output = "";
 		var tmpOutput = "";
+		var printed = 0;
 
 		// parse classes:
 		var cls;
 		var bodyCls = scope.bodyCls;
 		var num = scope.bodyCls.length;
-		for(var n = 0; n < num; n++)
+		if(num > 0)
 		{
-			cls = bodyCls[n];
-			if(cls.flags & dopple.Flag.HIDDEN) { continue; }
+			for(var n = 0; n < num; n++)
+			{
+				cls = bodyCls[n];
+				if(cls.flags & dopple.Flag.HIDDEN) { continue; }
 
-			tmpOutput += this.parseCls(cls);
+				tmpOutput += this.parseCls(cls);
+				printed++;
+			}
+
+			if(printed > 0)
+			{
+				output += tmpOutput + "\n";
+				tmpOutput = "";	
+				printed = 0;	
+			}
 		}
-
-		output += tmpOutput;
-		tmpOutput = "";		
-
+	
 		// parse functions:
 		var func;
 		var bodyFuncs = scope.bodyFuncs;
 		num = bodyFuncs.length;
-		for(n = 0; n < num; n++)
-		{
-			func = bodyFuncs[n];
-			if(func.flags & dopple.Flag.HIDDEN) { continue; }
+		if(num > 0)
+		{		
+			for(n = 0; n < num; n++)
+			{
+				func = bodyFuncs[n];
+				if(func.flags & dopple.Flag.HIDDEN) { continue; }
 
-			tmpOutput += this.parseFunc(func);
+				tmpOutput += this.parseFunc(func);
+				printed++;
+			}
+
+			if(printed > 0)
+			{
+				output += tmpOutput + "\n";
+				tmpOutput = "";	
+				printed = 0;	
+			}
 		}
-
-		output += tmpOutput;
-		tmpOutput = "";
 
 		//
 		var node;
@@ -181,6 +199,8 @@ dopple.compiler.js =
 
 	parseObj: function(node)
 	{
+		this.insideObj++;
+
 		var isEmpty = true;
 		var vars = node.scope.vars;
 		for(var key in vars) {
@@ -195,6 +215,8 @@ dopple.compiler.js =
 		else {
 			output = "{}";
 		}
+
+		this.insideObj--;
 		
 		return output;
 	},
@@ -281,15 +303,16 @@ dopple.compiler.js =
 
 	parseFunc: function(node)
 	{
-		var output = this.tabs + "function";
+		var output = "function";
 
 		if(node.name) {
 			output += " " + node.name;
 		}
 
-		output += "(" + this.parseParams(node.params) + ")\n{\n";
+		output += "(" + this.parseParams(node.params) + ")\n";
+		output += this.tabs + "{\n";
 		output += this.parseScope(node.scope);
-		output += "}\n\n";
+		output += this.tabs + "}";
 
 		return output;
 	},
@@ -303,8 +326,35 @@ dopple.compiler.js =
 
 	parseCls: function(node)
 	{
+		var vars = node.scope.vars;
+		var haveVars = false;
+		for(var key in vars) {
+			haveVars = true;
+			break;
+		}
+
 		var output = this.parseFunc(node.constrFunc);
-		output += node.name + ".prototype = \n{\n" + this.parseProto(node.scope.vars) + "\n};\n\n";
+		if(this.insideObj === 0) {
+			output += "\n\n"
+		}
+
+		var clsOutput =  this.genNameFromBuffer(node.nameBuffer) + ".prototype = \n{\n";
+
+		if(haveVars) {
+			var prevTabs = this.tabs;
+			this.tabs = "";
+			clsOutput += this.parseProto(node.scope.vars) + "\n";
+			this.tabs = prevTabs;
+		}
+
+		clsOutput += "};\n";
+
+		if(this.insideObj) {
+			this.clsOutput += clsOutput;
+		}
+		else {
+			output += clsOutput;
+		}
 
 		return output;
 	},
@@ -457,19 +507,43 @@ dopple.compiler.js =
 			case this.exprType.ARRAY:
 				return this.parseArray(node);
 
+			case this.exprType.FUNCTION_CALL:
+				return this.parseFuncCall(node);
+
+			case this.exprType.FUNCTION:
+				return this.parseFunc(node);
+
+			case this.exprType.CLASS:
+				return this.parseCls(node);
+
 			default:
 				throw "unhandled";
 		}
 	},
 
+	genNameFromBuffer: function(buffer)
+	{
+		var str = "";
+		var num = buffer.length - 1;
+		for(var n = 0; n < num; n++) {
+			str += buffer[n] + ".";
+		}
+
+		str += buffer[n];
+
+		return str;
+	},
+
 	//
 	scope: null,
 	globalScope: null,
-	output: null,
+	output: "",
+	clsOutput: "",
 
 	tabs: "",
+	insideObj: 0,
 
 	types: dopple.types,
 	subType: dopple.SubType,
-	exprType: dopple.ExprType	
+	exprType: dopple.ExprType
 };
