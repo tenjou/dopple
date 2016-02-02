@@ -628,7 +628,7 @@ dopple.resolver =
 			throw "ReferenceError: \"" + this.refName + "\" is not defined";
 		}
 
-		var func = this.refVarBuffer[this.refName];
+		var func = this.refParentExpr;
 
 		var args = node.args;
 		var numArgs = args.length;
@@ -689,7 +689,7 @@ dopple.resolver =
 		var name = nameBuffer[nameBuffer.length - 1];
 
 		var constrScope = constrFunc.scope;
-		var scope = new dopple.Scope(this.globalScope);
+		var scope = node.right.scope;
 		scope.owner = constrScope.owner;
 		constrScope.owner = scope;
 
@@ -862,13 +862,13 @@ dopple.resolver =
 	resolveObjProp: function(node)
 	{
 		var name = node.key.value;
-		if(this.scope.vars[name]) {
+		if(this.scope.protoVars[name]) {
 			throw "redefinition";
 		}
 
 		node.value = this.resolveValue(node.value);
 
-		this.scope.vars[name] = node.value;
+		this.scope.protoVars[name] = node.value;
 	},
 
 	resolveScope: function(scope)
