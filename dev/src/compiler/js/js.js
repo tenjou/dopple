@@ -72,7 +72,7 @@ dopple.compiler.js =
 
 			if(printed > 0)
 			{
-				output += tmpOutput + "\n";
+				output += tmpOutput + "\n\n";
 				tmpOutput = "";	
 				printed = 0;	
 			}
@@ -118,9 +118,14 @@ dopple.compiler.js =
 
 				default:
 					throw "unhandled";
-			}
+			}			
 
 			tmpOutput += "\n";
+
+			if(this.insideObj === 0) {
+				tmpOutput += this.clsOutput;
+				this.clsOutput = "";
+			}			
 		}
 
 		output += tmpOutput;
@@ -349,8 +354,14 @@ dopple.compiler.js =
 
 		clsOutput += "};\n";
 
-		if(this.insideObj) {
-			this.clsOutput += clsOutput;
+		if(this.insideObj) 
+		{
+			if(this.clsOutput) {
+				this.clsOutput += clsOutput;
+			}
+			else {
+				this.clsOutput += clsOutput + "\n";
+			}
 		}
 		else {
 			output += clsOutput;

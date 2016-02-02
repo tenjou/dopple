@@ -298,27 +298,15 @@ dopple.resolver =
 		{
 			case this.exprType.IDENTIFIER:
 			{
-				if(this._resolveName_num === 0) 
-				{
+				this.refName = node.value;
+
+				if(this._resolveName_num === 0) {
 					this._resolveRootScope(node);
-					this.refName = node.value;
 				}
 				else
 				{
-					this.refName = node.value;
 					if(this.refName === "prototype") {
 						this.refVarBuffer = this.refScope.protoVars;
-					}
-					else
-					{
-						var expr = this.refVarBuffer[this.refName];
-						if(expr) {
-							this.refNew = false;
-							this.refParentExpr = expr;
-						}
-						else {
-							this.refNew = true;
-						}						
 					}
 				}
 			} break;
@@ -342,12 +330,13 @@ dopple.resolver =
 				{
 					this._resolveName(node.left);
 
+					if(node.left.exprType !== this.exprType.MEMBER) {
+						this._resolveExprScope();
+					}
+					
 					if(this.refNew) {
 						throw "ReferenceError: \"" + this.refName + "\" is not defined";
-					}	
-					
-					this.refParentExpr = this.refVarBuffer[this.refName];	
-					this._resolveExprScope();			
+					}			
 				}
 
 				this._resolveName(node.right);
@@ -364,31 +353,42 @@ dopple.resolver =
 
 	_resolveExprScope: function()
 	{
-		if(!this.refParentExpr) { return; }
-
 		var expr;
-		if(this.refParentExpr.exprType === this.exprType.REFERENCE) {
-			expr = this.refParentExpr.value;
-		}
-		else {
+		if(this.refName === "prototype") {
 			expr = this.refParentExpr;
 		}
+		else 
+		{
+			expr = this.refVarBuffer[this.refName];
+			if(expr) {
+				this.refNew = false;
+			}
+			else {
+				this.refNew = true;
+				return;
+			}				
+		}
 
+		if(expr.exprType === this.exprType.REFERENCE) {
+			expr = expr.value;
+		}
+
+		this.refScope = expr.scope;
+
+		if(this.refName !== "prototype") {
+			this.refParentExpr = expr;
+		}
+	
 		if(expr.exprType === this.exprType.OBJECT) 
 		{
 			if(this.refName === "prototype") {
 				throw "Cannot set property \"" + this.refName + "\" of undefined";
 			}
 
-			this.refScope = expr.scope;
 			this.refVarBuffer = this.refScope.protoVars;
-			this.refParentExpr = expr;
 		}
 		else if(expr.exprType === this.exprType.FUNCTION)
 		{
-			this.refScope = expr.scope;
-			this.refParentExpr = expr;
-
 			if(this.refName === "prototype") {
 				this.refVarBuffer = this.refScope.protoVars;
 			}
@@ -428,7 +428,9 @@ dopple.resolver =
 
 	resolveAssign: function(node)
 	{
-		node.right = this.resolveValue(node.right);
+		var value = this.resolveValue(node.right);
+		var valueExpr = value.exprType;
+		node.right = value;
 
 		if(node.op === "=") {
 			this.resolveName(node.left);
@@ -442,32 +444,26 @@ dopple.resolver =
 			{
 				var parentExprType = this.refParentExpr.exprType;
 
-				if(parentExprType === this.exprType.OBJECT) {
+				if(parentExprType === this.exprType.OBJECT) 
+				{
 					returnNode = null;
-					this.refVarBuffer[this.refName] = new dopple.AST.Reference(this.refName, node.right);
+
+					if(valueExpr === this.exprType.FUNCTION) {
+						value.scope.owner = this.refParentExpr.scope;
+					}
+
+					this.refVarBuffer[this.refName] = value;
+				}
+				else if(parentExprType === this.exprType.CLASS) {
+					this._resolveAssign_Class(node);
 				}
 				else {
-					this.refVarBuffer[this.refName] = new dopple.AST.Reference(this.refName, node.right);
+					this.refVarBuffer[this.refName] = value;
 				}
 			}
 			// THIS
-			else
-			{
-				if(node.right.exprType !== this.exprType.REFERENCE && 
-				   node.right.cls.flags & dopple.Flag.SIMPLE) 
-				{
-					this.refVarBuffer[this.refName] = node.right;
-					returnNode = null;
-				}
-				else
-				{
-					if(node.right.exprType === this.exprType.REFERENCE) {
-						this.refVarBuffer[this.refName] = new node.right.value.cls.ast();
-					}
-					else {
-						throw "unhandled";
-					}
-				}
+			else {
+				this._resolveAssign_Class(node);
 			}
 		}
 		else 
@@ -489,6 +485,31 @@ dopple.resolver =
 		}
 
 		return returnNode;
+	},
+
+	_resolveAssign_Class: function(node)
+	{
+		var value = node.right;
+		var valueExpr = value.exprType;
+
+		if(valueExpr !== this.exprType.REFERENCE && 
+		   value.cls.flags & dopple.Flag.SIMPLE) 
+		{
+			this.refVarBuffer[this.refName] = value;
+			return null;
+		}
+		else
+		{
+			if(valueExpr === this.exprType.REFERENCE) {
+				this.refVarBuffer[this.refName] = new value.value.cls.ast();
+			}
+			else if(valueExpr === this.exprType.CLASS) {
+				throw "unhandled";
+			}
+			else {
+				this.refVarBuffer[this.refName] = new value.cls.ast();	
+			}
+		}
 	},
 
 	resolveIf: function(node)
@@ -578,6 +599,7 @@ dopple.resolver =
 
 		var prevScope = this.scope;
 		this.scope = node.scope;
+		this.scope.owner = prevScope;
 
 		if(node.params) {
 			this.resolveParams(node.params);
@@ -663,17 +685,24 @@ dopple.resolver =
 
 	createClsFromFunc: function(node, constrFunc)
 	{
-		var name = constrFunc.name;
+		var nameBuffer = this.genNameBuffer(node.left);
+		var name = nameBuffer[nameBuffer.length - 1];
 
-		var cls = dopple.extern.createCls(name, node.right.scope);
+		var constrScope = constrFunc.scope;
+		var scope = new dopple.Scope(this.globalScope);
+		scope.owner = constrScope.owner;
+		constrScope.owner = scope;
+
+		var cls = dopple.extern.createCls(name, scope);
 		cls.constrFunc = constrFunc;
-		cls.nameBuffer = this.genNameBuffer(node.left);
-		this.scope.protoVars[name] = cls;
+		cls.nameBuffer = nameBuffer;
+		scope.owner.protoVars[name] = cls;
 
 		constrFunc.flags |= dopple.Flag.CONSTRUCTOR | dopple.Flag.HIDDEN;
 
-		var clsVars = cls.scope.vars;
-		var constrVars = constrFunc.scope.protoVars;
+		var clsVars = scope.protoVars;
+		var constrVars = constrScope.protoVars;
+		constrScope.protoVars = clsVars;
 
 		var varNode, constrVarNode;
 		for(var key in constrVars) 
@@ -689,14 +718,11 @@ dopple.resolver =
 			}
 		}
 
-		constrFunc.scope.protoVars = clsVars;
-		cls.scope.protoVars = clsVars;
-
 		this.hideDef(constrFunc.scope);
 
 		node.flags |= dopple.Flag.HIDDEN;
 		constrFunc.flags |= dopple.Flag.HIDDEN;
-		this.scope.bodyCls.push(cls);
+		scope.owner.bodyCls.push(cls);
 
 		return cls;
 	},
@@ -805,7 +831,6 @@ dopple.resolver =
 		var prevScope = this.scope;
 		this.scope = node.scope;
 
-		var funcs = [];
 		var protoVars = this.scope.protoVars;
 
 		var item;
@@ -818,15 +843,8 @@ dopple.resolver =
 			switch(item.exprType)
 			{
 				case this.exprType.OBJECT_PROPERTY:
-				{
-					// resolve functions later:
-					if(item.value.exprType === this.exprType.FUNCTION) {
-						funcs.push(item);
-					}
-					else {
-						this.resolveObjProp(item);
-					}
-				} break;
+					this.resolveObjProp(item);
+					break;
 
 				case this.exprType.SETTER:
 				case this.exprType.GETTER:
@@ -835,35 +853,6 @@ dopple.resolver =
 
 				default:
 					throw "unhandled";
-			}
-		}
-
-		// resolve functions:
-		var funcProp, name;
-		num = funcs.length;
-		for(n = 0; n < num; n++) 
-		{
-			funcProp = funcs[n];
-			funcProp.value.scope.protoVars = protoVars;
-
-			if(funcProp.exprType === this.exprType.FUNCTION)
-			{
-				name = funcProp.key.value;
-				if(this.scope.vars[name]) {
-					throw "redefinition";
-				}			
-
-				this.resolveFunc(funcProp.value);
-
-				this.scope.vars[name] = funcProp.value;
-			}
-			else if(funcProp.exprType === this.exprType.SETTER)
-			{
-				this.resolveSetter(funcProp);
-			}
-			else if(funcProp.exprType === this.exprType.GETTER)
-			{
-				this.resolveGetter(funcProp);
 			}
 		}
 

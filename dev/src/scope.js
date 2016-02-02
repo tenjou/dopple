@@ -3,6 +3,7 @@
 dopple.Scope = function(parent) 
 {
 	this.parent = parent || null;
+	this.owner = null;
 	this.vars = {}
 	this.protoVars = this.vars;
 	this.staticVars = this.vars;
@@ -37,6 +38,5 @@ dopple.Scope.prototype =
 	},
 
 	//
-	virtual: false,
-	funcs: null
+	virtual: false
 };

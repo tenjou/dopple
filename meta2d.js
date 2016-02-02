@@ -6,11 +6,11 @@
 // }
 // var z = false;
 
-// function x(a, b) {
-// 	return a + b;
-// }
+function x(a, b) {
+	return a + b;
+}
 
-// var a = x(20, 30);
+var a = x(20, 30);
 
 function Entity()
 {
@@ -22,8 +22,8 @@ Entity.prototype = {
 	a: 10
 }
 
-var x = 10;
-var y = "sdsd";
+var x1 = 10;
+var y2 = "sdsd";
 
 // var x = {};
 // x.a = 10;
@@ -32,9 +32,9 @@ var y = "sdsd";
 // meta.x = {};
 
 // meta.x.Device = function() {
-//     this.name = "unknown";
-//     this.version = "0";
-//     this.versionBuffer = null;
+    // this.name = "unknown";
+    // this.version = "0";
+    // this.versionBuffer = null;
 //     this.vendors = [ "", "webkit", "moz", "ms", "o" ];
 //     this.vendor = "";
 //     this.support = {};
@@ -52,8 +52,35 @@ var y = "sdsd";
 // meta.x.Device.prototype.audioFormats = [];
 // meta.x.Device.prototype.mobile = false;
 
-// meta.Device2 = function() {};
-// meta.Device2.prototype = {};
+// var x = 10;
+// x = 20;
+
+var meta = {
+	
+};
+
+meta.x = {};
+
+meta.Device2 = function() {}
+
+meta.Device2.prototype = {};
+
+meta.Device2.prototype.y = meta;
+
+// meta.x = {};
+meta.x.Device = function() {};
+meta.x.Device.prototype = {};
+// meta.Device2 = function() {
+// 	this.name = "unknown";
+//     this.version = "0";
+//     this.a = this.version;
+//     this.versionBuffer = null;
+// };
+// meta.Device2.prototype = {
+
+// };
+
+// meta.x.Device.prototype.x = 10;
 
 // meta.x.Device.prototype = {};
 

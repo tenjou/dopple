@@ -7,9 +7,10 @@ dopple.extern =
 		this.globalScope = dopple.resolver.globalScope;
 
 		this.addVirtualType("Void", dopple.SubType.UNKNOWN, dopple.AST.Var, null);
-		this.addVirtualType("ObjectDef", dopple.SubType.OBJECT_DEF, dopple.AST.Object, null);
+		this.addVirtualType("ObjectDef", dopple.SubType.OBJECT_DEF, null, null);
 		this.addVirtualType("SetterGetter", dopple.SubType.SETTER_GETTER, dopple.AST.SetterGetter, null);
 		this.addVirtualType("Class", dopple.SubType.CLASS, dopple.AST.Class, null);
+
 		this.addVirtualType("Args", dopple.SubType.ARGS, dopple.AST.Args, null);
 
 		this.load_Number();
@@ -47,7 +48,14 @@ dopple.extern =
 
 	load_Object: function()
 	{
-		this.addInternalType("Object", dopple.SubType.OBJECT, [ dopple.AST.Object, dopple.AST.Null ], null);
+		var nullCls = this.addVirtualType("Null", dopple.SubType.OBJECT, dopple.AST.Null, null);
+		nullCls.flags |= dopple.Flag.SIMPLE;
+
+		var objCls = this.addInternalType("Object", dopple.SubType.OBJECT, null, null);
+		objCls.cls = nullCls;
+		objCls.ast = dopple.AST.Null;
+		dopple.AST.Object.prototype.cls = objCls;
+		dopple.AST.Object.prototype.ast = dopple.AST.Null;
 	},
 
 	load_Array: function()
@@ -67,8 +75,7 @@ dopple.extern =
 		var cls = new dopple.AST.Class(name, scope, null);
 		cls.id = this.types.length;
 		cls.cls = cls;
-		cls.ast = ast;
-
+		
 		if(subType) {
 			cls.subType = subType;
 		}
@@ -76,18 +83,9 @@ dopple.extern =
 		this.types.push(name);
 		this.typesMap[name] = cls;
 
-		if(ast) 
-		{	
-			if(ast instanceof Array) 
-			{
-				var num = ast.length;
-				for(var n = 0; n < num; n++) {
-					ast[n].prototype.cls = cls;
-				}
-			}
-			else {
-				ast.prototype.cls = cls;
-			}
+		if(ast) {	
+			cls.ast = ast;
+			ast.prototype.cls = cls;
 		}
 
 		return cls;
