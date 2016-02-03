@@ -297,14 +297,6 @@ dopple.compiler.js =
 		return output;
 	},
 
-	parseVar: function(key, node)
-	{
-		var output = "var " + key + this.parseType(node);
-		output += " = " + this.parseValue(node);
-
-		return output;
-	},
-
 	parseRef: function(node)
 	{
 		var output = this.parseName(node.name);

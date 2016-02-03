@@ -34,6 +34,11 @@ dopple.extern =
 		cls.scope.protoVars["userAgent"] = new dopple.AST.String("Dopple");
 		this.createInstance("navigator", cls);
 		dopple.resolver.resolveCls(cls);
+
+		var obj = this.createObj("console");
+		this.addFunc(obj.scope, "log", [ "Args" ], null);
+		this.addFunc(obj.scope, "warn", [ "Args" ], null);
+		this.addFunc(obj.scope, "error", [ "Args" ], null);
 		
 		this.maxInternalTypeId = this.types.length - 1;
 	},
@@ -76,7 +81,7 @@ dopple.extern =
 	load_Array: function()
 	{
 		var cls = this.createInternalType("Array", dopple.SubType.ARRAY, dopple.AST.Array, null);
-		this.addFunc(cls, "push", [ "Args" ], "Number");
+		this.addFunc(cls.scope, "push", [ "Args" ], "Number");
 	},				
 
 	createType: function(name, subType, ast, scope)
@@ -137,10 +142,20 @@ dopple.extern =
 		return cls;
 	},
 
-	addFunc: function(cls, name, params, returnType)
+	createObj: function(name)
 	{
-		var clsScope = cls.scope;
-		var scope = clsScope.createChild();
+		var scope = new dopple.Scope(this.globalScope);
+		var obj = new dopple.AST.Object(scope);
+		obj.flags |= dopple.Flag.INTERNAL_TYPE;
+
+		this.scope.protoVars[name] = obj;
+
+		return obj;
+	},
+
+	addFunc: function(scope, name, params, returnType)
+	{
+		var funcScope = scope.createChild();
 
 		var paramBuffer = null;
 		if(params)
@@ -158,8 +173,10 @@ dopple.extern =
 			}
 		}
 
-		var func = new dopple.AST.Function(name, scope, paramBuffer);
-		cls.scope.bodyFuncs.push(func);
+		var func = new dopple.AST.Function(name, funcScope, paramBuffer);
+		scope.protoVars[name] = func;
+
+		dopple.resolver.resolveFunc(func);
 	},
 
 	getType: function(name)

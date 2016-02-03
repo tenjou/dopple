@@ -56,13 +56,6 @@ dopple.resolver =
 					this.resolveIf(node);
 					break;
 
-				// case this.exprType.SETTER:
-				// 	this.resolveSetter(node);
-				// 	break;
-				// case this.exprType.GETTER:
-				// 	this.resolveGetter(node);
-				// 	break;
-
 				case this.exprType.NEW:
 					this.resolveNew(node);
 					break;
@@ -125,6 +118,9 @@ dopple.resolver =
 	{
 		var name = node.ref.name.value;
 		var expr = this.scope.vars[name];
+		if(expr) {
+			throw "redefinition";
+		}
 
 		var value;
 		if(node.ref.value)
@@ -144,7 +140,7 @@ dopple.resolver =
 			}
 		}
 		else {
-			this.scope.vars[name] = expr;
+			this.scope.vars[name] = null;
 		}
 
 		return null;
@@ -612,14 +608,7 @@ dopple.resolver =
 
 	resolveFunc: function(node, notValue)
 	{
-		var prevScope = this.scope;
-		this.scope = node.scope;
-
-		if(node.params) {
-			this.resolveParams(node.params);
-		}
-
-		this.scope = prevScope;
+		this.resolveParams(node);
 
 		node.scope.protoVars = this.scope.protoVars;
 
@@ -658,15 +647,22 @@ dopple.resolver =
 		node.flags |= dopple.Flag.RESOLVED;
 	},
 
-	resolveParams: function(params)
+	resolveParams: function(func)
 	{
+		if(!func.params) { return; }
+
 		var param;
+		var params = func.params;
 		var num = params.length;
 		for(var n = 0; n < num; n++)
 		{
 			param = params[n];
 			param.flags |= dopple.Flag.PARAM;
 			this.scope.vars[param.name.value] = param;
+
+			if(param.value.exprType === this.exprType.ARGS) {
+				func.argsIndex = n;
+			}
 		}
 	},
 
@@ -691,8 +687,20 @@ dopple.resolver =
 		}
 
 		var numParams = func.params ? func.params.length : 0;
-		if(numParams !== numArgs) {
-			throw "ParamError: Function \"" + this.refName + "\" supports " + numParams + " arguments but passed " + numArgs;
+		if(numParams !== numArgs) 
+		{
+			var error = true;
+
+			if(func.argsIndex > -1) 
+			{
+				if(numArgs > func.argsIndex) {
+					error = false;
+				}
+			}
+
+			if(error) {
+				throw "ParamError: Function \"" + this.refName + "\" supports " + numParams + " arguments but passed " + numArgs;
+			}
 		}
 
 		this.resolveFuncBody(func);
@@ -872,6 +880,10 @@ dopple.resolver =
 					funcs.push(item);
 					break;
 
+				case this.exprType.FUNCTION:
+					this.resolveFunc(item);
+					break;
+
 				default:
 					throw "unhandled";
 			}
@@ -890,6 +902,11 @@ dopple.resolver =
 		node.value = this.resolveValue(node.value);
 
 		this.scope.protoVars[name] = node.value;
+	},
+
+	resolveObjBody: function(obj)
+	{
+		this.resolveBodyFuncs(obj.scope);
 	},
 
 	resolveScope: function(scope)
