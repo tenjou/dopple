@@ -359,6 +359,18 @@ meta.class("dopple.AST.Block",
 	exprType: dopple.ExprType.BLOCK
 });
 
+/* regex */
+meta.class("dopple.AST.Regex", 
+{
+	init: function(value) {
+		this.value = value;
+	},
+
+	//
+	exprType: dopple.ExprType.REGEX,
+	subType: dopple.SubType.STRING
+});
+
 /* return */
 meta.class("dopple.AST.Return", 
 {

@@ -29,6 +29,11 @@ dopple.extern =
 		this.load_Function();
 		this.load_Object();
 		this.load_Array();
+
+		cls = this.createInternalCls("Navigator");
+		cls.scope.protoVars["userAgent"] = new dopple.AST.String("Dopple");
+		this.createInstance("navigator", cls);
+		dopple.resolver.resolveCls(cls);
 		
 		this.maxInternalTypeId = this.types.length - 1;
 	},

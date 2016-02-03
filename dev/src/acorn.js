@@ -71,6 +71,10 @@ dopple.acorn =
 
 	parseLiteral: function(node)
 	{
+		if(node.regex) {
+			return new dopple.AST.Regex(node.value);
+		}
+
 		if(typeof node.value === "string") {
 			return new dopple.AST.String(node.value);
 		}

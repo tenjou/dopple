@@ -126,18 +126,25 @@ dopple.resolver =
 		var name = node.ref.name.value;
 		var expr = this.scope.vars[name];
 
-		var value = node.ref.value;
-		if(value) {
-			value = this.resolveValue(node.ref.value);
-		}
-
-		this.scope.vars[name] = value;
-
-		if(value.exprType === this.exprType.FUNCTION)
+		var value;
+		if(node.ref.value)
 		{
-			value.name = name;
-			this.scope.bodyFuncs.push(value);
-			return null;
+			var value = node.ref.value;
+			if(value) {
+				value = this.resolveValue(node.ref.value);
+			}
+
+			this.scope.vars[name] = value;
+
+			if(value.exprType === this.exprType.FUNCTION)
+			{
+				value.name = name;
+				this.scope.bodyFuncs.push(value);
+				return null;
+			}
+		}
+		else {
+			this.scope.vars[name] = expr;
 		}
 
 		return null;
@@ -392,6 +399,15 @@ dopple.resolver =
 			}
 
 			this.refVarBuffer = this.refScope.protoVars;
+		}
+		else if(expr.exprType === this.exprType.INSTANCE) 
+		{
+			if(this.refName === "prototype") {
+				throw "Cannot set property \"" + this.refName + "\" of undefined";
+			}
+
+			this.refScope = expr.cls.scope;
+			this.refVarBuffer = expr.cls.scope.protoVars;
 		}
 		else if(expr.exprType === this.exprType.FUNCTION)
 		{

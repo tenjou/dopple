@@ -162,6 +162,10 @@ dopple.compiler.js =
 		return node.value;
 	},
 
+	parseRegex: function(node) {
+		return node.value;
+	},
+
 	parseBinary: function(node) {
 		return this.parseValue(node.lhs) + " " + node.op + " " + this.parseValue(node.rhs);
 	},
@@ -537,6 +541,9 @@ dopple.compiler.js =
 
 			case this.exprType.CLASS:
 				return this.parseCls(node);
+
+			case this.exprType.REGEX:
+				return this.parseRegex(node);
 
 			default:
 				throw "unhandled";
