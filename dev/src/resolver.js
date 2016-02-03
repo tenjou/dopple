@@ -140,7 +140,7 @@ dopple.resolver =
 			}
 		}
 		else {
-			this.scope.vars[name] = null;
+			this.scope.vars[name] = new dopple.AST.Reference();
 		}
 
 		return null;
@@ -377,8 +377,10 @@ dopple.resolver =
 			}				
 		}
 
-		if(expr.exprType === this.exprType.REFERENCE) {
+		if(expr.exprType === this.exprType.REFERENCE) 
+		{
 			expr = expr.value;
+			if(!expr) { return; }
 		}
 
 		if(this.refName !== "prototype") {

@@ -207,12 +207,12 @@ meta.class("dopple.AST.Reference",
 
 	//
 	exprType: dopple.ExprType.REFERENCE,
-	cls: null,
-	ops: 0,
 
 	name: null,
 	value: null,
-	scope: null
+	cls: null,
+
+	ops: 0
 });
 
 /* if */

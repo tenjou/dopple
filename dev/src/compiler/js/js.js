@@ -83,7 +83,13 @@ dopple.compiler.js =
 			if(node.flags & dopple.Flag.INTERNAL_TYPE) { continue; }
 			if(node.flags & dopple.Flag.PARAM) { continue; }
 
-			tmpOutput += this.tabs + "var " + key + " = " + this.parseValue(node) + ";\n";
+			tmpOutput += this.tabs + "var " + key
+
+			if(node.exprType !== this.exprType.REFERENCE && node.value) {
+				tmpOutput += " = " + this.parseValue(node);
+			}
+			
+			tmpOutput += ";\n";
 		}	
 
 		if(tmpOutput) {
