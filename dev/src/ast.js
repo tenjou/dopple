@@ -408,7 +408,8 @@ meta.class("dopple.AST.Function", "dopple.AST.Basic",
 	subType: dopple.SubType.FUNCTION,
 	cls: null,
 	argsIndex: -1,
-	minParams: -1
+	minParams: -1,
+	calls: 0
 });
 
 /* function call */
@@ -513,6 +514,19 @@ meta.class("dopple.AST.Object",
 	exprType: dopple.ExprType.OBJECT,
 	cls: null,
 	scope: null
+});
+
+/* instance */
+meta.class("dopple.AST.Instance",
+{
+	init: function(cls) {
+		this.cls = cls;
+	},
+
+	//
+	exprType: dopple.ExprType.INSTANCE,
+	subType: dopple.SubType.OBJECT,
+	cls: null
 });
 
 /* object property */

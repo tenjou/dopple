@@ -76,9 +76,7 @@ dopple.resolver =
 					break;
 
 				case this.exprType.FUNCTION:
-					this.resolveFunc(node);
-					this.scope.bodyFuncs.push(node);
-					body[n] = null;
+					body[n] = this.resolveFunc(node, true);
 					break;					
 
 				case this.exprType.CLASS:
@@ -90,13 +88,18 @@ dopple.resolver =
 
 	resolveBodyFuncs: function(scope)
 	{
+		var prevScope = this.scope;
+		this.scope = scope;
+
 		var node;
 		var vars = scope.protoVars;
 		for(var key in vars)
 		{
 			node = vars[key];
+			if(node.flags & dopple.Flag.RESOLVED) { continue; }
+
 			if(node.exprType === this.exprType.FUNCTION) {
-				this.resolveScope(node.scope);
+				this.resolveFuncBody(node);
 			}
 			else if(node.exprType === this.exprType.SETTER_GETTER)
 			{
@@ -110,15 +113,12 @@ dopple.resolver =
 			else if(node.exprType === this.exprType.OBJECT) {
 				this.resolveBodyFuncs(node.scope);
 			}
-			else if(node.exprType === this.exprType.CLASS) 
-			{
-				if(node.constrFunc) {
-					this.resolveScope(node.constrFunc.scope);
-				}
-				
-				this.resolveBodyFuncs(node.scope);
+			else if(node.exprType === this.exprType.CLASS) {
+				this.resolveClsBody(node);
 			}
 		}
+
+		this.scope = prevScope;
 	},
 
 	resolveVar: function(node)
@@ -140,7 +140,7 @@ dopple.resolver =
 			return null;
 		}
 
-		return node;
+		return null;
 	},
 
 	resolveRef: function(node)
@@ -190,7 +190,7 @@ dopple.resolver =
 		switch(exprType) 
 		{
 			case this.exprType.FUNCTION:
-				this.resolveFunc(node);
+				this.resolveFunc(node, false);
 				break;
 			case this.exprType.FUNCTION_CALL:
 				break;
@@ -300,8 +300,13 @@ dopple.resolver =
 			{
 				this.refName = node.value;
 
-				if(this._resolveName_num === 0) {
+				if(this._resolveName_num === 0) 
+				{
 					this._resolveRootScope(node);
+
+					if(this._resolveName_depth === 1) {
+						this._resolveExprScope();
+					}
 				}
 				else
 				{
@@ -373,11 +378,12 @@ dopple.resolver =
 			expr = expr.value;
 		}
 
-		this.refScope = expr.scope;
-
 		if(this.refName !== "prototype") {
 			this.refParentExpr = expr;
+			this.resolved.holderScope = this.refScope;
 		}
+
+		this.refScope = expr.scope;
 	
 		if(expr.exprType === this.exprType.OBJECT) 
 		{
@@ -424,6 +430,7 @@ dopple.resolver =
 
 		this.refScope = scope;
 		this.refVarBuffer = scope.staticVars;
+		this.resolved.holderScope = scope;
 	},	
 
 	resolveAssign: function(node)
@@ -455,7 +462,7 @@ dopple.resolver =
 					this.refVarBuffer[this.refName] = value;
 				}
 				else if(parentExprType === this.exprType.CLASS) {
-					this._resolveAssign_Class(node);
+					returnNode = this._resolveAssign_Class(node);
 				}
 				else {
 					this.refVarBuffer[this.refName] = value;
@@ -463,7 +470,7 @@ dopple.resolver =
 			}
 			// THIS
 			else {
-				this._resolveAssign_Class(node);
+				returnNode = this._resolveAssign_Class(node);
 			}
 		}
 		else 
@@ -492,8 +499,7 @@ dopple.resolver =
 		var value = node.right;
 		var valueExpr = value.exprType;
 
-		if(valueExpr !== this.exprType.REFERENCE && 
-		   value.cls.flags & dopple.Flag.SIMPLE) 
+		if((this.insideFunc === 0) && valueExpr !== this.exprType.REFERENCE && value.cls.flags & dopple.Flag.SIMPLE)
 		{
 			this.refVarBuffer[this.refName] = value;
 			return null;
@@ -510,6 +516,8 @@ dopple.resolver =
 				this.refVarBuffer[this.refName] = new value.cls.ast();	
 			}
 		}
+
+		return node;
 	},
 
 	resolveIf: function(node)
@@ -586,20 +594,10 @@ dopple.resolver =
 		}
 	},
 
-	resolveFunc: function(node)
+	resolveFunc: function(node, notValue)
 	{
-		if(node.name)
-		{
-			if(this.scope.vars[node.name]) {
-				throw "redefinition";
-			}
-
-			this.scope.vars[node.name] = node;
-		}
-
 		var prevScope = this.scope;
 		this.scope = node.scope;
-		this.scope.owner = prevScope;
 
 		if(node.params) {
 			this.resolveParams(node.params);
@@ -607,7 +605,41 @@ dopple.resolver =
 
 		this.scope = prevScope;
 
+		node.scope.protoVars = this.scope.protoVars;
+
+		if(notValue) 
+		{
+			if(node.name)
+			{
+				if(this.scope.vars[node.name]) {
+					throw "redefinition";
+				}
+
+				this.scope.vars[node.name] = node;
+			}
+
+			this.scope.bodyFuncs.push(node);	
+			return null;
+		}
+
 		return node;
+	},
+
+	resolveFuncBody: function(node)
+	{
+		if(node.flags & dopple.Flag.RESOLVED) { return; }
+
+		if((node.flags & dopple.Flag.CONSTRUCTOR) === 0) {
+			this.insideFunc++;
+		}
+		
+		this.resolveScope(node.scope);
+
+		if((node.flags & dopple.Flag.CONSTRUCTOR) === 0) {
+			this.insideFunc--;
+		}
+
+		node.flags |= dopple.Flag.RESOLVED;
 	},
 
 	resolveParams: function(params)
@@ -617,6 +649,7 @@ dopple.resolver =
 		for(var n = 0; n < num; n++)
 		{
 			param = params[n];
+			param.flags |= dopple.Flag.PARAM;
 			this.scope.vars[param.name.value] = param;
 		}
 	},
@@ -629,6 +662,11 @@ dopple.resolver =
 		}
 
 		var func = this.refParentExpr;
+		if(func.exprType !== this.exprType.FUNCTION) {
+			throw "ConstructorError: Invalid constructor call of \"" + this.refName + "\"";
+		}
+
+		func.calls++;
 
 		var args = node.args;
 		var numArgs = args.length;
@@ -640,6 +678,8 @@ dopple.resolver =
 		if(numParams !== numArgs) {
 			throw "ParamError: Function \"" + this.refName + "\" supports " + numParams + " arguments but passed " + numArgs;
 		}
+
+		this.resolveFuncBody(func);
 	},
 
 	resolveNew: function(node)
@@ -688,43 +728,26 @@ dopple.resolver =
 		var nameBuffer = this.genNameBuffer(node.left);
 		var name = nameBuffer[nameBuffer.length - 1];
 
+		constrFunc.flags |= dopple.Flag.CONSTRUCTOR | dopple.Flag.HIDDEN;
+		if(constrFunc.calls > 0) {
+			throw "ConstructorError: Calling constructor of \"" + name + "\" before it's body is defined."
+		}
+
 		var constrScope = constrFunc.scope;
 		var scope = node.right.scope;
-		scope.owner = constrScope.owner;
-		constrScope.owner = scope;
 
 		var cls = dopple.extern.createCls(name, scope);
 		cls.constrFunc = constrFunc;
 		cls.nameBuffer = nameBuffer;
-		scope.owner.protoVars[name] = cls;
-
-		constrFunc.flags |= dopple.Flag.CONSTRUCTOR | dopple.Flag.HIDDEN;
+		this.resolved.holderScope.protoVars[name] = cls;
+		this.resolved.holderScope.bodyCls.push(cls);
 
 		var clsVars = scope.protoVars;
 		var constrVars = constrScope.protoVars;
 		constrScope.protoVars = clsVars;
 
-		var varNode, constrVarNode;
-		for(var key in constrVars) 
-		{
-			varNode = clsVars[key];
-			if(varNode) {
-				constrVars[key].flags &= ~dopple.Flag.DEF;
-			}
-			else {
-				constrVarNode = constrVars[key];
-				constrVarNode.flags |= dopple.Flag.DEF;
-				clsVars[key] = constrVarNode;
-			}
-		}
-
-		this.hideDef(constrFunc.scope);
-
+		cls.flags |= dopple.Flag.HIDDEN;
 		node.flags |= dopple.Flag.HIDDEN;
-		constrFunc.flags |= dopple.Flag.HIDDEN;
-		scope.owner.bodyCls.push(cls);
-
-		return cls;
 	},
 
 	genNameBuffer: function(node)
@@ -773,21 +796,14 @@ dopple.resolver =
 		}
 	},
 
-	resolveObjAsCls: function(node)
-	{
-		var clsExpr = dopple.extern.createType(this.refName, dopple.SubType.CLASS, null, node.value.scope);
-		clsExpr.cls = clsExpr;
-		this.refScope.vars[this.refName] = clsExpr;
-		
-		// if(this.refVar)
-		// {
-		// 	if(this.refVar.type !== this.typesMap.function) {
-		// 		throw "Type Redefinition: " + this.refName + " expected [function] but got [" + node.rhs.type.name + "]"; 
-		// 	}
-		// }
+	// resolveObjAsCls: function(node)
+	// {
+	// 	var clsExpr = dopple.extern.createType(this.refName, dopple.SubType.CLASS, null, node.value.scope);
+	// 	clsExpr.cls = clsExpr;
+	// 	this.refScope.vars[this.refName] = clsExpr;
 	
-		this.resolveScope(clsExpr.scope);
-	},
+	// 	this.resolveScope(clsExpr.scope);
+	// },
 
 	resolveCls: function(node)
 	{
@@ -797,33 +813,22 @@ dopple.resolver =
 		node.cls = node;
 		this.scope.vars[node.name] = node;
 		this.types.push(node.name);
+	},
+
+	resolveClsBody: function(node)
+	{
+		if(node.flags & dopple.Flag.RESOLVED) { return; }
+
+		var func = node.constrFunc;
+		if(func) 
+		{
+			this.resolveFuncBody(func);
+			func.scope.protoVars = node.scope.protoVars;
+		}
 		
+		this.resolveBodyFuncs(node.scope);		
 
-		// var expr, name;
-		// var scope = this.globalScope;
-		// var path = node.name.split(".");
-		// var num = path.length - 1;
-		// for(var n = 0; n < num; n++)
-		// {
-		// 	name = path[n];
-		// 	expr = scope.vars[name];
-		// 	if(!expr) {
-		// 		var objScope = new dopple.Scope(scope);
-		// 		var objExpr = new dopple.AST.Object(objScope);
-		// 		expr = new dopple.AST.Var(name, objExpr);
-		// 		scope.vars[name] = expr;
-		// 	}
-
-		// 	scope = expr.value.scope;
-		// }
-
-		// name = path[num];
-		// expr = scope.vars[name];
-		// if(expr) {
-		// 	throw "Redefinition: \"" + node.name + "\" is already defined in this scope";
-		// }
-
-		// scope.vars[name] = node;
+		node.flags |= dopple.Flag.RESOLVED;
 	},
 
 	resolveObj: function(node) 
@@ -946,8 +951,14 @@ dopple.resolver =
 	refVarBuffer: null,
 	refParentExpr: null,
 
+	resolved: {
+		holderScope: null,
+	},
+
 	_resolveName_depth: 0,
 	_resolveName_num: 0,
+
+	insideFunc: 0,
 
 	types: dopple.types,
 	exprType: dopple.ExprType,

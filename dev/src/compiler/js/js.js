@@ -30,7 +30,6 @@ dopple.compiler.js =
 	{
 		var output = "";
 		var tmpOutput = "";
-		var printed = 0;
 
 		// parse classes:
 		var cls;
@@ -41,17 +40,14 @@ dopple.compiler.js =
 			for(var n = 0; n < num; n++)
 			{
 				cls = bodyCls[n];
-				if(cls.flags & dopple.Flag.HIDDEN) { continue; }
 
-				tmpOutput += this.parseCls(cls);
-				printed++;
+				tmpOutput += this.parseCls(cls) + "\n";
 			}
 
-			if(printed > 0)
+			if(tmpOutput)
 			{
-				output += tmpOutput + "\n";
-				tmpOutput = "";	
-				printed = 0;	
+				output += tmpOutput;
+				tmpOutput = "";
 			}
 		}
 	
@@ -66,20 +62,41 @@ dopple.compiler.js =
 				func = bodyFuncs[n];
 				if(func.flags & dopple.Flag.HIDDEN) { continue; }
 
-				tmpOutput += this.parseFunc(func);
-				printed++;
+				tmpOutput += this.parseFunc(func) + "\n\n";
 			}
 
-			if(printed > 0)
+			if(tmpOutput)
 			{
-				output += tmpOutput + "\n\n";
-				tmpOutput = "";	
-				printed = 0;	
+				output += tmpOutput;
+				tmpOutput = "";
 			}
 		}
 
 		//
 		var node;
+		var vars = scope.vars;
+		for(var key in vars) 
+		{
+			node = vars[key];
+			if(node.exprType === this.exprType.FUNCTION) { continue; }
+			if(node.flags & dopple.Flag.HIDDEN) { continue; }
+			if(node.flags & dopple.Flag.INTERNAL_TYPE) { continue; }
+			if(node.flags & dopple.Flag.PARAM) { continue; }
+
+			tmpOutput += this.tabs + "var " + key + " = " + this.parseValue(node) + ";\n";
+		}	
+
+		if(tmpOutput) {
+			output += tmpOutput + "\n";
+			tmpOutput = "";
+		}
+
+		if(this.insideObj === 0 && this.clsOutput) {
+			output += this.clsOutput + "\n";
+			this.clsOutput = "";
+		}	
+
+		//
 		var body = scope.body;
 		num = body.length;
 		for(n = 0; n < num; n++)
@@ -92,10 +109,6 @@ dopple.compiler.js =
 
 			switch(node.exprType)
 			{
-				case this.exprType.VAR:
-					tmpOutput += this.parseVar(node) + ";";
-					break;
-
 				case this.exprType.ASSIGN:
 					tmpOutput += this.parseAssign(node) + ";";
 					break;
@@ -280,12 +293,10 @@ dopple.compiler.js =
 		return output;
 	},
 
-	parseVar: function(node)
+	parseVar: function(key, node)
 	{
-		var ref = node.ref;
-
-		var output = "var " + this.parseName(ref.name) + this.parseType(ref.value);
-		output += " = " + this.parseValue(ref.value);
+		var output = "var " + key + this.parseType(node);
+		output += " = " + this.parseValue(node);
 
 		return output;
 	},

@@ -42,7 +42,8 @@ dopple.ExprType = {
 	TYPE: 38,
 	IDENTIFIER: 39,
 	ARGS: 40,
-	PARAM: 41
+	PARAM: 41,
+	INSTANCE: 42
 };
 
 dopple.SubType = {
@@ -67,5 +68,7 @@ dopple.Flag = {
 	HIDDEN: 1 << 4,
 	DEF: 1 << 5,
 	CONSTRUCTOR: 1 << 6,
-	SIMPLE: 1 << 7
+	SIMPLE: 1 << 7,
+	PARAM: 1 << 8,
+	RESOLVED: 1 << 9
 };
