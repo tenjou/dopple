@@ -518,15 +518,37 @@ dopple.resolver =
 		}
 		else
 		{
+			var expr;
+
 			if(valueExpr === this.exprType.REFERENCE) {
-				this.refVarBuffer[this.refName] = new value.value.cls.ast();
+				value = value.value;
 			}
-			else if(valueExpr === this.exprType.CLASS) {
-				throw "unhandled";
+
+			switch(value.exprType)
+			{
+				case this.exprType.NUMBER:
+					expr = new dopple.AST.Number();
+					break;
+
+				case this.exprType.BOOL:
+					expr = new dopple.AST.Bool();
+					break;					
+
+				case this.exprType.STRING:
+					expr = new dopple.AST.String();
+					break;
+
+				case this.exprType.ARRAY:
+				case this.exprType.OBJECT:
+				case this.exprType.INSTANCE:
+					expr = new dopple.AST.Null();
+					break;
+
+				default:
+					throw "unhandled";
 			}
-			else {
-				this.refVarBuffer[this.refName] = new value.cls.ast();	
-			}
+
+			this.refVarBuffer[this.refName] = expr;
 		}
 
 		return node;
