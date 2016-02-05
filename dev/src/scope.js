@@ -6,7 +6,6 @@ dopple.Scope = function(parent)
 	this.vars = {}
 	this.protoVars = null;
 	this.staticVars = {};
-	this.preBody = [];
 	this.body = [];
 	this.bodyFuncs = [];
 	this.bodyCls = [];

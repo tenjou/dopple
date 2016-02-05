@@ -531,7 +531,7 @@ meta.class("dopple.AST.Instance",
 
 	//
 	exprType: dopple.ExprType.INSTANCE,
-	subType: dopple.SubType.OBJECT,
+	subType: dopple.SubType.INSTANCE,
 	cls: null
 });
 

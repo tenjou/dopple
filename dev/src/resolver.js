@@ -93,30 +93,34 @@ dopple.resolver =
 		this.scope = scope;
 
 		var node;
-		var vars = scope.protoVars;
-		for(var key in vars)
+		var bodyFuncs = scope.bodyFuncs;
+		var num = bodyFuncs.length;
+		for(var n = 0; n < num; n++)
 		{
-			node = vars[key];
-			if(node.flags & dopple.Flag.RESOLVED) { continue; }
+			node = bodyFuncs[n];
 
-			if(node.exprType === this.exprType.FUNCTION) {
-				this.resolveFuncBody(node);
-			}
-			else if(node.exprType === this.exprType.SETTER_GETTER)
-			{
-				if(node.setter) {
-					this.resolveScope(node.setter.value.scope);
-				}
-				if(node.getter) {
-					this.resolveScope(node.getter.value.scope);
-				}
-			}
-			else if(node.exprType === this.exprType.OBJECT) {
-				this.resolveBodyFuncs(node.scope);
-			}
-			else if(node.exprType === this.exprType.CLASS) {
-				this.resolveClsBody(node);
-			}
+			if(node.flags & dopple.Flag.RESOLVED_BODY) { continue; }		
+
+			this.resolveFuncBody(node);
+
+			// if(node.exprType === this.exprType.FUNCTION) {
+			// 	this.resolveFuncBody(node);
+			// }
+			// else if(node.exprType === this.exprType.SETTER_GETTER)
+			// {
+			// 	if(node.setter) {
+			// 		this.resolveScope(node.setter.value.scope);
+			// 	}
+			// 	if(node.getter) {
+			// 		this.resolveScope(node.getter.value.scope);
+			// 	}
+			// }
+			// else if(node.exprType === this.exprType.OBJECT) {
+			// 	this.resolveBodyFuncs(node.scope);
+			// }
+			// else if(node.exprType === this.exprType.CLASS) {
+			// 	this.resolveClsBody(node);
+			// }
 		}
 
 		this.scope = prevScope;
@@ -133,12 +137,12 @@ dopple.resolver =
 		if(node.value)
 		{
 			node.value = this.resolveValue(node.value);
+			node.ref.cls = node.value.cls;
 
 			var valueExprType = node.value.exprType;
 			if(valueExprType === this.exprType.FUNCTION)
 			{
 				node.value.name = name;
-				this.scope.bodyFuncs.push(node.value);
 				this.scope.vars[name] = node.value;
 				return null;
 			}
@@ -261,15 +265,7 @@ dopple.resolver =
 			throw "ReferenceError: '" + this.refName + "' is not defined";
 		}
 
-		var expr;
-		if(this.refParentExpr.exprType !== this.exprType.REFERENCE) {
-			expr = new dopple.AST.Reference(node, this.refParentExpr);
-		}
-		else {
-			expr = this.refParentExpr;
-		}
-
-		return expr;
+		return this.refParentExpr.ref;
 	},	
 
 	resolveBinary: function(node)
@@ -330,7 +326,7 @@ dopple.resolver =
 					{
 						this.refScope = this.scope;
 						this.refVarBuffer = this.scope.protoVars;
-						this.resolved.pointSelf = false;
+						this.resolved.pointSelf = true;
 					}
 					else {
 						throw "Unexpected: This expression";
@@ -385,44 +381,52 @@ dopple.resolver =
 			}				
 		}
 
-		if(expr.exprType === this.exprType.REFERENCE) 
-		{
-			expr = expr.value;
-			if(!expr) { return; }
-		}
-
 		if(this.refName !== "prototype") {
 			this.refParentExpr = expr;
 			this.resolved.holderScope = this.refScope;
 		}
 
-		this.refScope = expr.scope;
+
+		var cls;
+		if(expr.exprType === this.exprType.VAR) {
+			cls = expr.ref.cls;
+			this.refScope = expr.value.scope;
+		}
+		else {
+			cls = expr.cls;
+			this.refScope = expr.scope;		
+		}
 	
-		if(expr.exprType === this.exprType.OBJECT) 
+		switch(cls.subType)
 		{
-			if(this.refName === "prototype") {
-				throw "Cannot set property '" + this.refName + "' of undefined";
-			}
+			case this.subType.OBJECT:
+			{
+				if(this.refName === "prototype") {
+					throw "Cannot set property '" + this.refName + "' of undefined";
+				}
 
-			this.refVarBuffer = this.refScope.protoVars;
-		}
-		else if(expr.exprType === this.exprType.INSTANCE) 
-		{
-			if(this.refName === "prototype") {
-				throw "Cannot set property '" + this.refName + "' of undefined";
-			}
-
-			this.refScope = expr.cls.scope;
-			this.refVarBuffer = expr.cls.scope.protoVars;
-		}
-		else if(expr.exprType === this.exprType.FUNCTION)
-		{
-			if(this.refName === "prototype") {
 				this.refVarBuffer = this.refScope.protoVars;
-			}
-			else {
-				this.refVarBuffer = this.refScope.staticVars;
-			}
+			} break;
+
+			case this.subType.INSTANCE:
+			{
+				if(this.refName === "prototype") {
+					throw "Cannot set property '" + this.refName + "' of undefined";
+				}
+
+				this.refScope = cls.scope;
+				this.refVarBuffer = cls.scope.protoVars;
+			} break;
+
+			case this.subType.FUNCTION:
+			{
+				if(this.refName === "prototype") {
+					this.refVarBuffer = this.refScope.protoVars;
+				}
+				else {
+					this.refVarBuffer = this.refScope.staticVars;
+				}
+			} break;
 		}
 	},
 
@@ -482,7 +486,7 @@ dopple.resolver =
 					this.refVarBuffer[this.refName] = new dopple.AST.Reference(value);
 				}
 				else if(parentExprType === this.exprType.CLASS) {
-					returnNode = this._resolveAssign_Class(node);
+					returnNode = this._resolveAssign_Class(node, value);
 				}
 				else {
 					this.refVarBuffer[this.refName] = new dopple.AST.Reference(value);
@@ -490,8 +494,8 @@ dopple.resolver =
 			}
 			else 
 			{
-				if(this.refThis) {
-					returnNode = this._resolveAssign_Class(node);
+				if(this.resolved.pointSelf) {
+					returnNode = this._resolveAssign_Class(node, value);
 				}
 				else {
 					throw "ReferenceError: '" + this.refName + "' is not defined";
@@ -512,26 +516,37 @@ dopple.resolver =
 			}
 			else
 			{
-				if(this.refParentExpr.exprType !== this.exprType.VAR) {
-					throw "unhandled";
+				if(this.refParentExpr.exprType === this.exprType.VAR) {
+					this.refParentExpr.ref.ops++;
 				}
+				else
+				{
+					// TODO: typechecks
+					if(this.resolved.pointSelf) {
+						
+					}
+					else
+					{
 
-				this.refParentExpr.ref.ops++;
-				// TODO: typechecks
+					}
+				}
 			}
 		}
 
 		return returnNode;
 	},
 
-	_resolveAssign_Class: function(node)
+	_resolveAssign_Class: function(node, value)
 	{
-		var value = node.right;
 		var valueExpr = value.exprType;
 
 		if((this.insideFunc === 0) && valueExpr !== this.exprType.REFERENCE && value.cls.flags & dopple.Flag.SIMPLE)
 		{
-			this.refVarBuffer[this.refName] = new dopple.AST.Reference(value);
+			var ref = new dopple.AST.Reference(node.left);
+			ref.cls = value.cls;
+			var varExpr = new dopple.AST.Var(ref, value);
+			this.refVarBuffer[this.refName] = varExpr;
+
 			return null;
 		}
 		else
@@ -562,8 +577,9 @@ dopple.resolver =
 					throw "unhandled";
 			}
 
-			var ref = new dopple.AST.Reference(this.refName);
-			this.refScope = new dopple.AST.Var(ref, expr);
+			var ref = new dopple.AST.Reference(node.left);
+			ref.cls = value.cls;
+			this.refVarBuffer[this.refName] = new dopple.AST.Var(ref, expr);
 		}
 
 		return node;
@@ -655,6 +671,13 @@ dopple.resolver =
 
 		this.scope = prevScope;
 
+		if(((node.flags & dopple.Flag.HANDLED) === 0) && 
+		   ((node.flags & dopple.Flag.EXTERN) === 0) &&
+		   this.insideObj === 0) 
+		{
+			this.globalScope.bodyFuncs.push(node);
+		}		
+
 		if(notValue) 
 		{
 			if(node.name)
@@ -665,10 +688,6 @@ dopple.resolver =
 
 				this.scope.vars[node.name] = node;
 			}
-
-			if((node.flags & dopple.Flag.HANDLED) === 0) {
-				this.scope.bodyFuncs.push(node);
-			}
 				
 			return null;
 		}
@@ -678,7 +697,7 @@ dopple.resolver =
 
 	resolveFuncBody: function(node)
 	{
-		if(node.flags & dopple.Flag.RESOLVEDB_BODY) { return; }
+		if(node.flags & dopple.Flag.RESOLVED_BODY) { return; }
 
 		if((node.flags & dopple.Flag.CONSTRUCTOR) === 0) {
 			this.insideFunc++;
@@ -690,7 +709,7 @@ dopple.resolver =
 			this.insideFunc--;
 		}
 
-		node.flags |= dopple.Flag.RESOLVEDB_BODY;
+		node.flags |= dopple.Flag.RESOLVED_BODY;
 	},
 
 	resolveParams: function(func)
@@ -703,15 +722,15 @@ dopple.resolver =
 		for(var n = 0; n < num; n++)
 		{
 			param = params[n];
-			name = param.ref.name;
+			name = param.ref.name.value;
 
 			if(this.scope.vars[name]) {
 				throw "redefinition";
 			}
 
-			this.scope.vars[name] = param.ref;
+			this.scope.vars[name] = new dopple.AST.Var(param.ref.name, param.ref);
 
-			if(param.ref.cls && (param.ref.cls.subType === this.exprType.ARGS)) {
+			if(param.ref.cls && (param.ref.cls.subType === this.subType.ARGS)) {
 				func.argsIndex = n;
 			}
 		}
@@ -892,7 +911,7 @@ dopple.resolver =
 
 	resolveClsBody: function(node)
 	{
-		if(node.flags & dopple.Flag.RESOLVED) { return; }
+		if(node.flags & dopple.Flag.RESOLVED_BODY) { return; }
 
 		var func = node.constrFunc;
 		if(func) 
@@ -903,15 +922,15 @@ dopple.resolver =
 		
 		this.resolveBodyFuncs(node.scope);		
 
-		node.flags |= dopple.Flag.RESOLVED;
+		node.flags |= dopple.Flag.RESOLVED_BODY;
 	},
 
 	resolveObj: function(node) 
 	{
+		this.insideObj++;
+
 		var prevScope = this.scope;
 		this.scope = node.scope;
-
-		var protoVars = this.scope.protoVars;
 
 		var item;
 		var body = this.scope.body;
@@ -941,6 +960,8 @@ dopple.resolver =
 		}
 
 		this.scope = prevScope;
+
+		this.insideObj--;
 	},
 
 	resolveObjProp: function(node)
@@ -951,6 +972,9 @@ dopple.resolver =
 		}
 
 		node.value = this.resolveValue(node.value);
+		if(node.value.exprType === this.exprType.FUNCTION) {
+			node.value.scope.protoVars = this.scope.protoVars;
+		}
 
 		this.scope.protoVars[name] = node.value;
 	},
@@ -1044,6 +1068,7 @@ dopple.resolver =
 	_resolveName_num: 0,
 
 	insideFunc: 0,
+	insideObj: 0,
 
 	types: dopple.types,
 	exprType: dopple.ExprType,

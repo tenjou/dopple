@@ -62,7 +62,8 @@ dopple.acorn =
 			if(!expr) { continue; }
 
 			if(expr.exprType === this.exprType.FUNCTION) {
-				this.scope.bodyFuncs.push(expr);
+				this.globalScope.bodyFuncs.push(expr);
+				expr.flags |= dopple.Flag.HANDLED;
 			}
 			else {
 				this.scope.body.push(expr);
@@ -393,7 +394,6 @@ dopple.acorn =
 		}
 		
 		var func = new dopple.AST.Function(name, scope, this.parseParams(node.params));
-		func.flags |= dopple.Flag.HANDLED;
 
 		this.scope = this.scope.parent;
 
@@ -449,12 +449,7 @@ dopple.acorn =
 		for(var n = 0; n < num; n++) 
 		{
 			propExpr = this.parseObjProp(props[n]);
-			if(propExpr.exprType === this.exprType.FUNCTION) {
-				objScope.bodyFuncs.push(propExpr);
-			}
-			else {
-				objScope.body.push(propExpr);
-			}
+			objScope.body.push(propExpr);
 		}
 
 		var objExpr = new dopple.AST.Object(objScope);
@@ -536,12 +531,13 @@ dopple.acorn =
 		var node = null;
 		var num = paramNodes.length;		
 		var params = new Array(num);
-		var id;
+		var id, param;
 
 		for(var n = 0; n < num; n++) {
 			node = paramNodes[n];
 			id = this.parseIdentifier(node);
-			params[n] = new dopple.AST.Param(id);
+			param = new dopple.AST.Param(id);
+			params[n] = param;
 		}
 
 		return params;

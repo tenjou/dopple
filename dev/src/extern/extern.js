@@ -166,13 +166,14 @@ dopple.extern =
 			for(var n = 0; n < numParams; n++)
 			{
 				paramType = paramTypes[n];
-				param = new dopple.AST.Param("arg" + n);
+				param = new dopple.AST.Param(new dopple.AST.Identifier("arg" + n));
 				param.ref.cls = this.typesMap[paramType].cls;
 				params[n] = param;
 			}
 		}
 
 		var func = new dopple.AST.Function(name, funcScope, params);
+		func.flags |= dopple.Flag.EXTERN;
 		scope.protoVars[name] = func;
 
 		dopple.resolver.resolveFunc(func);

@@ -58,7 +58,8 @@ dopple.SubType = {
 	OBJECT_DEF: 7,
 	CLASS: 8,
 	ARRAY: 9,
-	ARGS: 10
+	ARGS: 10,
+	INSTANCE: 11
 };
 
 dopple.Flag = {
@@ -73,5 +74,6 @@ dopple.Flag = {
 	PARAM: 1 << 8,
 	RESOLVED: 1 << 9,
 	HANDLED: 1 << 10,
-	RESOLVED_BODY: 1 << 11
+	RESOLVED_BODY: 1 << 11,
+	EXTERN: 1 << 12
 };

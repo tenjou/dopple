@@ -312,7 +312,7 @@ dopple.compiler.js =
 	},
 
 	parseRef: function(node) {
-		return node.name.value;
+		return this.parseName(node.name);
 	},
 
 	parseReturn: function(node)
@@ -396,7 +396,7 @@ dopple.compiler.js =
 		var output = "";
 		var added = false;
 
-		var node;
+		var node, value;
 		for(var key in vars)
 		{
 			if(added) {
@@ -404,22 +404,30 @@ dopple.compiler.js =
 			}
 
 			node = vars[key];
-			if(node.exprType === this.exprType.SETTER_GETTER)
+
+			if(node.exprType === this.exprType.VAR) {
+				value = node.value;
+			}
+			else {
+				value = node;
+			}
+
+			if(value.exprType === this.exprType.SETTER_GETTER)
 			{
-				if(node.setter) {
-					output += this.tabs + "set " + key + this.parseSetter(node.setter);
+				if(value.setter) {
+					output += this.tabs + "set " + key + this.parseSetter(value.setter);
 				}
-				if(node.getter) 
+				if(value.getter) 
 				{
-					if(node.setter) {
+					if(value.setter) {
 						output += ",\n";
 					}
-					output += this.tabs + "get " + key + this.parseGetter(node.getter);
+					output += this.tabs + "get " + key + this.parseGetter(value.getter);
 				}
 			}
 			else 
 			{
-				output += this.tabs + key + ": " + this.parseValue(node);
+				output += this.tabs + key + ": " + this.parseValue(value);
 			}
 			
 			added = true;
@@ -433,18 +441,21 @@ dopple.compiler.js =
 	parseName: function(node)
 	{
 		var output = "";
+		var exprType = node.exprType;
 
-		if(node.exprType === this.exprType.IDENTIFIER) {
-			output += node.value;
-		}
-		else if(node.exprType === this.exprType.MEMBER) {
-			output += this.parseName(node.left) + "." + this.parseName(node.right);
-		}
-		else if(node.exprType === this.exprType.THIS) {
-			output += "this";
-		}
-		else {
-			throw "unhandled";
+		switch(exprType)
+		{
+			case this.exprType.IDENTIFIER:
+				output += node.value;
+				break;
+
+			case this.exprType.MEMBER:
+				output += this.parseName(node.left) + "." + this.parseName(node.right);
+				break;
+
+			case this.exprType.THIS:
+				output += "this";
+				break;
 		}
 
 		return output;
@@ -468,12 +479,17 @@ dopple.compiler.js =
 			num--;
 			
 			for(var n = 0; n < num; n++) {
-				output += this.parseValue(buffer[n]) + ", ";
+				output += this.parseParam(buffer[n]) + ", ";
 			}
-			output += this.parseValue(buffer[n]);			
+			output += this.parseParam(buffer[n]);			
 		}
 
 		return output;
+	},
+
+	parseParam: function(node)
+	{
+		return node.ref.name.value;
 	},
 
 	parseArgs: function(buffer)
