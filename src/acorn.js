@@ -327,7 +327,7 @@ dopple.acorn =
 
 		for(var n = 0; n < num; n++) {
 			node = paramNodes[n];
-			param = new dopple.AST.Reference(node.name, null);
+			param = new dopple.AST.Param(node.name, new dopple.AST.Reference());
 			params[n] = param;
 			this.scope.vars[param.name] = param;
 		}

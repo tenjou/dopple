@@ -71,5 +71,7 @@ dopple.Flag = {
 	CONSTRUCTOR: 1 << 6,
 	SIMPLE: 1 << 7,
 	PARAM: 1 << 8,
-	RESOLVED: 1 << 9
+	RESOLVED: 1 << 9,
+	HANDLED: 1 << 10,
+	RESOLVED_BODY: 1 << 11
 };

@@ -72,37 +72,13 @@ dopple.compiler.js =
 			}
 		}
 
-		//
-		var node;
-		var vars = scope.vars;
-		for(var key in vars) 
-		{
-			node = vars[key];
-			if(node.exprType === this.exprType.FUNCTION) { continue; }
-			if(node.flags & dopple.Flag.HIDDEN) { continue; }
-			if(node.flags & dopple.Flag.INTERNAL_TYPE) { continue; }
-			if(node.flags & dopple.Flag.PARAM) { continue; }
-
-			tmpOutput += this.tabs + "var " + key
-
-			if(node.exprType !== this.exprType.REFERENCE && node.value) {
-				tmpOutput += " = " + this.parseValue(node);
-			}
-			
-			tmpOutput += ";\n";
-		}	
-
-		if(tmpOutput) {
-			output += tmpOutput + "\n";
-			tmpOutput = "";
-		}
-
 		if(this.insideObj === 0 && this.clsOutput) {
 			output += this.clsOutput + "\n";
 			this.clsOutput = "";
 		}	
 
 		//
+		var node;
 		var body = scope.body;
 		num = body.length;
 		for(n = 0; n < num; n++)
@@ -117,6 +93,10 @@ dopple.compiler.js =
 			{
 				case this.exprType.ASSIGN:
 					tmpOutput += this.parseAssign(node) + ";";
+					break;
+
+				case this.exprType.UPDATE:
+					tmpOutput += this.parseUpdate(node) + ";";
 					break;
 
 				case this.exprType.IF:
@@ -134,6 +114,10 @@ dopple.compiler.js =
 				case this.exprType.RETURN:
 					tmpOutput += this.parseReturn(node) + ";";
 					break;
+
+				case this.exprType.VAR: 
+					tmpOutput += this.parseVar(node) + ";";
+					break;					
 
 				default:
 					throw "unhandled";
@@ -180,9 +164,33 @@ dopple.compiler.js =
 		return this.parseValue(node.lhs) + " " + node.op + " " + this.parseValue(node.rhs);
 	},
 
+	parseVar: function(node)
+	{
+		var output = "var " + node.ref.name.value;
+
+		if(node.value) {
+			output += " = " + this.parseValue(node.value);
+		}	
+
+		return output;	
+	},
+
 	parseAssign: function(node)
 	{
 		var output = this.parseName(node.left) + " " + node.op + " " + this.parseValue(node.right);
+
+		return output;
+	},
+
+	parseUpdate: function(node)
+	{
+		var output = this.parseName(node.value);
+		if(node.prefix) {
+			output = node.op + output;
+		}
+		else {
+			output += node.op;
+		}
 
 		return output;
 	},
@@ -303,10 +311,8 @@ dopple.compiler.js =
 		return output;
 	},
 
-	parseRef: function(node)
-	{
-		var output = this.parseName(node.name);
-		return output;
+	parseRef: function(node) {
+		return node.name.value;
 	},
 
 	parseReturn: function(node)
@@ -518,6 +524,9 @@ dopple.compiler.js =
 
 			case this.exprType.ASSIGN:
 				return this.parseAssign(node);
+
+			case this.exprType.UPDATE:
+				return this.parseUpdate(node);	
 
 			case this.exprType.NEW:
 				return this.parseNew(node);	

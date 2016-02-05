@@ -153,27 +153,26 @@ dopple.extern =
 		return obj;
 	},
 
-	addFunc: function(scope, name, params, returnType)
+	addFunc: function(scope, name, paramTypes, returnType)
 	{
 		var funcScope = scope.createChild();
 
-		var paramBuffer = null;
-		if(params)
+		var params = null;
+		if(paramTypes)
 		{
-			var numParams = params.length;
-			var param, id, expr, ref;
-			paramBuffer = new Array(numParams);
+			var numParams = paramTypes.length;
+			var paramType, param, id;
+			params = new Array(numParams);
 			for(var n = 0; n < numParams; n++)
 			{
-				param = params[n];
-				id = new dopple.AST.Identifier("arg" + n);
-				expr = new this.typesMap[param].cls.ast();
-				ref = new dopple.AST.Reference(id, expr);
-				paramBuffer[n] = ref;
+				paramType = paramTypes[n];
+				param = new dopple.AST.Param("arg" + n);
+				param.ref.cls = this.typesMap[paramType].cls;
+				params[n] = param;
 			}
 		}
 
-		var func = new dopple.AST.Function(name, funcScope, paramBuffer);
+		var func = new dopple.AST.Function(name, funcScope, params);
 		scope.protoVars[name] = func;
 
 		dopple.resolver.resolveFunc(func);

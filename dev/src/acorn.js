@@ -5,6 +5,7 @@ dopple.acorn =
 	prepare: function()
 	{
 		this.scope = new dopple.Scope();
+		this.scope.protoVars = this.scope.vars;
 		this.globalScope = this.scope;
 
 		this.lookup["Literal"] = this.parseLiteral;
@@ -60,7 +61,12 @@ dopple.acorn =
 			var expr = this.lookup[node.type].call(this, node);
 			if(!expr) { continue; }
 
-			this.scope.body.push(expr);
+			if(expr.exprType === this.exprType.FUNCTION) {
+				this.scope.bodyFuncs.push(expr);
+			}
+			else {
+				this.scope.body.push(expr);
+			}
 		}
 	},
 
@@ -124,6 +130,10 @@ dopple.acorn =
 		var value = this.lookup[node.argument.type].call(this, node.argument);
 
 		var updateNode = new dopple.AST.Update(value, node.operator);
+		if(node.prefix) {
+			updateNode.prefix = node.prefix;
+		}
+
 		return updateNode;
 	},
 
@@ -172,8 +182,8 @@ dopple.acorn =
 			value = this.lookup[node.init.type].call(this, node.init);
 		}
 
-		var refExpr = new dopple.AST.Reference(name, value);
-		var varExpr = new dopple.AST.Var(refExpr);
+		var ref = new dopple.AST.Reference(name);
+		var varExpr = new dopple.AST.Var(ref, value);
 		return varExpr;
 	},
 
@@ -374,6 +384,7 @@ dopple.acorn =
 	{
 		var scope = new dopple.Scope(this.scope);
 		this.scope = scope;
+		
 		this.parseBody(node.body.body);
 
 		var name = "";
@@ -382,6 +393,8 @@ dopple.acorn =
 		}
 		
 		var func = new dopple.AST.Function(name, scope, this.parseParams(node.params));
+		func.flags |= dopple.Flag.HANDLED;
+
 		this.scope = this.scope.parent;
 
 		return func;
@@ -521,7 +534,6 @@ dopple.acorn =
 	parseParams: function(paramNodes) 
 	{
 		var node = null;
-		var param = null;
 		var num = paramNodes.length;		
 		var params = new Array(num);
 		var id;
@@ -529,8 +541,7 @@ dopple.acorn =
 		for(var n = 0; n < num; n++) {
 			node = paramNodes[n];
 			id = this.parseIdentifier(node);
-			param = new dopple.AST.Reference(id);
-			params[n] = param;
+			params[n] = new dopple.AST.Param(id);
 		}
 
 		return params;
