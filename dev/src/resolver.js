@@ -473,23 +473,31 @@ dopple.resolver =
 		{
 			if(this.refParentExpr)
 			{
-				var parentExprType = this.refParentExpr.exprType;
-
-				if(parentExprType === this.exprType.OBJECT) 
-				{
-					returnNode = null;
-
-					if(valueExpr === this.exprType.FUNCTION) {
-						value.scope.owner = this.refParentExpr.scope;
-					}
-
-					this.refVarBuffer[this.refName] = new dopple.AST.Reference(value);
-				}
-				else if(parentExprType === this.exprType.CLASS) {
-					returnNode = this._resolveAssign_Class(node, value);
+				var parentCls;
+				if(this.refParentExpr.exprType === this.exprType.VAR) {
+					parentCls = this.refParentExpr.ref.cls;
 				}
 				else {
-					this.refVarBuffer[this.refName] = new dopple.AST.Reference(value);
+					parentCls = this.refParentExpr.cls;
+				}
+
+				switch(parentCls.subType)
+				{
+					case this.subType.OBJECT:
+					{
+						returnNode = null;
+
+						this.refVarBuffer[this.refName] = value
+					} break;
+
+					case this.subType.CLASS:
+					{
+						returnNode = this._resolveAssign_Class(node, value);
+					} break;
+
+					default: {
+						this.refVarBuffer[this.refName] = value;
+					} break;
 				}
 			}
 			else 
@@ -555,21 +563,21 @@ dopple.resolver =
 
 			switch(value.cls.subType)
 			{
-				case this.exprType.NUMBER:
+				case this.subType.NUMBER:
 					expr = new dopple.AST.Number();
 					break;
 
-				case this.exprType.BOOL:
+				case this.subType.BOOL:
 					expr = new dopple.AST.Bool();
 					break;					
 
-				case this.exprType.STRING:
+				case this.subType.STRING:
 					expr = new dopple.AST.String();
 					break;
 
-				case this.exprType.ARRAY:
-				case this.exprType.OBJECT:
-				case this.exprType.INSTANCE:
+				case this.subType.ARRAY:
+				case this.subType.OBJECT:
+				case this.subType.INSTANCE:
 					expr = new dopple.AST.Null();
 					break;
 
@@ -834,7 +842,6 @@ dopple.resolver =
 		cls.constrFunc = constrFunc;
 		cls.nameBuffer = nameBuffer;
 		this.resolved.holderScope.protoVars[name] = cls;
-		this.resolved.holderScope.bodyCls.push(cls);
 
 		var clsVars = scope.protoVars;
 		var constrVars = constrScope.protoVars;

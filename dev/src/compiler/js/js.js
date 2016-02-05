@@ -30,31 +30,11 @@ dopple.compiler.js =
 	{
 		var output = "";
 		var tmpOutput = "";
-
-		// parse classes:
-		var cls;
-		var bodyCls = scope.bodyCls;
-		var num = scope.bodyCls.length;
-		if(num > 0)
-		{
-			for(var n = 0; n < num; n++)
-			{
-				cls = bodyCls[n];
-
-				tmpOutput += this.parseCls(cls) + "\n";
-			}
-
-			if(tmpOutput)
-			{
-				output += tmpOutput;
-				tmpOutput = "";
-			}
-		}
 	
 		// parse functions:
-		var func;
+		var func, n;
 		var bodyFuncs = scope.bodyFuncs;
-		num = bodyFuncs.length;
+		var num = bodyFuncs.length;
 		if(num > 0)
 		{		
 			for(n = 0; n < num; n++)

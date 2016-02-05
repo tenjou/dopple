@@ -8,7 +8,6 @@ dopple.Scope = function(parent)
 	this.staticVars = {};
 	this.body = [];
 	this.bodyFuncs = [];
-	this.bodyCls = [];
 };
 
 dopple.Scope.prototype = 
