@@ -166,12 +166,21 @@ dopple.acorn =
 		var varExpr;
 		var decls = node.declarations;
 		var num = decls.length;
-		for(var n = 0; n < num; n++) {
-			varExpr = this.parseVarDecl(decls[n]);
-			this.scope.body.push(varExpr);
+		if(num === 1)
+		{
+			varExpr = this.parseVarDecl(decls[0]);
+			return varExpr;
 		}
 
-		return null;
+		var declExpr = new dopple.AST.Decls();
+		declExpr.decls.length = num;
+
+		for(var n = 0; n < num; n++) {
+			varExpr = this.parseVarDecl(decls[n]);
+			declExpr.decls[n] = varExpr;
+		}
+
+		return declExpr;
 	},	
 
 	parseVarDecl: function(node)
@@ -303,8 +312,8 @@ dopple.acorn =
 
 	parseForIn: function(node)
 	{
-		var lhsExpr = this.lookup[node.left.type].call(this, node.left);
-		var rhsExpr = this.lookup[node.right.type].call(this, node.right);
+		var left = this.lookup[node.left.type].call(this, node.left);
+		var right = this.lookup[node.right.type].call(this, node.right);
 
 		var rootScope = this.scope;
 		var bodyScope = rootScope.createVirtual();
@@ -312,7 +321,7 @@ dopple.acorn =
 		this.lookup[node.body.type].call(this, node.body);
 		this.scope = rootScope;
 
-		var forInExpr = new dopple.AST.ForIn(lhsExpr, rhsExpr, bodyScope);
+		var forInExpr = new dopple.AST.ForIn(left, right, bodyScope);
 		return forInExpr;		
 	},
 

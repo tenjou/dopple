@@ -193,6 +193,19 @@ meta.class("dopple.AST.Var", "dopple.AST.Basic",
 	value: null
 });
 
+/* decls */
+meta.class("dopple.AST.Decls", "dopple.AST.Basic", 
+{
+	init: function() 
+	{
+		this.decls = [];
+	},
+
+	//
+	exprType: dopple.ExprType.DECLS,
+	decls: null
+});
+
 /* reference */
 meta.class("dopple.AST.Reference", 
 {
@@ -274,18 +287,18 @@ meta.class("dopple.AST.For",
 /* for in */
 meta.class("dopple.AST.ForIn", 
 {
-	Branch: function(initScope, updateScope, bodyScope) 
+	init: function(left, right, scope) 
 	{
-		if(this.initScope) { this.initScope = initScope; }
-		if(this.updateScope) { this.updateScope = updateScope; }
-		if(this.bodyScope) { this.bodyScope = bodyScope; }
+		this.left = left;
+		this.right = right;
+		this.scope = scope;
 	},
 
 	//
 	exprType: dopple.ExprType.FOR_IN,
-	initScope: null,
-	updateScope: null,
-	bodyScope: null
+	left: null,
+	right: null,
+	scope: null
 });
 
 /* while */

@@ -44,7 +44,8 @@ dopple.ExprType = {
 	ARGS: 40,
 	PARAM: 41,
 	INSTANCE: 42,
-	REGEX: 43
+	REGEX: 43,
+	DECLS: 44
 };
 
 dopple.SubType = {

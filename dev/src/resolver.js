@@ -44,6 +44,10 @@ dopple.resolver =
 					body[n] = this.resolveVar(node);
 					break;
 
+				case this.exprType.DECLS:
+					this.resolveDecls(node);
+					break;
+
 				case this.exprType.STRING:
 				case this.exprType.NUMBER:
 					body[n] = null;
@@ -63,6 +67,22 @@ dopple.resolver =
 
 				case this.exprType.IF:
 					this.resolveIf(node);
+					break;
+
+				case this.exprType.FOR:
+					this.resolveFor(node);
+					break;
+
+				case this.exprType.WHILE:
+					this.resolveWhile();
+					break;
+
+				case this.exprType.DO_WHILE:
+					this.resolveDoWhile();
+					break;
+
+				case this.exprType.FOR_IN:
+					this.resolveForIn(node);
 					break;
 
 				case this.exprType.NEW:
@@ -102,25 +122,6 @@ dopple.resolver =
 			if(node.flags & dopple.Flag.RESOLVED_BODY) { continue; }		
 
 			this.resolveFuncBody(node);
-
-			// if(node.exprType === this.exprType.FUNCTION) {
-			// 	this.resolveFuncBody(node);
-			// }
-			// else if(node.exprType === this.exprType.SETTER_GETTER)
-			// {
-			// 	if(node.setter) {
-			// 		this.resolveScope(node.setter.value.scope);
-			// 	}
-			// 	if(node.getter) {
-			// 		this.resolveScope(node.getter.value.scope);
-			// 	}
-			// }
-			// else if(node.exprType === this.exprType.OBJECT) {
-			// 	this.resolveBodyFuncs(node.scope);
-			// }
-			// else if(node.exprType === this.exprType.CLASS) {
-			// 	this.resolveClsBody(node);
-			// }
 		}
 
 		this.scope = prevScope;
@@ -149,6 +150,17 @@ dopple.resolver =
 		}
 
 		this.scope.vars[name] = node;
+
+		return node;
+	},
+
+	resolveDecls: function(node)
+	{
+		var decls = node.decls;
+		var num = decls.length;
+		for(var n = 0; n < num; n++) {
+			this.resolveVar(decls[n]);
+		}
 
 		return node;
 	},
@@ -614,6 +626,34 @@ dopple.resolver =
 	{
 		this.resolveValue(node.value);
 		this.resolveScope(node.scope);
+	},
+
+	resolveForIn: function(node)
+	{
+		var leftExprType = node.left.exprType;
+		if(leftExprType === this.exprType.DECLS) {
+			throw "SyntaxError: Invalid left-hand side in for-in loop: Must have a single binding";
+		}
+		
+		var left;
+		if(leftExprType === this.exprType.VAR) {
+			left = this.resolveVar(node.left);
+		}
+		else if(leftExprType === this.exprType.IDENTIFIER) {
+			left = this.resolveId(node.left);
+		}
+		else if(leftExprType === this.exprType.MEMBER) {
+			left = this.resolveMember(node.left);
+		}
+		else {	
+			throw "SyntaxError: Invalid left-hand side in for-loop";
+		}
+
+		var right = this.resolveValue(node.right);
+
+		this.resolveScope(node.scope);
+
+		return node;
 	},
 
 	resolveEqualsAssign: function(node)

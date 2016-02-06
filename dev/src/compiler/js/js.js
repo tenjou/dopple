@@ -71,6 +71,14 @@ dopple.compiler.js =
 
 			switch(node.exprType)
 			{
+				case this.exprType.VAR: 
+					tmpOutput += this.parseVar(node) + ";";
+					break;	
+
+				case this.exprType.DECLS:
+					tmpOutput += this.parseDecls(node) + ";";
+					break;
+
 				case this.exprType.ASSIGN:
 					tmpOutput += this.parseAssign(node) + ";";
 					break;
@@ -95,9 +103,9 @@ dopple.compiler.js =
 					tmpOutput += this.parseReturn(node) + ";";
 					break;
 
-				case this.exprType.VAR: 
-					tmpOutput += this.parseVar(node) + ";";
-					break;					
+				case this.exprType.FOR_IN:
+					tmpOutput += this.parseForIn(node) + ";";
+					break;				
 
 				default:
 					throw "unhandled";
@@ -153,6 +161,35 @@ dopple.compiler.js =
 		}	
 
 		return output;	
+	},
+
+	parseDecls: function(node)
+	{
+		var output = "var ";
+
+		var declNode;
+		var decls = node.decls;
+		var num = decls.length - 1;
+		for(var n = 0; n < num; n++) 
+		{
+			declNode = decls[n];
+
+			output += declNode.ref.name.value;
+			if(declNode.value) {
+				output += " = " + this.parseValue(declNode.value);
+			}	
+
+			output += ", ";
+		}
+
+		declNode = decls[n];
+
+		output += declNode.ref.name.value;
+		if(declNode.value) {
+			output += " = " + this.parseValue(declNode.value);
+		}			
+
+		return output;
 	},
 
 	parseAssign: function(node)
@@ -257,6 +294,26 @@ dopple.compiler.js =
 		else {
 			output = "[]";
 		}
+
+		return output;
+	},
+
+	parseForIn: function(node)
+	{
+		console.log(node);
+
+		var leftOutput = this.parseValue(node.left);
+		var rightOutput = this.parseValue(node.right);
+
+		var output = "for(" + leftOutput + " in " + rightOutput + ")\n";
+		output += this.tabs + "{\n";
+
+		var scopeOutput = this.parseScope(node.scope);
+		if(scopeOutput) {
+			output += scopeOutput + "\n";
+		}
+
+		output += this.tabs + "}\n";
 
 		return output;
 	},
@@ -508,6 +565,9 @@ dopple.compiler.js =
 
 			case this.exprType.REFERENCE:
 				return this.parseRef(node);
+
+			case this.exprType.VAR:
+				return this.parseVar(node);
 
 			case this.exprType.MEMBER:
 				return this.parseMember(node);
