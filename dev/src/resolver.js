@@ -69,9 +69,9 @@ dopple.resolver =
 					this.resolveNew(node);
 					break;
 
-				// case this.exprType.MEMBER:
-				// 	this.resolveMember(node);
-				// 	break;
+				case this.exprType.MEMBER:
+					this.resolveMember(node);
+					break;
 
 				case this.exprType.RETURN:
 					this.resolveReturn(node);
@@ -265,7 +265,9 @@ dopple.resolver =
 			throw "ReferenceError: '" + this.refName + "' is not defined";
 		}
 
-		return this.refParentExpr.ref;
+		node.ref = this.refParentExpr.ref;
+
+		return node;
 	},	
 
 	resolveBinary: function(node)
@@ -284,8 +286,8 @@ dopple.resolver =
 		this.refVarBuffer = this.scope.vars;
 		this.refParentExpr = null;
 		this.refNew = false;
-		this._resolveName_depth = 0;
 		this._resolveName_num = 0;
+		this._resolveName_solve = 0;
 		this.resolved.pointSelf = false;
 
 		this._resolveName(node);
@@ -293,21 +295,14 @@ dopple.resolver =
 
 	_resolveName: function(node)
 	{
-		this._resolveName_depth++;
-
 		switch(node.exprType)
 		{
 			case this.exprType.IDENTIFIER:
 			{
 				this.refName = node.value;
 
-				if(this._resolveName_num === 0) 
-				{
+				if(this._resolveName_num === 0) {
 					this._resolveRootScope(node);
-
-					if(this._resolveName_depth === 1) {
-						this._resolveExprScope();
-					}
 				}
 				else
 				{
@@ -315,10 +310,14 @@ dopple.resolver =
 						this.refVarBuffer = this.refScope.protoVars;
 					}
 				}
+
+				this._resolveExprScope();
 			} break;
 
 			case this.exprType.MEMBER:
 			{
+				this._resolveName_solve += 2;
+
 				// THIS
 				if(node.left.exprType === this.exprType.THIS)
 				{
@@ -337,10 +336,7 @@ dopple.resolver =
 				else
 				{
 					this._resolveName(node.left);
-
-					if(node.left.exprType !== this.exprType.MEMBER) {
-						this._resolveExprScope();
-					}
+					this._resolveName_solve--;
 					
 					if(this.refNew) {
 						throw "ReferenceError: '" + this.refName + "' is not defined";
@@ -348,7 +344,7 @@ dopple.resolver =
 				}
 
 				this._resolveName(node.right);
-				this._resolveExprScope();
+				this._resolveName_solve--;
 			} break;
 
 			default:
@@ -356,7 +352,6 @@ dopple.resolver =
 		}
 
 		this._resolveName_num++;
-		this._resolveName_depth--;
 	},
 
 	_resolveExprScope: function()
@@ -386,15 +381,23 @@ dopple.resolver =
 			this.resolved.holderScope = this.refScope;
 		}
 
+		if(this._resolveName_solve < 2) {
+			return;
+		}
 
 		var cls;
-		if(expr.exprType === this.exprType.VAR) {
+		var value;
+		if(expr.exprType === this.exprType.VAR) 
+		{
 			cls = expr.ref.cls;
-			this.refScope = expr.value.scope;
+			value = expr.value;
+			if(!value) {
+				throw "Invalid value for var";
+			}
 		}
 		else {
 			cls = expr.cls;
-			this.refScope = expr.scope;		
+			value = expr;
 		}
 	
 		switch(cls.subType)
@@ -406,16 +409,17 @@ dopple.resolver =
 				}
 
 				this.refVarBuffer = this.refScope.protoVars;
+				this.refScope = value.scope;
 			} break;
 
-			case this.subType.INSTANCE:
+			case this.subType.CLASS:
 			{
 				if(this.refName === "prototype") {
 					throw "Cannot set property '" + this.refName + "' of undefined";
 				}
 
-				this.refScope = cls.scope;
 				this.refVarBuffer = cls.scope.protoVars;
+				this.refScope = cls.scope;
 			} break;
 
 			case this.subType.FUNCTION:
@@ -426,6 +430,14 @@ dopple.resolver =
 				else {
 					this.refVarBuffer = this.refScope.staticVars;
 				}
+
+				this.refScope = value.scope;
+			} break;
+
+			default: 
+			{
+				this.refScope = null;
+				this.refScope = null;
 			} break;
 		}
 	},
@@ -1071,8 +1083,8 @@ dopple.resolver =
 		holderScope: null,
 	},
 
-	_resolveName_depth: 0,
 	_resolveName_num: 0,
+	_resolveName_solve: 0,
 
 	insideFunc: 0,
 	insideObj: 0,

@@ -495,7 +495,7 @@ meta.class("dopple.AST.Class",
 
 	//
 	exprType: dopple.ExprType.CLASS,
-	subType: dopple.SubType.OBJECT,
+	subType: dopple.SubType.CLASS,
 	cls: null,
 	ast: null,
 	id: 0,
@@ -562,6 +562,7 @@ meta.class("dopple.AST.Member",
 	//
 	exprType: dopple.ExprType.MEMBER,
 	cls: null,
+	ref: null,
 
 	left: null,
 	right: null

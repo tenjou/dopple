@@ -31,7 +31,7 @@ dopple.extern =
 		this.load_Array();
 
 		cls = this.createInternalCls("Navigator");
-		cls.scope.protoVars["userAgent"] = new dopple.AST.String("Dopple");
+		this.addVar(cls, "userAgent", "String");
 		this.createInstance("navigator", cls);
 		dopple.resolver.resolveCls(cls);
 
@@ -151,6 +151,20 @@ dopple.extern =
 		this.scope.protoVars[name] = obj;
 
 		return obj;
+	},
+
+	addVar: function(cls, name, clsName)
+	{
+		var typeCls = this.typesMap[clsName];
+		if(!typeCls) {
+			throw "TypeError: No '" + clsName + "' class found";
+		}
+
+		var id = new dopple.AST.Identifier(name)
+		var ref = new dopple.AST.Reference(id);
+		var varExpr = new dopple.AST.Var(ref, null);
+		varExpr.cls = typeCls;
+		cls.scope.protoVars[name] = varExpr;
 	},
 
 	addFunc: function(scope, name, paramTypes, returnType)
