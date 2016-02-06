@@ -270,7 +270,7 @@ meta.class("dopple.AST.SwitchCase",
 /* for */
 meta.class("dopple.AST.For", 
 {
-	Branch: function(initScope, updateScope, bodyScope) 
+	init: function(initScope, updateScope, bodyScope) 
 	{
 		if(this.initScope) { this.initScope = initScope; }
 		if(this.updateScope) { this.updateScope = updateScope; }
@@ -304,31 +304,31 @@ meta.class("dopple.AST.ForIn",
 /* while */
 meta.class("dopple.AST.While", 
 {
-	Branch: function(test, bodyScope) 
+	init: function(test, scope) 
 	{
 		this.test = test;
-		this.bodyScope = bodyScope;
+		this.scope = scope;
 	},
 
 	//
 	exprType: dopple.ExprType.WHILE,
 	test: null,
-	bodyScope: null
+	scope: null
 });
 
 /* do while */
 meta.class("dopple.AST.DoWhile", 
 {
-	Branch: function(test, bodyScope) 
+	init: function(test, scope) 
 	{
 		this.test = test;
-		this.bodyScope = bodyScope;
+		this.scope = scope;
 	},
 
 	//
 	exprType: dopple.ExprType.DO_WHILE,
 	test: null,
-	bodyScope: null
+	scope: null
 });
 
 /* continue */
@@ -358,8 +358,8 @@ meta.class("dopple.AST.Conditional",
 /* block */
 meta.class("dopple.AST.Block", 
 {
-	init: function(bodyScope) {
-		this.bodyScope = bodyScope;
+	init: function(scope) {
+		this.scope = scope;
 	},
 
 	//

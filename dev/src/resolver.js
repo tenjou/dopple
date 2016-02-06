@@ -74,11 +74,11 @@ dopple.resolver =
 					break;
 
 				case this.exprType.WHILE:
-					this.resolveWhile();
+					this.resolveWhile(node);
 					break;
 
 				case this.exprType.DO_WHILE:
-					this.resolveDoWhile();
+					this.resolveDoWhile(node);
 					break;
 
 				case this.exprType.FOR_IN:
@@ -102,7 +102,10 @@ dopple.resolver =
 					break;
 
 				case this.exprType.FUNCTION:
-					break;					
+					break;	
+
+				default:
+					throw "unhandled";				
 			}
 		}
 	},
@@ -625,6 +628,12 @@ dopple.resolver =
 	resolveBranch: function(node)
 	{
 		this.resolveValue(node.value);
+		this.resolveScope(node.scope);
+	},
+
+	resolveWhile: function(node)
+	{
+		this.resolveValue(node.test);
 		this.resolveScope(node.scope);
 	},
 

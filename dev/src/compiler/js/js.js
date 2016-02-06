@@ -103,8 +103,12 @@ dopple.compiler.js =
 					tmpOutput += this.parseReturn(node) + ";";
 					break;
 
+				case this.exprType.WHILE:
+					tmpOutput += this.parseWhile(node);
+					break;
+
 				case this.exprType.FOR_IN:
-					tmpOutput += this.parseForIn(node) + ";";
+					tmpOutput += this.parseForIn(node);
 					break;				
 
 				default:
@@ -112,7 +116,7 @@ dopple.compiler.js =
 			}			
 
 			tmpOutput += "\n";
-
+			
 			if(this.insideObj === 0) {
 				tmpOutput += this.clsOutput;
 				this.clsOutput = "";
@@ -298,22 +302,25 @@ dopple.compiler.js =
 		return output;
 	},
 
+	parseWhile: function(node)
+	{
+		var output = "while(" + this.parseValue(node.test) + ")\n";
+		output += this.tabs + "{\n";
+		output += this.parseScope(node.scope);
+		output += this.tabs + "}";
+
+		return output;
+	},
+
 	parseForIn: function(node)
 	{
-		console.log(node);
-
 		var leftOutput = this.parseValue(node.left);
 		var rightOutput = this.parseValue(node.right);
 
 		var output = "for(" + leftOutput + " in " + rightOutput + ")\n";
 		output += this.tabs + "{\n";
-
-		var scopeOutput = this.parseScope(node.scope);
-		if(scopeOutput) {
-			output += scopeOutput + "\n";
-		}
-
-		output += this.tabs + "}\n";
+		output += this.parseScope(node.scope);
+		output += this.tabs + "}";
 
 		return output;
 	},

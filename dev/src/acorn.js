@@ -315,13 +315,9 @@ dopple.acorn =
 		var left = this.lookup[node.left.type].call(this, node.left);
 		var right = this.lookup[node.right.type].call(this, node.right);
 
-		var rootScope = this.scope;
-		var bodyScope = rootScope.createVirtual();
-		this.scope = bodyScope;
-		this.lookup[node.body.type].call(this, node.body);
-		this.scope = rootScope;
+		var block = this.lookup[node.body.type].call(this, node.body);
 
-		var forInExpr = new dopple.AST.ForIn(left, right, bodyScope);
+		var forInExpr = new dopple.AST.ForIn(left, right, block.scope);
 		return forInExpr;		
 	},
 
@@ -368,14 +364,13 @@ dopple.acorn =
 	parseBlock: function(node) 
 	{
 		var rootScope = this.scope;
+		var scope = rootScope.createVirtual();
 
-		var blockScope = rootScope.createVirtual();
-		this.scope = blockScope;
+		this.scope = scope;
 		this.parseBody(node.body);
-
 		this.scope = rootScope;
 
-		var blockNode = new dopple.AST.Block(blockScope);
+		var blockNode = new dopple.AST.Block(scope);
 		return blockNode;
 	},
 
