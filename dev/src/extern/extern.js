@@ -30,7 +30,9 @@ dopple.extern =
 		this.load_Object();
 		this.load_Array();
 		this.createInternalType("Enum", dopple.SubType.Enum, dopple.AST.Enum, null);
-		this.createInternalType("Map", dopple.SubType.Map, dopple.AST.Map, null);		
+		this.createInternalType("Map", dopple.SubType.Map, dopple.AST.Map, null);	
+
+		this.loadFuncs_String();	
 
 		cls = this.createInternalCls("Navigator");
 		this.addVar(cls, "userAgent", "String");
@@ -61,7 +63,14 @@ dopple.extern =
 	{
 		var cls = this.createInternalType("String", dopple.SubType.STRING, dopple.AST.String, null);
 		cls.flags |= dopple.Flag.SIMPLE;
+		
 	},	
+
+	loadFuncs_String: function()
+	{
+		var cls = this.typesMap.String;
+		this.addFunc(cls.scope, "match", [ "String" ], "Array");
+	},
 
 	load_Function: function()
 	{
@@ -165,6 +174,7 @@ dopple.extern =
 
 		var id = new dopple.AST.Identifier(name)
 		var ref = new dopple.AST.Reference(id);
+		ref.cls = typeCls;
 		var varExpr = new dopple.AST.Var(ref, null);
 		varExpr.cls = typeCls;
 		cls.scope.protoVars[name] = varExpr;

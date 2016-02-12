@@ -1168,10 +1168,7 @@ dopple.resolver =
 				cls = expr.ref.cls;			
 			}
 
-			value = expr.value;
-			if(!value) {
-				throw "Invalid value for var";
-			}				
+			value = expr.value;			
 		}
 		else {
 			cls = expr.cls;
@@ -1187,11 +1184,18 @@ dopple.resolver =
 				}
 
 				nameResolve.varBuffer = nameResolve.scope.protoVars;
+
+				if(!value) {
+					throw "Invalid value";
+				}					
 				nameResolve.scope = value.scope;
 			} break;
 
 			case this.subType.CLASS:
 			case this.subType.ARRAY:
+			case this.subType.NUMBER:
+			case this.subType.BOOL:
+			case this.subType.STRING:			
 			{
 				if(nameResolve.name === "prototype") {
 					throw "Cannot set property '" + nameResolve.name + "' of undefined";
@@ -1210,6 +1214,9 @@ dopple.resolver =
 					nameResolve.varBuffer = nameResolve.scope.staticVars;
 				}
 
+				if(!value) {
+					throw "Invalid value";
+				}
 				nameResolve.scope = value.scope;
 			} break;
 
