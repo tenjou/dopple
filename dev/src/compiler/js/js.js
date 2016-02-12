@@ -88,7 +88,7 @@ dopple.compiler.js =
 					break;
 
 				case this.exprType.SUBSCRIPT:
-					tmpOutput += this.parseSubscript(node);
+					tmpOutput += this.parseSubscript(node) + ";";
 					break;
 
 				case this.exprType.IF:
@@ -222,8 +222,8 @@ dopple.compiler.js =
 
 	parseSubscript: function(node)
 	{
-		var output = this.parseName(node.value) + "[";
-		
+		var output = this.parseName(node.value.name) + "[";
+		output += this.parseValue(node.accessValue);
 		output += "]";
 		return output;
 	},

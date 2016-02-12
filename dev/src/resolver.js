@@ -304,6 +304,8 @@ dopple.resolver =
 		}
 
 		node.ref = this.nameResolve.parentExpr.ref;
+		node.cls = node.ref.cls;
+		node.templateCls = node.ref.templateCls;
 
 		return node;
 	},	
@@ -464,9 +466,30 @@ dopple.resolver =
 
 	resolveSubscript: function(node)
 	{
-		this.resolveValue(node.value);
+		node.value = this.resolveValue(node.value);
+		node.accessValue = this.resolveValue(node.accessValue);
 
-		console.log(node);
+		var subType = node.value.cls.subType;
+		var accessSubType = node.accessValue.cls.subType;
+
+		if(subType === this.subType.ARRAY) 
+		{
+			if(accessSubType !== this.subType.NUMBER) 
+			{
+				throw "SubscriptError: Invalid access value type '" + node.accessValue.cls.name 
+					+ "' but expected 'Number'";
+			}
+		}
+		else if(subType === this.subType.MAP) 
+		{
+			if(accessSubType !== this.subType.STRING) 
+			{
+				throw "SubscriptError: Invalid access value type '" + node.accessValue.cls.name 
+					+ "' but expected 'String'";
+			}
+		}
+
+		return node;
 	},
 
 	resolveIf: function(node)
@@ -479,7 +502,7 @@ dopple.resolver =
 		node.scope.vars = this.scope.vars;
 		node.scope.protoVars = this.scope.protoVars;
 
-		this.resolveValue(node.value);
+		this.resolveBodyValue(node.value);
 		this.resolveScope(node.scope);
 	},
 
@@ -710,7 +733,11 @@ dopple.resolver =
 		}
 
 		node.func = func;
-		node.cls = func.returnCls;
+
+		if(func.returnRef) {
+			node.cls = func.returnRef.cls;
+			node.templateCls = func.returnRef.templateCls;
+		}
 
 		this.resolveFuncBody(func);
 	},
@@ -1183,11 +1210,7 @@ dopple.resolver =
 					throw "Cannot set property '" + nameResolve.name + "' of undefined";
 				}
 
-				nameResolve.varBuffer = nameResolve.scope.protoVars;
-
-				if(!value) {
-					throw "Invalid value";
-				}					
+				nameResolve.varBuffer = value.scope.protoVars;				
 				nameResolve.scope = value.scope;
 			} break;
 

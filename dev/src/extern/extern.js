@@ -69,7 +69,7 @@ dopple.extern =
 	loadFuncs_String: function()
 	{
 		var cls = this.typesMap.String;
-		this.addFunc(cls.scope, "match", [ "String" ], "Array");
+		this.addFunc(cls.scope, "match", [ "String" ], this.createRef("Array", "String"));
 	},
 
 	load_Function: function()
@@ -92,7 +92,7 @@ dopple.extern =
 	load_Array: function()
 	{
 		var cls = this.createInternalType("Array", dopple.SubType.ARRAY, dopple.AST.Array, null);
-		this.addFunc(cls.scope, "push", [ "Args" ], "Number");
+		this.addFunc(cls.scope, "push", [ "Args" ], this.createRef("Number"));
 		this.addFunc(cls.scope, "shift", null, null);
 	},				
 
@@ -165,6 +165,33 @@ dopple.extern =
 		return obj;
 	},
 
+	createRef: function(clsName, templateClsName)
+	{
+		var ref = new dopple.AST.Reference();
+
+		if(clsName)
+		{
+			var cls = this.typesMap[clsName];
+			if(!cls) {
+				throw "TypeError: No '" + clsName + "' class found";
+			}
+
+			ref.cls = cls;
+		}
+
+		if(templateClsName)
+		{
+			var templateCls = this.typesMap[templateClsName];
+			if(!templateCls) {
+				throw "TypeError: No '" + templateClsName + "' class found";
+			}
+
+			ref.templateCls = templateCls;
+		}
+
+		return ref;
+	},
+
 	addVar: function(cls, name, clsName)
 	{
 		var typeCls = this.typesMap[clsName];
@@ -180,7 +207,7 @@ dopple.extern =
 		cls.scope.protoVars[name] = varExpr;
 	},
 
-	addFunc: function(scope, name, paramTypes, returnType)
+	addFunc: function(scope, name, paramTypes, returnRef)
 	{
 		var funcScope = scope.createChild();
 
@@ -203,15 +230,10 @@ dopple.extern =
 		func.flags |= dopple.Flag.EXTERN;
 		scope.protoVars[name] = func;
 
-		if(returnType) 
-		{
-			var returnCls = this.typesMap[returnType];
-			if(!returnCls) {
-				throw "ExternError: Invalid return type specified - '" + returnType + "'";
-			}
-			func.returnCls = returnCls;
+		if(returnRef) {
+			func.returnRef = returnRef;
 		}
-
+		
 		dopple.resolver.resolveFunc(func);
 	},
 

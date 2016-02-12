@@ -418,8 +418,7 @@ meta.class("dopple.AST.Function", "dopple.AST.Basic",
 	//
 	exprType: dopple.ExprType.FUNCTION,
 	subType: dopple.SubType.FUNCTION,
-	cls: null,
-	returnCls: null,
+	returnRef: null,
 	argsIndex: -1,
 	minParams: -1,
 	calls: 0
