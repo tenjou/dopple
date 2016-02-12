@@ -16,11 +16,11 @@ dopple.extern =
 		cls.flags |= dopple.Flag.RESOLVED;
 		this.windowInst = this.createInstance("window", cls);
 
-		this.createVirtualType("Void", dopple.SubType.UNKNOWN, dopple.AST.Var, null);
+		this.createVirtualType("Undefined", dopple.SubType.UNKNOWN, dopple.AST.Var, null);
 		this.createVirtualType("ObjectDef", dopple.SubType.OBJECT_DEF, null, null);
 		this.createVirtualType("SetterGetter", dopple.SubType.SETTER_GETTER, dopple.AST.SetterGetter, null);
 		this.createVirtualType("Class", dopple.SubType.CLASS, dopple.AST.Class, null);
-
+		this.createVirtualType("Template", dopple.SubType.TEMPLATE, null, null);
 		this.createVirtualType("Args", dopple.SubType.ARGS, dopple.AST.Args, null);
 
 		this.load_Number();
@@ -29,6 +29,8 @@ dopple.extern =
 		this.load_Function();
 		this.load_Object();
 		this.load_Array();
+		this.createInternalType("Enum", dopple.SubType.Enum, dopple.AST.Enum, null);
+		this.createInternalType("Map", dopple.SubType.Map, dopple.AST.Map, null);		
 
 		cls = this.createInternalCls("Navigator");
 		this.addVar(cls, "userAgent", "String");
@@ -82,6 +84,7 @@ dopple.extern =
 	{
 		var cls = this.createInternalType("Array", dopple.SubType.ARRAY, dopple.AST.Array, null);
 		this.addFunc(cls.scope, "push", [ "Args" ], "Number");
+		this.addFunc(cls.scope, "shift", null, null);
 	},				
 
 	createType: function(name, subType, ast, scope)
@@ -189,6 +192,15 @@ dopple.extern =
 		var func = new dopple.AST.Function(name, funcScope, params);
 		func.flags |= dopple.Flag.EXTERN;
 		scope.protoVars[name] = func;
+
+		if(returnType) 
+		{
+			var returnCls = this.typesMap[returnType];
+			if(!returnCls) {
+				throw "ExternError: Invalid return type specified - '" + returnType + "'";
+			}
+			func.returnCls = returnCls;
+		}
 
 		dopple.resolver.resolveFunc(func);
 	},

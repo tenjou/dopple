@@ -327,11 +327,10 @@ dopple.acorn =
 
 		var rootScope = this.scope;
 		var bodyScope = rootScope.createVirtual();
-		this.scope = bodyScope;
-		this.lookup[node.body.type].call(this, node.body);
-		this.scope = rootScope;
 
-		var whileExpr = new dopple.AST.While(testExpr, bodyScope);
+		var block = this.lookup[node.body.type].call(this, node.body);
+
+		var whileExpr = new dopple.AST.While(testExpr, block.scope);
 		return whileExpr;
 	},
 

@@ -45,22 +45,28 @@ dopple.ExprType = {
 	PARAM: 41,
 	INSTANCE: 42,
 	REGEX: 43,
-	DECLS: 44
+	DECLS: 44,
+	ENUM: 45,
+	MAP: 46
 };
 
 dopple.SubType = {
-	UNKNOWN: 0,
-	NUMBER: 1,
-	BOOL: 2,
-	STRING: 3,
-	FUNCTION: 4,
-	SETTER_GETTER: 5,
-	OBJECT: 6,
-	OBJECT_DEF: 7,
-	CLASS: 8,
-	ARRAY: 9,
-	ARGS: 10,
-	INSTANCE: 11
+	UNDEFINED: 0,
+	UNKNOWN: 1,
+	NUMBER: 2,
+	BOOL: 3,
+	STRING: 4,
+	FUNCTION: 5,
+	SETTER_GETTER: 6,
+	OBJECT: 7,
+	OBJECT_DEF: 8,
+	CLASS: 9,
+	ARRAY: 10,
+	ARGS: 11,
+	INSTANCE: 12,
+	TEMPLATE: 13,
+	ENUM: 14,
+	MAP: 15
 };
 
 dopple.Flag = {

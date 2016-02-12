@@ -87,6 +87,10 @@ dopple.compiler.js =
 					tmpOutput += this.parseUpdate(node) + ";";
 					break;
 
+				case this.exprType.SUBSCRIPT:
+					tmpOutput += this.parseSubscript(node);
+					break;
+
 				case this.exprType.IF:
 					tmpOutput += this.parseIf(node);
 					break;		
@@ -216,6 +220,14 @@ dopple.compiler.js =
 		return output;
 	},
 
+	parseSubscript: function(node)
+	{
+		var output = this.parseName(node.value) + "[";
+		
+		output += "]";
+		return output;
+	},
+
 	parseIf: function(node)
 	{
 		var output = "if" + this._parseBranch(node.branchIf);
@@ -276,6 +288,14 @@ dopple.compiler.js =
 		this.insideObj--;
 		
 		return output;
+	},
+
+	parseMap: function(node) {
+		return this.parseObj(node);
+	},
+
+	parseEnum: function(node) {
+		return this.parseEnum(node);
 	},
 
 	parseArray: function(node)
@@ -500,6 +520,13 @@ dopple.compiler.js =
 			case this.exprType.THIS:
 				output += "this";
 				break;
+
+			case this.exprType.SUBSCRIPT:
+				output += this.parseName(node.value) + "[" + this.parseName(node.accessValue) + "]";
+				break;	
+
+			default:
+				throw "unhandled";
 		}
 
 		return output;
@@ -591,6 +618,9 @@ dopple.compiler.js =
 			case this.exprType.UPDATE:
 				return this.parseUpdate(node);	
 
+			case this.exprType.SUBSCRIPT:
+				return this.parseSubscript(node);
+
 			case this.exprType.NEW:
 				return this.parseNew(node);	
 
@@ -614,6 +644,12 @@ dopple.compiler.js =
 
 			case this.exprType.REGEX:
 				return this.parseRegex(node);
+
+			case this.exprType.MAP:
+				return this.parseMap(node);
+
+			case this.exprType.ENUM:
+				return this.parseEnum(node);
 
 			default:
 				throw "unhandled";

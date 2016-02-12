@@ -6,7 +6,9 @@ meta.class("dopple.AST.Basic",
 	//
 	exprType: 0,
 	subType: 0,
-	flags: 0
+	flags: 0,
+	cls: null,
+	templateCls: null
 });
 
 /* number */
@@ -19,7 +21,6 @@ meta.class("dopple.AST.Number", "dopple.AST.Basic",
 
 	//
 	exprType: dopple.ExprType.NUMBER,
-	cls: null,
 	value: 0
 });
 
@@ -34,7 +35,6 @@ meta.class("dopple.AST.Bool", "dopple.AST.Basic",
 
 	//
 	exprType: dopple.ExprType.BOOL,
-	cls: null,
 	value: false
 });
 
@@ -48,7 +48,6 @@ meta.class("dopple.AST.String", "dopple.AST.Basic",
 
 	//
 	exprType: dopple.ExprType.STRING,
-	cls: null,
 	value: ""
 });
 
@@ -68,8 +67,7 @@ meta.class("dopple.AST.Param", "dopple.AST.Basic",
 meta.class("dopple.AST.Args", "dopple.AST.Basic",
 {
 	//
-	exprType: dopple.ExprType.ARGS,
-	cls: null
+	exprType: dopple.ExprType.ARGS
 });
 
 /* binary */
@@ -83,7 +81,6 @@ meta.class("dopple.AST.Binary",
 
 	//
 	exprType: dopple.ExprType.BINARY,
-	cls: null,
 	op: "",
 	lhs: null,
 	rhs: null
@@ -99,8 +96,8 @@ meta.class("dopple.AST.Identifier",
 
 	//
 	exprType: dopple.ExprType.IDENTIFIER,
-	cls: null,
-	value: ""
+	value: "",
+	ref: null
 });
 
 /* assign */
@@ -114,7 +111,6 @@ meta.class("dopple.AST.Assign", "dopple.AST.Basic",
 
 	//
 	exprType: dopple.ExprType.ASSIGN,
-	cls: null,
 	op: "=",
 	left: null,
 	right: null	
@@ -207,7 +203,7 @@ meta.class("dopple.AST.Decls", "dopple.AST.Basic",
 });
 
 /* reference */
-meta.class("dopple.AST.Reference", 
+meta.class("dopple.AST.Reference", "dopple.AST.Basic",
 {
 	init: function(name) {
 		this.name = name;
@@ -215,10 +211,7 @@ meta.class("dopple.AST.Reference",
 
 	//
 	exprType: dopple.ExprType.REFERENCE,
-
 	name: null,
-	cls: null,
-
 	ops: 0
 });
 
@@ -426,13 +419,14 @@ meta.class("dopple.AST.Function", "dopple.AST.Basic",
 	exprType: dopple.ExprType.FUNCTION,
 	subType: dopple.SubType.FUNCTION,
 	cls: null,
+	returnCls: null,
 	argsIndex: -1,
 	minParams: -1,
 	calls: 0
 });
 
 /* function call */
-meta.class("dopple.AST.FunctionCall",
+meta.class("dopple.AST.FunctionCall", "dopple.AST.Basic",
 {
 	init: function(name, args) {
 		this.name = name;
@@ -441,7 +435,8 @@ meta.class("dopple.AST.FunctionCall",
 
 	//
 	exprType: dopple.ExprType.FUNCTION_CALL,
-	args: null
+	args: null,
+	func: null
 });
 
 /* setter */
@@ -532,6 +527,34 @@ meta.class("dopple.AST.Object",
 	//
 	exprType: dopple.ExprType.OBJECT,
 	cls: null,
+	scope: null
+});
+
+/* enum */
+meta.class("dopple.AST.Enum",
+{
+	init: function(scope) {
+		this.scope = scope;
+		this.scope.protoVars = scope.vars;
+	},
+
+	//
+	exprType: dopple.ExprType.ENUM,
+	subType: dopple.SubType.ENUM,
+	scope: null
+});
+
+/* map */
+meta.class("dopple.AST.Map",
+{
+	init: function(scope) {
+		this.scope = scope;
+		this.scope.protoVars = scope.vars;
+	},
+
+	//
+	exprType: dopple.ExprType.MAP,
+	subType: dopple.SubType.MAP,
 	scope: null
 });
 
