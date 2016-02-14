@@ -3,12 +3,34 @@
 /* basic */
 meta.class("dopple.AST.Basic",
 {
-	//
 	exprType: 0,
-	subType: 0,
 	flags: 0,
+	type: null
+});
+
+/* type */
+meta.class("dopple.AST.Type",
+{
+	init: function(cls, templateType, subType) 
+	{
+		if(templateType) {
+			this.templateType = templateType;
+			this.name = cls.name + "<" + this.templateType.name + ">";
+		}
+		else {
+			this.name = cls.name;
+		}
+
+		this.cls = cls;
+		this.subType = subType;
+	},
+
+	//
+	name: null,
+	flags: 0,
+	subType: 0,
 	cls: null,
-	templateCls: null
+	templateType: null
 });
 
 /* number */
@@ -21,9 +43,9 @@ meta.class("dopple.AST.Number", "dopple.AST.Basic",
 
 	//
 	exprType: dopple.ExprType.NUMBER,
-	value: 0
+	value: 0,
+	flags: dopple.Flag.SIMPLE
 });
-
 
 /* bool */
 meta.class("dopple.AST.Bool", "dopple.AST.Basic",
@@ -35,7 +57,8 @@ meta.class("dopple.AST.Bool", "dopple.AST.Basic",
 
 	//
 	exprType: dopple.ExprType.BOOL,
-	value: false
+	value: false,
+	flags: dopple.Flag.SIMPLE
 });
 
 /* string */
@@ -48,7 +71,8 @@ meta.class("dopple.AST.String", "dopple.AST.Basic",
 
 	//
 	exprType: dopple.ExprType.STRING,
-	value: ""
+	value: "",
+	flags: dopple.Flag.SIMPLE
 });
 
 /* param */
@@ -60,7 +84,8 @@ meta.class("dopple.AST.Param", "dopple.AST.Basic",
 
 	//
 	exprType: dopple.ExprType.PARAM,
-	ref: null
+	ref: null,
+	defaultRef: null
 });
 
 /* args */
@@ -418,6 +443,7 @@ meta.class("dopple.AST.Function", "dopple.AST.Basic",
 	//
 	exprType: dopple.ExprType.FUNCTION,
 	subType: dopple.SubType.FUNCTION,
+	params: null,
 	returnRef: null,
 	argsIndex: -1,
 	minParams: -1,
@@ -500,6 +526,37 @@ meta.class("dopple.AST.Class",
 		if(this.extend) { this.extend = extend; }
 	},
 
+	addTemplate: function(cls)
+	{
+		if(!this.templates) {
+			this.templates = {};
+		}
+
+		if(!this.templates[cls.name]) {
+			this.templates[cls.name] = cls;
+		}
+	},
+
+	getTemplate: function(templateType) 
+	{		
+		if(!this.templates) {
+			this.templates = {};
+		}
+
+		var name = templateType.name;
+		var template = this.templates[name];
+		if(!template) 
+		{
+			template = new dopple.AST.Type(this, templateType, this.type.subType);
+			this.templates[name] = template;
+
+			dopple.extern.types.push(template.name);
+			dopple.extern.typesMap[template.name] = template;
+		}
+
+		return template;
+	},
+
 	//
 	exprType: dopple.ExprType.CLASS,
 	subType: dopple.SubType.CLASS,
@@ -512,11 +569,12 @@ meta.class("dopple.AST.Class",
 	nameBuffer: null,
 	scope: null,
 	constrFunc: null,
-	extend: null
+	extend: null,
+	templates: null
 });
 
 /* object */
-meta.class("dopple.AST.Object",
+meta.class("dopple.AST.Object", "dopple.AST.Basic",
 {
 	init: function(scope) {
 		this.scope = scope;
@@ -525,7 +583,6 @@ meta.class("dopple.AST.Object",
 
 	//
 	exprType: dopple.ExprType.OBJECT,
-	cls: null,
 	scope: null
 });
 
@@ -558,16 +615,14 @@ meta.class("dopple.AST.Map",
 });
 
 /* instance */
-meta.class("dopple.AST.Instance",
+meta.class("dopple.AST.Instance", "dopple.AST.Basic",
 {
-	init: function(cls) {
-		this.cls = cls;
+	init: function(type) {
+		this.type = type;
 	},
 
 	//
-	exprType: dopple.ExprType.INSTANCE,
-	subType: dopple.SubType.INSTANCE,
-	cls: null
+	exprType: dopple.ExprType.INSTANCE
 });
 
 /* object property */
@@ -587,7 +642,7 @@ meta.class("dopple.AST.ObjectProperty",
 });
 
 /* member */
-meta.class("dopple.AST.Member",
+meta.class("dopple.AST.Member", "dopple.AST.Basic",
 {
 	init: function(left, right) {
 		this.left = left;
@@ -596,7 +651,6 @@ meta.class("dopple.AST.Member",
 
 	//
 	exprType: dopple.ExprType.MEMBER,
-	cls: null,
 	ref: null,
 
 	left: null,
@@ -630,11 +684,12 @@ meta.class("dopple.AST.Null",
 {
 	//
 	exprType: dopple.ExprType.NULL,
-	cls: null
+	cls: null,
+	flags: dopple.Flag.SIMPLE
 });
 
 /* array */
-meta.class("dopple.AST.Array",
+meta.class("dopple.AST.Array", "dopple.AST.Basic",
 {
 	init: function(elements) 
 	{
@@ -643,6 +698,5 @@ meta.class("dopple.AST.Array",
 
 	//
 	exprType: dopple.ExprType.ARRAY,
-	cls: null,
 	elements: null
 });

@@ -22,6 +22,7 @@ dopple.extern =
 		this.createVirtualType("Class", dopple.SubType.CLASS, dopple.AST.Class, null);
 		this.createVirtualType("Template", dopple.SubType.TEMPLATE, null, null);
 		this.createVirtualType("Args", dopple.SubType.ARGS, dopple.AST.Args, null);
+		this.createVirtualType("Regex", dopple.SubType.REGEX, dopple.AST.Regex, null);
 
 		this.load_Number();
 		this.load_Bool();
@@ -29,8 +30,10 @@ dopple.extern =
 		this.load_Function();
 		this.load_Object();
 		this.load_Array();
-		this.createInternalType("Enum", dopple.SubType.Enum, dopple.AST.Enum, null);
-		this.createInternalType("Map", dopple.SubType.Map, dopple.AST.Map, null);	
+		this.createVirtualType("Enum", dopple.SubType.Enum, dopple.AST.Enum, null);
+		this.createVirtualType("Map", dopple.SubType.Map, dopple.AST.Map, null);
+
+		this.createCls("RegExp");
 
 		this.loadFuncs_String();	
 
@@ -43,6 +46,8 @@ dopple.extern =
 		this.addFunc(obj.scope, "log", [ "Args" ], null);
 		this.addFunc(obj.scope, "warn", [ "Args" ], null);
 		this.addFunc(obj.scope, "error", [ "Args" ], null);
+
+		this.addFunc(this.scope, "parseInt", [ "Number" ], this.createRef("Number"));
 		
 		this.maxInternalTypeId = this.types.length - 1;
 	},
@@ -50,26 +55,24 @@ dopple.extern =
 	load_Number: function()
 	{
 		var cls = this.createInternalType("Number", dopple.SubType.NUMBER, dopple.AST.Number, null);
-		cls.flags |= dopple.Flag.SIMPLE;
 	},
 
 	load_Bool: function()
 	{
 		var cls = this.createInternalType("Boolean", dopple.SubType.NUMBER, dopple.AST.Bool, null);
-		cls.flags |= dopple.Flag.SIMPLE;
 	},
 
 	load_String: function()
 	{
 		var cls = this.createInternalType("String", dopple.SubType.STRING, dopple.AST.String, null);
-		cls.flags |= dopple.Flag.SIMPLE;
-		
 	},	
 
 	loadFuncs_String: function()
 	{
-		var cls = this.typesMap.String;
-		this.addFunc(cls.scope, "match", [ "String" ], this.createRef("Array", "String"));
+		var cls = this.typesMap.String.cls;
+		var func = this.addFunc(cls.scope, "match", [ "String" ], this.createRef("Array", "String"));
+		//this.addParamsToFunc(func, [ ""])
+		this.addFunc(cls.scope, "split", [ "String" ], this.createRef("Array", "String"));
 	},
 
 	load_Function: function()
@@ -80,13 +83,8 @@ dopple.extern =
 	load_Object: function()
 	{
 		var nullCls = this.createVirtualType("Null", dopple.SubType.OBJECT, dopple.AST.Null, null);
-		nullCls.flags |= dopple.Flag.SIMPLE;
 
-		var objCls = this.createInternalType("Object", dopple.SubType.OBJECT, null, null);
-		objCls.cls = nullCls;
-		objCls.ast = dopple.AST.Null;
-		dopple.AST.Object.prototype.cls = objCls;
-		dopple.AST.Object.prototype.ast = dopple.AST.Null;
+		var objCls = this.createInternalType("Object", dopple.SubType.OBJECT, dopple.AST.Object, null);
 	},
 
 	load_Array: function()
@@ -105,19 +103,17 @@ dopple.extern =
 
 		var cls = new dopple.AST.Class(name, scope, null);
 		cls.id = this.types.length;
-		cls.cls = cls;
 
-		if(subType) {
-			cls.subType = subType;
-		}
-		
-		this.types.push(name);
-		this.typesMap[name] = cls;
+		var type = new dopple.AST.Type(cls, null, subType);
+		cls.type = type;
 
 		if(ast) {	
 			cls.ast = ast;
-			ast.prototype.cls = cls;
+			ast.prototype.type = type;
 		}
+
+		this.types.push(name);
+		this.typesMap[name] = type;
 
 		return cls;
 	},
@@ -132,8 +128,8 @@ dopple.extern =
 
 	createInstance: function(name, cls)
 	{
-		var instance = new dopple.AST.Instance(cls);
-		instance.flags |= dopple.Flag.INTERNAL_TYPE;
+		var instance = new dopple.AST.Instance(cls.type);
+		instance.type.flags |= dopple.Flag.INTERNAL_TYPE;
 		this.globalScope.vars[name] = instance;
 
 		return instance;
@@ -142,7 +138,7 @@ dopple.extern =
 	createInternalType: function(name, subType, ast, scope)
 	{
 		var cls = this.createType(name, subType, ast, scope);
-		cls.flags |= dopple.Flag.INTERNAL_TYPE;
+		cls.type.flags |= dopple.Flag.INTERNAL_TYPE;
 		this.scope.protoVars[name] = cls;
 		return cls;
 	},
@@ -150,7 +146,7 @@ dopple.extern =
 	createVirtualType: function(name, subType, ast, scope)
 	{
 		var cls = this.createType(name, subType, ast, scope);
-		cls.flags |= dopple.Flag.VIRTUAL_TYPE;
+		cls.type.flags |= dopple.Flag.VIRTUAL_TYPE | dopple.Flag.SIMPLE;
 		return cls;
 	},
 
@@ -158,7 +154,6 @@ dopple.extern =
 	{
 		var scope = new dopple.Scope(this.globalScope);
 		var obj = new dopple.AST.Object(scope);
-		obj.flags |= dopple.Flag.INTERNAL_TYPE;
 
 		this.scope.protoVars[name] = obj;
 
@@ -227,7 +222,8 @@ dopple.extern =
 		}
 
 		var func = new dopple.AST.Function(name, funcScope, params);
-		func.flags |= dopple.Flag.EXTERN;
+		func.flags |= dopple.Flag.HIDDEN;
+		func.type.flags |= dopple.Flag.EXTERN;
 		scope.protoVars[name] = func;
 
 		if(returnRef) {

@@ -73,6 +73,9 @@ dopple.resolver =
 			case this.exprType.ASSIGN:
 				return this.resolveAssign(node);
 
+			case this.exprType.UPDATE:
+				return this.resolveUpdate(node);
+
 			case this.exprType.SUBSCRIPT:
 				this.resolveSubscript(node);
 				break;					
@@ -149,15 +152,14 @@ dopple.resolver =
 		if(node.value)
 		{
 			node.value = this.resolveValue(node.value);
-			node.ref.cls = node.value.cls;
-			node.ref.templateCls = node.value.templateCls;
+			node.ref.type = node.value.type;
 
 			if(node.value.exprType === this.exprType.FUNCTION_CALL) 
 			{
-				if(!node.value.cls)	{
+				if(!node.value.type.cls)	{
 					throw "ReturnError: Called function does not have return value";
 				}
-			}			
+			}
 
 			var valueExprType = node.value.exprType;
 			if(valueExprType === this.exprType.FUNCTION)
@@ -267,13 +269,17 @@ dopple.resolver =
 				break;
 			case this.exprType.FUNCTION_CALL:
 				this.resolveFuncCall(node);
-				break;				
+				break;	
+
+			case this.exprType.ARRAY:
+				this.resolveArray(node);
+				break;			
 
 			case this.exprType.NUMBER:
 			case this.exprType.BOOL:
 			case this.exprType.STRING:
 			case this.exprType.NULL:
-			case this.exprType.ARRAY:
+			case this.exprType.REGEX:
 				break;
 
 			default:
@@ -303,9 +309,13 @@ dopple.resolver =
 			throw "ReferenceError: '" + this.nameResolve.name + "' is not defined";
 		}
 
-		node.ref = this.nameResolve.parentExpr.ref;
-		node.cls = node.ref.cls;
-		node.templateCls = node.ref.templateCls;
+		var expr = this.nameResolve.parentExpr;
+		if(expr.exprType === this.exprType.VAR) {
+			node.ref = expr.ref;
+		}
+		else {
+			node.ref = expr;
+		}
 
 		return node;
 	},	
@@ -336,15 +346,15 @@ dopple.resolver =
 		{
 			if(parentExpr)
 			{
-				var parentCls;
+				var type;
 				if(parentExpr.exprType === this.exprType.VAR) {
-					parentCls = parentExpr.ref.cls;
+					type = parentExpr.ref.type;
 				}
 				else {
-					parentCls = parentExpr.cls;
+					type = parentExpr.type;
 				}				
 
-				switch(parentCls.subType)
+				switch(type.subType)
 				{
 					case this.subType.OBJECT:
 					{
@@ -387,9 +397,14 @@ dopple.resolver =
 			}
 			else
 			{
+				var targetExpr;
+
 				if(parentExpr.exprType === this.exprType.VAR) 
 				{
+					targetExpr = parentExpr.ref;
+
 					parentExpr.ref.ops++;
+
 
 					// if(this.refParentExpr.ref.exprType === this.exprType.FUNCTION_CALL) 
 					// {
@@ -400,6 +415,8 @@ dopple.resolver =
 				}		
 				else
 				{
+					targetExpr = parentExpr;
+
 					// TODO: typechecks
 					if(this.nameResolve.pointSelf) {
 						
@@ -409,6 +426,8 @@ dopple.resolver =
 
 					}
 				}
+
+				targetExpr.type = value.type;	
 			}
 		}
 
@@ -419,10 +438,18 @@ dopple.resolver =
 	{
 		var valueExpr = value.exprType;
 
-		if((this.insideFunc === 0) && valueExpr !== this.exprType.REFERENCE && value.cls.flags & dopple.Flag.SIMPLE)
+		var type;
+		if(value.exprType === this.exprType.MEMBER) {
+			type = value.ref.type;
+		}
+		else {
+			type = value.type;
+		}
+
+		if((this.insideFunc === 0) && valueExpr !== this.exprType.REFERENCE && value.flags & dopple.Flag.SIMPLE)
 		{
 			var ref = new dopple.AST.Reference(node.left);
-			ref.cls = value.cls;
+			ref.type = value.type;
 			var varExpr = new dopple.AST.Var(ref, value);
 			this.nameResolve.varBuffer[this.nameResolve.name] = varExpr;
 
@@ -432,7 +459,7 @@ dopple.resolver =
 		{
 			var expr;
 
-			switch(value.cls.subType)
+			switch(type.subType)
 			{
 				case this.subType.NUMBER:
 					expr = new dopple.AST.Number();
@@ -457,12 +484,24 @@ dopple.resolver =
 			}
 
 			var ref = new dopple.AST.Reference(node.left);
-			ref.cls = value.cls;
+			ref.type = type;
 			this.nameResolve.varBuffer[this.nameResolve.name] = new dopple.AST.Var(ref, expr);
 		}
 
 		return node;
 	},
+
+	resolveUpdate: function(node)
+	{
+		node.value = this.resolveValue(node.value);
+
+		var type = node.value.type;
+		if(type.subType !== this.subType.NUMBER) {
+			throw "UpdateError: Expected 'Number' but instead got '" + type.cls.name + "'";
+		}
+
+		return node;
+	},	
 
 	resolveSubscript: function(node)
 	{
@@ -735,11 +774,40 @@ dopple.resolver =
 		node.func = func;
 
 		if(func.returnRef) {
-			node.cls = func.returnRef.cls;
-			node.templateCls = func.returnRef.templateCls;
+			node.type = func.returnRef.type;
 		}
 
 		this.resolveFuncBody(func);
+	},
+
+	resolveArray: function(node)
+	{
+		if(!node.elements) { return node; }
+
+		var type = node.type.templateType;
+
+		var element;
+		var elements = node.elements;
+		var num = elements.length;
+		for(var n = 0; n < num; n++)
+		{
+			element = this.resolveValue(elements[n]);
+			if(!type) {
+				type = element.type;
+			}
+			else 
+			{
+				if(type !== element.type) 
+				{
+					throw "ArrayType: Incompatible class types, expected 'Array<" + 
+						type.name + ">' but got 'Array<" + element.type.name + ">' in one of the elements";
+				}
+			}
+		}
+
+		node.type = node.type.cls.getTemplate(type);
+
+		return node;
 	},
 
 	resolveNew: function(node)
@@ -800,13 +868,15 @@ dopple.resolver =
 		cls.constrFunc = constrFunc;
 		cls.nameBuffer = nameBuffer;
 		this.nameResolve.holderScope.protoVars[name] = cls;
+		this.nameResolve.holderScope.bodyCls.push(cls);
 
 		var clsVars = scope.protoVars;
 		var constrVars = constrScope.protoVars;
 		constrScope.protoVars = clsVars;
 
-		cls.flags |= dopple.Flag.HIDDEN;
 		node.flags |= dopple.Flag.HIDDEN;
+
+		return cls;
 	},
 
 	genNameBuffer: function(node)
@@ -970,7 +1040,7 @@ dopple.resolver =
 			node.value.scope.protoVars = this.scope.protoVars;
 		}
 
-		node.cls = node.value.cls;
+		node.type = node.value.type;
 		this.scope.protoVars[name] = node.value;
 	},
 
@@ -1184,23 +1254,24 @@ dopple.resolver =
 			return;
 		}
 
-		var cls;
-		var value;
+		var type, value;
 		if(expr.exprType === this.exprType.VAR) 
 		{
-			if(expr.ref.templateCls) {
-				cls = expr.ref.templateCls;
-			}
-			else {
-				cls = expr.ref.cls;			
-			}
-
+			type = expr.ref.type;
 			value = expr.value;			
 		}
 		else {
-			cls = expr.cls;
+			type = expr.type;
 			value = expr;
 		}
+
+		var cls;
+		if(type.templateCls) {
+			cls = type.templateCls;
+		}
+		else {
+			cls = type.cls;			
+		}		
 	
 		switch(cls.subType)
 		{
@@ -1292,6 +1363,16 @@ dopple.resolver =
 
 	popTmpResolve: function(buffer) {
 		this.tmpResolveBuffer.push(buffer);
+	},
+
+	getTypeName: function(type)
+	{
+		var output = type.cls.name;
+		if(type.templateType) {
+			output += this.getTypeName(type.templateType);
+		}
+
+		return output;
 	},
 
 	//

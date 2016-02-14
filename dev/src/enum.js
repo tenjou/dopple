@@ -66,7 +66,8 @@ dopple.SubType = {
 	INSTANCE: 12,
 	TEMPLATE: 13,
 	ENUM: 14,
-	MAP: 15
+	MAP: 15,
+	REGEX: 16
 };
 
 dopple.Flag = {

@@ -32,11 +32,12 @@ dopple.compiler.js =
 		var tmpOutput = "";
 	
 		// parse functions:
-		var func, n;
+		var n;
 		var bodyFuncs = scope.bodyFuncs;
 		var num = bodyFuncs.length;
 		if(num > 0)
 		{		
+			var func;
 			for(n = 0; n < num; n++)
 			{
 				func = bodyFuncs[n];
@@ -56,6 +57,26 @@ dopple.compiler.js =
 			output += this.clsOutput + "\n";
 			this.clsOutput = "";
 		}	
+
+		// parse classes:
+		var bodyCls = scope.bodyCls;
+		num = bodyCls.length;
+		if(num > 0)
+		{
+			var cls;
+			for(n = 0; n < num; n++)
+			{
+				cls = bodyCls[n];
+
+				tmpOutput += this.parseCls(cls) + "\n";
+			}
+
+			if(tmpOutput)
+			{
+				output += tmpOutput;
+				tmpOutput = "";
+			}			
+		}
 
 		//
 		var node;
@@ -209,7 +230,7 @@ dopple.compiler.js =
 
 	parseUpdate: function(node)
 	{
-		var output = this.parseName(node.value);
+		var output = this.parseValue(node.value);
 		if(node.prefix) {
 			output = node.op + output;
 		}
@@ -543,6 +564,7 @@ dopple.compiler.js =
 	parseParams: function(buffer)
 	{
 		var output = "";
+		if(!buffer) { return output; }
 
 		var num = buffer.length;
 		if(num > 0)
