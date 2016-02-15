@@ -272,9 +272,9 @@ dopple.resolver =
 			{
 				this.resolveFuncCall(node);
 
-				if(node.value.exprType === this.exprType.FUNCTION_CALL) 
+				if(node.func.exprType === this.exprType.FUNCTION_CALL) 
 				{
-					if(!node.value.type.cls)	{
+					if(!node.func.returnRef)	{
 						throw "ReturnError: Called function does not have return value";
 					}
 				}
@@ -517,14 +517,14 @@ dopple.resolver =
 		node.value = this.resolveValue(node.value);
 		node.accessValue = this.resolveValue(node.accessValue);
 
-		var subType = node.value.cls.subType;
-		var accessSubType = node.accessValue.cls.subType;
+		var subType = node.value.type.subType;
+		var accessSubType = node.accessValue.type.subType;
 
 		if(subType === this.subType.ARRAY) 
 		{
 			if(accessSubType !== this.subType.NUMBER) 
 			{
-				throw "SubscriptError: Invalid access value type '" + node.accessValue.cls.name 
+				throw "SubscriptError: Invalid access value type '" + node.accessValue.type.name 
 					+ "' but expected 'Number'";
 			}
 		}
@@ -532,7 +532,7 @@ dopple.resolver =
 		{
 			if(accessSubType !== this.subType.STRING) 
 			{
-				throw "SubscriptError: Invalid access value type '" + node.accessValue.cls.name 
+				throw "SubscriptError: Invalid access value type '" + node.accessValue.type.name 
 					+ "' but expected 'String'";
 			}
 		}
@@ -588,7 +588,7 @@ dopple.resolver =
 		}
 
 		var right = this.resolveValue(node.right);
-		left.cls = dopple.extern.typesMap.String;
+		left.type = dopple.extern.typesMap.String;
 
 		this.resolveScope(node.scope);
 
@@ -979,8 +979,8 @@ dopple.resolver =
 		var item;
 		var body = this.scope.body;
 		var num = body.length;
-		var prevCls = null;
-		var clsSimilar = true;
+		var prevType = null;
+		var typeSimilar = true;
 		for(var n = 0; n < num; n++) 
 		{
 			item = body[n];
@@ -1004,31 +1004,33 @@ dopple.resolver =
 					throw "unhandled";
 			}
 
-			if(!prevCls) {
-				prevCls = item.cls;
+			if(!prevType) {
+				prevType = item.type;
 			}
 			else 
 			{
-				if(prevCls !== item.cls) {
-					clsSimilar = false;
+				if(prevType !== item.type) {
+					typeSimilar = false;
 				}
 			}
 		}
 
 		this.scope = prevScope;
 
-		if(prevCls)
+		if(prevType)
 		{
-			if(clsSimilar) 
+			if(typeSimilar) 
 			{
-				if(prevCls.flags & dopple.Flag.SIMPLE) {
+				if(prevType.flags & dopple.Flag.SIMPLE) {
 					node = new dopple.AST.Enum(node.scope);
 				}
 				else {
 					node = new dopple.AST.Map(node.scope);
 				}
 
-				node.templateCls = prevCls;
+				node.type = node.type.cls.getTemplate(prevType);
+				console.log(node.type);
+				//node.type = prevCls;
 			}
 		}		
 
@@ -1213,14 +1215,56 @@ dopple.resolver =
 					expr = expr.ref;
 				}
 
-				if(expr.cls.subType !== this.subType.STRING) 
+				if(expr.type.subType !== this.subType.STRING) 
 				{
 					throw "UnexpectedType: '" + tmpNameResolve.name + 
-						"' should be of String subtype but instead is " + meta.enumToString(dopple.SubType, expr.cls.subType);
+						"' should be of String subtype but instead is " + expr.type.name;
 				}
 
 				nameResolve.name = node.value.value;
 				this._resolveExprScope(nameResolve);
+
+				var expr = nameResolve.parentExpr;
+				var value = expr.value;
+				var accessSubType = tmpNameResolve.parentExpr.ref.type.subType;
+				var itemRef = new dopple.AST.Reference(null);
+
+				switch(value.exprType)
+				{
+					case this.exprType.MAP:
+					case this.exprType.ENUM:
+					{
+						if(accessSubType !== this.subType.STRING) 
+						{
+							throw "SubscriptError: Invalid access value type '" + node.accessValue.type.name 
+								+ "' but expected 'String'";
+						}
+
+						itemRef.type = value.type.templateType;
+					} break;
+
+					case this.exprType.ARRAY:
+					{
+						if(accessSubType !== this.subType.NUMBER) 
+						{
+							throw "SubscriptError: Invalid access value type '" + node.accessValue.type.name 
+								+ "' but expected 'Number'";
+						}
+
+						itemRef.type = value.type.templateType;
+					} break;
+
+					default: 
+					{
+						itemRef.type = dopple.extern.typesMap.Dynamic;
+					} break;
+				}
+
+				var cls = itemRef.type.cls;
+				nameResolve.parentExpr = itemRef;
+				nameResolve.scope = cls.scope;
+				nameResolve.varBuffer = cls.scope.protoVars;
+				nameResolve.holderScope = cls.scope;
 
 				this.popTmpResolve(tmpNameResolve);
 			} break;
@@ -1274,17 +1318,12 @@ dopple.resolver =
 			value = expr;
 		}
 
-		var cls;
-		if(type.templateCls) {
-			cls = type.templateCls;
-		}
-		else {
-			cls = type.cls;			
-		}		
-	
-		switch(type.subType)
+		var cls = type.cls;
+		switch(cls.subType)
 		{
 			case this.subType.OBJECT:
+			case this.subType.MAP:
+			case this.subType.ENUM:
 			{
 				if(nameResolve.name === "prototype") {
 					throw "Cannot set property '" + nameResolve.name + "' of undefined";

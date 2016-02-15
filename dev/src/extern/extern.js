@@ -17,6 +17,7 @@ dopple.extern =
 		this.windowInst = this.createInstance("window", cls);
 
 		this.createVirtualType("Undefined", dopple.SubType.UNKNOWN, dopple.AST.Var, null);
+		this.createVirtualType("Dynamic", dopple.SubType.DYNAMIC, null, null);
 		this.createVirtualType("ObjectDef", dopple.SubType.OBJECT_DEF, null, null);
 		this.createVirtualType("SetterGetter", dopple.SubType.SETTER_GETTER, dopple.AST.SetterGetter, null);
 		this.createVirtualType("Class", dopple.SubType.CLASS, dopple.AST.Class, null);
@@ -30,8 +31,8 @@ dopple.extern =
 		this.load_Function();
 		this.load_Object();
 		this.load_Array();
-		this.createVirtualType("Enum", dopple.SubType.Enum, dopple.AST.Enum, null);
-		this.createVirtualType("Map", dopple.SubType.Map, dopple.AST.Map, null);
+		this.createVirtualType("Enum", dopple.SubType.ENUM, dopple.AST.Enum, null);
+		this.createVirtualType("Map", dopple.SubType.MAP, dopple.AST.Map, null);
 
 		this.createCls("RegExp");
 
@@ -103,6 +104,10 @@ dopple.extern =
 
 		var cls = new dopple.AST.Class(name, scope, null);
 		cls.id = this.types.length;
+
+		if(subType) {
+			cls.subType = subType;
+		}
 
 		var type = new dopple.AST.Type(cls, null, subType);
 		cls.type = type;
