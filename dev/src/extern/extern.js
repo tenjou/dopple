@@ -119,11 +119,11 @@ dopple.extern =
 	},
 
 	createCls: function(name, scope) {
-		return this.createType(name, 0, null, scope, false);
+		return this.createType(name, dopple.SubType.CLASS, null, scope, false);
 	},
 
 	createInternalCls(name, scope) {
-		return this.createInternalType(name, 0, null, scope, false);
+		return this.createInternalType(name, dopple.SubType.CLASS, null, scope, false);
 	},
 
 	createInstance: function(name, cls)

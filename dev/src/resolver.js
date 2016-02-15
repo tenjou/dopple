@@ -151,17 +151,17 @@ dopple.resolver =
 
 		if(node.value)
 		{
-			node.value = this.resolveValue(node.value);
-			node.ref.type = node.value.type;
+			var value = this.resolveValue(node.value);
+			node.value = value;
 
-			if(node.value.exprType === this.exprType.FUNCTION_CALL) 
-			{
-				if(!node.value.type.cls)	{
-					throw "ReturnError: Called function does not have return value";
-				}
+			var valueExprType = value.exprType;
+			if(valueExprType === this.exprType.MEMBER) {
+				node.ref.type = value.ref.type;
+			}
+			else {
+				node.ref.type = value.type;
 			}
 
-			var valueExprType = node.value.exprType;
 			if(valueExprType === this.exprType.FUNCTION)
 			{
 				node.value.name = name;
@@ -267,9 +267,18 @@ dopple.resolver =
 			case this.exprType.FUNCTION:
 				this.resolveFunc(node, false);
 				break;
+
 			case this.exprType.FUNCTION_CALL:
+			{
 				this.resolveFuncCall(node);
-				break;	
+
+				if(node.value.exprType === this.exprType.FUNCTION_CALL) 
+				{
+					if(!node.value.type.cls)	{
+						throw "ReturnError: Called function does not have return value";
+					}
+				}
+			} break;
 
 			case this.exprType.ARRAY:
 				this.resolveArray(node);
@@ -1273,7 +1282,7 @@ dopple.resolver =
 			cls = type.cls;			
 		}		
 	
-		switch(cls.subType)
+		switch(type.subType)
 		{
 			case this.subType.OBJECT:
 			{
