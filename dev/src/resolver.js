@@ -537,6 +537,8 @@ dopple.resolver =
 			}
 		}
 
+		node.type = node.value.type.templateType;
+
 		return node;
 	},
 
@@ -1029,8 +1031,6 @@ dopple.resolver =
 				}
 
 				node.type = node.type.cls.getTemplate(prevType);
-				console.log(node.type);
-				//node.type = prevCls;
 			}
 		}		
 

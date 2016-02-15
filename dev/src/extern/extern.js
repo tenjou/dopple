@@ -165,45 +165,42 @@ dopple.extern =
 		return obj;
 	},
 
-	createRef: function(clsName, templateClsName)
+	createRef: function(typeName, templateTypeName)
 	{
-		var ref = new dopple.AST.Reference();
+		var ref = new dopple.AST.Reference(null);
 
-		if(clsName)
-		{
-			var cls = this.typesMap[clsName];
-			if(!cls) {
-				throw "TypeError: No '" + clsName + "' class found";
-			}
-
-			ref.cls = cls;
+		var type = this.typesMap[typeName];
+		if(!type) {
+			throw "TypeError: No '" + typeName + "' class found";
 		}
 
-		if(templateClsName)
+		if(!templateTypeName) {
+			ref.type = type;
+		}
+		else 
 		{
-			var templateCls = this.typesMap[templateClsName];
-			if(!templateCls) {
-				throw "TypeError: No '" + templateClsName + "' class found";
+			var templateType = this.typesMap[templateTypeName];
+			if(!templateType) {
+				throw "TypeError: No '" + templateTypeName + "' class found";
 			}
 
-			ref.templateCls = templateCls;
+			ref.type = type.cls.getTemplate(templateType);
 		}
 
 		return ref;
 	},
 
-	addVar: function(cls, name, clsName)
+	addVar: function(cls, name, typeName)
 	{
-		var typeCls = this.typesMap[clsName];
-		if(!typeCls) {
-			throw "TypeError: No '" + clsName + "' class found";
+		var type = this.typesMap[typeName];
+		if(!type) {
+			throw "TypeError: No '" + typeName + "' class found";
 		}
 
 		var id = new dopple.AST.Identifier(name)
 		var ref = new dopple.AST.Reference(id);
-		ref.cls = typeCls;
+		ref.type = type;
 		var varExpr = new dopple.AST.Var(ref, null);
-		varExpr.cls = typeCls;
 		cls.scope.protoVars[name] = varExpr;
 	},
 
